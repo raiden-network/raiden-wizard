@@ -10,6 +10,11 @@ else:
     PLATFORM = 'linux'
 
 
+class PATHS:
+    USR_BIN_DIR = pathlib.Path('/usr/local/bin')
+    DEFAULT_INSTALL_DIR = pathlib.Path('/opt/raiden')
+
+
 class RAIDEN_META:
     NAME = 'raiden'
     VERSION = 'v0.100.2'
@@ -20,21 +25,16 @@ class RAIDEN_META:
 
 class GETH_META:
     NAME = 'geth'
-    VERSION = ''
-    BINARY = ''
-    DOWNLOAD_URL = ''
+    VERSION = '1.8.23'
+    FLAVOR = sys.platform
+    COMMIT = 'c9427004'
+    DOWNLOAD_URL = f'https://gethstore.blob.core.windows.net/builds/geth-{FLAVOR}-{VERSION}-{COMMIT}.tar.gz'
+    BIN_PATH = PATHS.USR_BIN_DIR.joinpath(NAME)
 
 
 class PARITY_META:
     NAME = 'parity'
-    VERSION = ''
-    BINARY = ''
-    DOWNLOAD_URL = ''
-
-
-class PATHS:
-    USR_BIN_DIR = pathlib.Path('/usr/local/bin')
-    DEFAULT_INSTALL_DIR = pathlib.Path('/opt/raiden')
-
-
-
+    VERSION = 'v2.4.0'
+    FLAVOR = 'apple-darwin' if sys.platform == 'darwin' else 'unknown-linux-gnu'
+    DOWNLOAD_URL = f'https://releases.parity.io/ethereum/{VERSION}/x86_64-{FLAVOR}/parity'
+    BIN_PATH = PATHS.USR_BIN_DIR.joinpath(NAME)

@@ -1,3 +1,9 @@
+import hashlib
+import uuid
+import getpass
+
+import requests
+
 from raiden_installer.steps.executor import StepExecutor
 from raiden_installer.utils import is_testnet
 
@@ -12,8 +18,16 @@ class AccountFundingStep(StepExecutor):
     def request_testnet_ether(self):
         """Request ether for the given `account` from somewhere.
 
+        Reference:
+
+            https://github.com/raiden-network/workshop/blob/235af9bfb1e9858678ca71369bf6746fd3003314/tools/onboarder/onboarder.py#L30
+
         TODO: This is a stub.
         """
+        faucet_url = ''
+        wallet = ''
+        client_hash = hashlib.sha256(f'{uuid.getnode()}-{getpass.getuser()}'.encode()).hexdigest()
+        return requests.post(faucet_url, json={'address': wallet, 'client_hash': client_hash})
 
     def fund_mainnet_account(self):
         """Magically fund your main net account out of thin air.

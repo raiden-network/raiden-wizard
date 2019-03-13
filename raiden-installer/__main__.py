@@ -3,15 +3,13 @@ import pathlib
 
 from raiden_installer.steps import (
     RaidenInstallationStep,
-    AccountSetupStep,
     EthClientInstallationStep,
-    install_eth_client,
-    fund_account,
-    token_acquisition,
-    StepExecutor,
+    AccountSetupStep,
+    AccountFundingStep,
+    TokenAcquisitionStep,
 )
 
-from installer.utils import user_input
+from raiden_installer.utils import user_input
 
 # Choose a default installation directory
 tar_dir = user_input("Choose a installation directory: [/opt/raiden]", default="/opt/raiden")

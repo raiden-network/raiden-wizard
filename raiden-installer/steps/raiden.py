@@ -1,5 +1,6 @@
 import pathlib
 
+from raiden_installer.constants import PATHS
 from raiden_installer.steps.executor import StepExecutor
 from raiden_installer.utils import (
     create_symlink,
@@ -12,27 +13,29 @@ from raiden_installer.utils import (
 
 class RaidenInstallationStep(StepExecutor):
 
-    def download_raiden_binary(self, target_path: pathlib.Path) -> pathlib.Path:
+    def __init__(self, install_dir: pathlib.Path=PATHS.DEFAULT_INSTALL_DIR):
+        super(RaidenInstallationStep, self).__init__('raiden', install_dir)
+        self.download_dir = self.install_dir.joinpath('download')
+        self.archive = None
+        self.binary_dir = self.install_dir.joinpath('bin')
+        self.binary = None
+
+    def download_binary(self):
         """Download the latest Raiden client binary.
 
         TODO: This is a stub.
         """
-        path = download_file(target_path, "version_string")
-        return path
+        self.archive = download_file(self.download_dir, self.raiden_version)
 
-    def install_raiden_binary(
-            self,
-            archive_path: pathlib.Path,
-            target_path: pathlib.Path
-    ) -> pathlib.Path:
-        """Install the Raiden binary on this machine, unpacking the archive if necessary.
+    def install_binary(self):
+        """Install the binary on this machine, unpacking the archive if necessary.
 
         TODO: This is a stub.
         """
-        return target_path
+        self.binary = extract_archive(self.archive, self.binary_dir)
 
-    def configure_raiden_client(self, bin_path: pathlib.Path, network: str) -> None:
-        """configure the raiden client to use the given `network`.
+    def configure_client(self, network: str) -> None:
+        """configure the client to use the given `network`.
 
         TODO: This is a stub.
         """
@@ -44,30 +47,26 @@ class RaidenInstallationStep(StepExecutor):
         """
         print("Always wear a helmet when hacking on raiden!")
 
-    def install_raiden(self, download_cache_dir, binary_dir):
+    def run(self):
         # Download the binary
-        archive_dir = self.download_raiden_binary(download_cache_dir)
-
-        # Extract the archive
-        bin_path = extract_archive(archive_dir, binary_dir)
+        self.download_binary()
 
         # Copy binary to given directory.
-        self.install_raiden_binary(bin_path)
+        self.install_binary()
 
         # Determine whether or not we should create a symbolic link and desktop icon
         # for the raiden client.
-
         symbolic_link = user_input("Add a symbolic link to /usr/local/bin for Raiden? [Y/n]", default='yes', options=['yes', 'no'])
         if symbolic_link == 'yes':
-            create_symlink(bin_path)
+            create_symlink(self.binary)
 
         desktop_icon = user_input('Would you like to create a desktop icon for the Raiden client?')
         if desktop_icon:
-            create_desktop_icon(bin_path)
+            create_desktop_icon(self.binary)
 
-        # Configure Raiden
+        # Configure the client
         network = user_input("Your selection: [1]", default=1, options=['Test Network', 'Main Network'])
-        self.configure_raiden_client(bin_path, network)
+        self.configure_client(network)
 
         # Display the requirements for safe usage and have the user confirm he read them.
         self.show_safe_usage_requirements()

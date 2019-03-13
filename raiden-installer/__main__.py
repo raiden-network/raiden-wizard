@@ -1,13 +1,16 @@
 """One-click installer application."""
 import pathlib
 
-from installer.steps import (
-    install_raiden,
+from raiden_installer.steps import (
+    RaidenInstallationStep,
+    AccountSetupStep,
+    EthClientInstallationStep,
     install_eth_client,
-    account_setup,
     fund_account,
     token_acquisition,
+    StepExecutor,
 )
+
 from installer.utils import user_input
 
 # Choose a default installation directory
@@ -23,27 +26,33 @@ binary_dir = install_root_path.joinpath('bin')
 # Install the Raiden Client
 ################################################################################
 
-install_raiden(download_cache_dir, binary_dir)
+with RaidenInstallationStep() as step:
+    step.run()
 
 ################################################################################
 # Install Ethereum Client
 ################################################################################
 
-install_eth_client(download_cache_dir, binary_dir)
+with EthClientInstallationStep() as step:
+    step.run()
 
 ################################################################################
 # Setup Account for Raiden Development
 ################################################################################
 
-account_setup()
+with AccountSetupStep('client') as step:
+    step.run()
 
 ################################################################################
 # Fund accounts with Ether
 ################################################################################
 
-fund_account()
+with AccountFundingStep() as step:
+    step.run()
 
 ################################################################################
 # Acquire Tokens
 ################################################################################
-token_acquisition()
+
+with TokenAcquisitionStep() as step:
+    step.run()

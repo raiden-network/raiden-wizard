@@ -29,6 +29,7 @@ class GETH_META:
     FLAVOR = sys.platform
     COMMIT = 'c9427004'
     DOWNLOAD_URL = f'https://gethstore.blob.core.windows.net/builds/geth-{FLAVOR}-{VERSION}-{COMMIT}.tar.gz'
+    SIGNATURE = f'{DOWNLOAD_URL}.asc'
     BIN_PATH = PATHS.USR_BIN_DIR.joinpath(NAME)
 
 

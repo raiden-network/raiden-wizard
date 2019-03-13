@@ -48,10 +48,30 @@ class RaidenInstallationStep(StepExecutor):
         print("Always wear a helmet when hacking on raiden!")
 
     def run(self):
+        """Execute the Raiden client installation step.
+
+        We download the binary from the download url specified in
+        :attr:`RAIDEN_META.DOWNLOAD_URL` and place it in `<INSTALL DIR>/download`,
+        and unpack the archive; the resulting binary is copied to
+        `<INSTALL DIR>/bin`.
+
+        Once this is done, we ask the user if a symbolic link should be created
+        in :attr:`PATHS.USR_BIN_DIR`, and if so, create it.
+
+        We repeat the procedure for a desktop icon linking to the installed binary.
+
+        Next, we determine which network the user would like to connect to.
+        Their input is used to configure the raiden client appropriately.
+
+        Finally, we show the 'Safe Usage Requirements' to the user, and have them
+        confirm that they read it.
+
+        Once this is happens, the step is complete and we return.
+        """
         # Download the binary
         self.download_binary()
 
-        # Copy binary to given directory.
+        # Copy binary to the directory specified in self.install_dir.
         self.install_binary()
 
         # Determine whether or not we should create a symbolic link and desktop icon

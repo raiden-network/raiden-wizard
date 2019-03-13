@@ -10,9 +10,10 @@
         options chosen by the user and installed by the installer.
 
 """
+from abc import ABC, abstractmethod
 
 
-class StepExecutor:
+class StepExecutor(metaclass=ABC):
     """Context manager for executing installation steps.
 
     Takes care of the following:
@@ -26,7 +27,7 @@ class StepExecutor:
 
     In order to provide the above functionalities, this class needs to be
     inherited and customized for each of the installation steps. However, the
-    general functionality is described in this class' magic methods.
+    general logic and tasks is described in this class' magic methods.
 
     Usage::
 
@@ -70,6 +71,6 @@ class StepExecutor:
         """
         pass
 
+    @abstractmethod
     def run(self):
         """Run the installer step."""
-        raise NotImplementedError

@@ -1,22 +1,24 @@
+from raiden_installer.steps.executor import StepExecutor
+from raiden_installer.utils import user_input
 
 
-def acquire_token(network: str, token: str) -> None:
-    """Acquire the given `token` on the given `network`.
+class TokenAcquisitionStep(StepExecutor):
 
-    TODO: This is a stub.
-    """
+    def acquire_token(self, network: str, token: str) -> None:
+        """Acquire the given `token` on the given `network`.
 
+        TODO: This is a stub.
+        """
 
-def token_acquisition(network, is_testnet):
-    """Execute the token acquisition step.
+    def token_acquisition(self, network, is_testnet):
+        """Execute the token acquisition step.
 
-    TODO: This is a stub.
-    """
-    if is_testnet(network):
-        # TODO: User input require input validation.
-        token = input('Specify a token to acquire:')
-        acquire_token(token)
-    else:
-        # Skipping token acquisition for Main network.
-        pass
-
+        TODO: This is a stub.
+        """
+        if is_testnet(network):
+            # TODO: User input require input validation.
+            token = user_input('Specify a token to acquire:')
+            self.acquire_token(token)
+        else:
+            # Skipping token acquisition for Main network.
+            pass

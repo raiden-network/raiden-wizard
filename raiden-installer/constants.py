@@ -14,7 +14,8 @@ class RAIDEN_META:
     NAME = 'raiden'
     VERSION = 'v0.100.2'
     BINARY_NAME = f'raiden-{VERSION}'
-    ARCHIVE = f'{BINARY_NAME}-{PLATFORM}-x86_64.{ARCHIVE_EXT}'
+    ARCH = 'macOS' if sys.platform == 'darwin' else 'linux'
+    ARCHIVE = f'{BINARY_NAME}-{ARCH}-x86_64.{ARCHIVE_EXT}'
     DOWNLOAD_URL = f'https://github.com/raiden-network/raiden/releases/download/{VERSION}/{ARCHIVE}'
 
 

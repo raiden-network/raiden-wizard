@@ -1,6 +1,6 @@
 import pathlib
 
-from raiden_installer.constants import PATHS, CLIENTS
+from raiden_installer.constants import PATHS, GETH_META
 from raiden_installer.steps.executor import StepExecutor
 from raiden_installer.utils import (
     create_symlink,
@@ -79,7 +79,7 @@ class EthClientInstallationStep(StepExecutor):
         else:
             self.binary = user_input(
                 'Please specify the path to the eth client: [/usr/local/bin/geth]',
-                default=PATHS.USR_BIN_DIR.join(CLIENTS.GETH),
+                default=GETH_META.BINARY,
                 short_hand=True
             )
         # Determine which connection method we should use.

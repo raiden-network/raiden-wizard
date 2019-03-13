@@ -1,6 +1,6 @@
 import pathlib
 
-from raiden_installer.constants import PATHS
+from raiden_installer.constants import PATHS, RAIDEN_META
 from raiden_installer.steps.executor import StepExecutor
 from raiden_installer.utils import (
     create_symlink,
@@ -25,7 +25,7 @@ class RaidenInstallationStep(StepExecutor):
 
         TODO: This is a stub.
         """
-        self.archive = download_file(self.download_dir, self.raiden_version)
+        self.archive = download_file(self.download_dir, RAIDEN_META.VERSION)
 
     def install_binary(self):
         """Install the binary on this machine, unpacking the archive if necessary.

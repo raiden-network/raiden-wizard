@@ -12,7 +12,10 @@ from raiden_installer.steps import (
 from raiden_installer.utils import user_input
 
 # Choose a default installation directory
-tar_dir = user_input("Choose a installation directory: [/opt/raiden]", default="/opt/raiden")
+tar_dir = user_input(
+    "Choose a installation directory: [/opt/raiden]",
+    default="/opt/raiden"
+)
 install_root_path = pathlib.Path(tar_dir)
 
 # Create directories for installing.

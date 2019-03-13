@@ -20,4 +20,4 @@ class VERSIONS:
 class URLS:
     GETH_BINARY = ''
     PARITY_BINARY = ''
-    RAIDEN_SPACE = ''
+    RAIDEN_RELEASES = 'https://github.com/raiden-network/raiden/releases/download/'

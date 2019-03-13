@@ -9,10 +9,12 @@ else:
     ARCHIVE_EXT = 'tar.gz'
     PLATFORM = 'linux'
 
+
 class RAIDEN_META:
     NAME = 'raiden'
     VERSION = 'v0.100.2'
-    ARCHIVE = f'raiden-{RAIDEN_VERSION}-{PLATFORM}-x86_64.{ARCHIVE_EXT}'
+    BINARY_NAME = f'raiden-{VERSION}'
+    ARCHIVE = f'{BINARY_NAME}-{PLATFORM}-x86_64.{ARCHIVE_EXT}'
     DOWNLOAD_URL = f'https://github.com/raiden-network/raiden/releases/download/{VERSION}/{ARCHIVE}'
 
 

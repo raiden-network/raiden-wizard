@@ -2,6 +2,8 @@ import pathlib
 
 from typing import List, Dict, Union, Optional, Any
 
+from raiden_installer.constants import STRINGS
+
 
 def render_options(
     options: Union[List[str], Dict[str, str]],
@@ -61,7 +63,13 @@ def user_input(
     default: Optional[str] = None,
     options: Optional[Union[Dict[str, str], List[str]]] = None,
 ) -> Any:
-    """Ask the user for his input."""
+    """Ask the user for his input.
+
+    If `options` is specified, we will validate the input against its contents.
+    Should the validation fail we print :attr:`PATHS.INPUT_REJECTED` to the
+    console and ask for input again. Otherwise, :attr:`PATHS.INPUT_ACCEPTED` is
+    printed instead and the input value returned.
+    """
     render_options(options)
 
     while True:
@@ -70,6 +78,7 @@ def user_input(
             return response or default
         elif response in options:
             return response
+        print(STRINGS.INVALID_SELECTION)
         render_options(options, short_hand=True)
 
 

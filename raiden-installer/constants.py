@@ -37,3 +37,18 @@ class PARITY_META:
     DOWNLOAD_URL = f'https://releases.parity.io/ethereum/{VERSION}/x86_64-{ARCH}/parity'
     BIN_PATH = PATHS.USR_BIN_DIR.joinpath(NAME)
     KEYSTORE_PATH = pathlib.Path.home().joinpath('.local', 'share', 'io.parity.ethereum', 'keys')
+
+
+class STRINGS:
+    # String names of our installation steps
+    STEP_1 = 'Step 1: Raiden Binary Setup'
+    STEP_2 = 'Step 2: Ethereum Client Setup'
+    STEP_3 = 'Step 3: Account Setup'
+    STEP_4 = 'Step 4: Account Funding'
+    STEP_5 = 'Step 5: Token Acquisition'
+
+    # User input parser strings
+    CHOOSE_ONE_LONG = ''
+    CHOOSE_ONE_SHORT = ''
+    SELECTION_ACCEPTED = ''
+    SELECTION_REJECTED = ''

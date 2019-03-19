@@ -9,12 +9,12 @@ from raiden_installer.steps import (
     TokenAcquisitionStep,
 )
 
-from raiden_installer.utils import user_input
+from raiden_installer.utils import user_input, STRINGS, PATHS
 
 # Choose a default installation directory
 tar_dir = user_input(
-    "Choose a installation directory: [/opt/raiden]",
-    default="/opt/raiden"
+    f"Choose a installation directory: [{PATHS.DEFAULT_INSTALL_DIR}]",
+    default=PATHS.DEFAULT_INSTALL_DIR,
 )
 install_root_path = pathlib.Path(tar_dir)
 
@@ -27,6 +27,7 @@ binary_dir = install_root_path.joinpath('bin')
 # Install the Raiden Client
 ################################################################################
 
+print(f'{STRINGS.STEP_1}\n')
 with RaidenInstallationStep() as step:
     step.run()
 
@@ -34,6 +35,7 @@ with RaidenInstallationStep() as step:
 # Install Ethereum Client
 ################################################################################
 
+print(f'{STRINGS.STEP_2}\n')
 with EthClientInstallationStep() as step:
     step.run()
 
@@ -41,6 +43,7 @@ with EthClientInstallationStep() as step:
 # Setup Account for Raiden Development
 ################################################################################
 
+print(f'{STRINGS.STEP_3}\n')
 with AccountSetupStep('client') as step:
     step.run()
 
@@ -48,6 +51,7 @@ with AccountSetupStep('client') as step:
 # Fund accounts with Ether
 ################################################################################
 
+print(f'{STRINGS.STEP_4}\n')
 with AccountFundingStep() as step:
     step.run()
 
@@ -55,5 +59,6 @@ with AccountFundingStep() as step:
 # Acquire Tokens
 ################################################################################
 
+print(f'{STRINGS.STEP_5}\n')
 with TokenAcquisitionStep() as step:
     step.run()

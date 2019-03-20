@@ -1,8 +1,8 @@
-# Raiden default path values.
+# Expected Raiden client default path values.
 RAIDEN_INSTALL_PATH = '/opt/raiden'
 DEFAULT_BIN_PATH = f'{RAIDEN_INSTALL_PATH}/bin'
 RAIDEN_BINARY = DEFAULT_BIN_PATH + '/raiden'
-
+RAIDEN_SPACE = 'https://raiden-nightlies.ams3.digitaloceanspaces.com/'
 # Raiden 'custom' paths, emulating user input during install steps.
 CUSTOM_BIN_PATH = '/opt/testing/bin'
 

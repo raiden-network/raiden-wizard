@@ -87,7 +87,7 @@ class StepExecutor(ABC):
         TODO: This is a stub.
         """
         if self.name not in self.meta:
-            self.meta[self.name] = {'run_count': 1 }
+            self.meta[self.name] = {'run_count': 1}
         else:
             self.meta[self.name]['run_count'] += 1
 
@@ -95,16 +95,20 @@ class StepExecutor(ABC):
 
         json_serializable = (str, int, float, dict, list)
         for attr, value in self.__dict__.items():
-            if callable(attr):
+            # Avoid dumping methods to the meta file, and avoid ending with a
+            # circular reference ValueError.
+            if callable(attr) or attr == 'meta':
                 continue
             if isinstance(value, json_serializable):
                 self.meta[self.name][attr] = value
             else:
                 self.meta[self.name][attr] = str(value)
 
-        json.dump(self.meta, self.meta_path.open('w'), indent=4)
+        with self.meta_path.open('w') as fp:
+            json.dump(self.meta, fp, indent=4)
+
         if exc_type == KeyboardInterrupt:
-            print("Setup Interrupted. Progress saved.")
+            print("Setup cancelled by user. Progress saved.")
 
     @property
     def is_rerun(self) -> bool:

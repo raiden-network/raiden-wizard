@@ -37,13 +37,6 @@ class RaidenInstallationStep(StepExecutor):
         TODO: This is a stub.
         """
 
-    def show_safe_usage_requirements(self) -> None:
-        """Print safe usage requirements to console.
-
-        TODO: This is a stub.
-        """
-        print("Always wear a helmet when hacking on raiden!")
-
     def run(self):
         """Execute the Raiden client installation step.
 

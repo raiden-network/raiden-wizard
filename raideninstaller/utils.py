@@ -61,7 +61,7 @@ class ReleaseArchive:
 
     def validate(self):
         """Confirm there is only one file present in the archive."""
-        if len(self.files()) != 1:
+        if len(self.files) != 1:
             raise ValueError(
                 f'Release archive has unexpected content. '
                 f'Expected 1 file, found {len(self.files)}: {", ".join(self.files)}',
@@ -137,7 +137,7 @@ def render_options(
 
 def user_input(
     prompt: str,
-    default: Optional[str] = None,
+    default: Optional[Union[str, int, float]] = None,
     options: Optional[Union[Dict[str, str], List[str]]] = None,
 ) -> Any:
     """Ask the user for his input.
@@ -147,16 +147,23 @@ def user_input(
     console and ask for input again. Otherwise, :attr:`PATHS.INPUT_ACCEPTED` is
     printed instead and the input value returned.
     """
+    acceptable_input = None
     if options:
         render_options(options)
+        acceptable_input = [str(x) for x in range(len(options))] if isinstance(options, list) else options.keys()
 
     while True:
         response = input(prompt)
-        if options is None:
+        if options is None or (not response and default):
+            print(STRINGS.SELECTION_ACCEPTED)
             return response or default
-        elif response in options:
+        elif not response and not default:
+            print(STRINGS.SELECTION_CANNOT_BE_EMPTY)
+        elif response in acceptable_input:
+            print(STRINGS.SELECTION_ACCEPTED)
             return response
-        print(STRINGS.INVALID_SELECTION)
+        else:
+            print(STRINGS.SELECTION_REJECTED)
         if options:
             render_options(options, short_hand=True)
 
@@ -181,12 +188,7 @@ def create_desktop_icon(target: pathlib.Path, symlink_name: str) -> None:
 
 
 def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:
-    """Download the file at given `url` to `target_path`.
-
-    :raises requests.HTTPError:
-        if the GET request to the given `url` returns a status code >399.
-    """
-    """Download this release's binary from our servers to the given `target_folder`."""
+    """Download this release's binary from our servers to the given `target_path`."""
 
     with requests.get(url, stream=True) as resp:
         try:
@@ -195,9 +197,10 @@ def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:
             raise ValueError(
                 f"Can't download file from {url}!",
             ) from e
-
-    with target_path.open('wb+') as release_file:
-        shutil.copyfileobj(resp.raw, release_file)
+        with target_path.open('wb') as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:  # filter out keep-alive new chunks
+                    f.write(chunk)
 
     return target_path
 

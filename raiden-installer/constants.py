@@ -1,6 +1,14 @@
+import json
+import logging
 import pathlib
 import sys
 
+from typing import Union
+
+import requests
+
+
+log = logging.getLogger(__name__)
 
 ARCHIVE_EXT = 'zip' if sys.platform == 'darwin' else 'tar.gz'
 
@@ -17,6 +25,28 @@ class RAIDEN_META:
     ARCH = 'macOS' if sys.platform == 'darwin' else 'linux'
     ARCHIVE = f'{BINARY_NAME}-{ARCH}-x86_64.{ARCHIVE_EXT}'
     DOWNLOAD_URL = f'https://github.com/raiden-network/raiden/releases/download/{VERSION}/{ARCHIVE}'
+
+    @classmethod
+    def latest(cls) -> Union[str, None]:
+        try:
+            resp = requests.get('https://api.github.com/repos/raiden-network/raiden/releases')
+        except requests.HTTPError as e:
+            log. exception(e)
+            log.error('Could not retrieve latest release data due to an HTTPError!')
+        else:
+            try:
+                return resp.json()[0]['tag_name']
+            except json.JSONDecodeError as e:
+                log.exception(e)
+                log.error('Could not retrieve latest release data! It is not valid JSON!')
+            except IndexError as e:
+                log.exception(e)
+                log.error('Could not retrieve data on latest release - response is an empty list!')
+
+            except KeyError as e:
+                log.exception(e)
+                log.error('Could not retrieve "tag_name" from response!')
+        return None
 
 
 class GETH_META:

@@ -48,10 +48,12 @@ class StepExecutor(ABC):
     def __init__(self, name: str, install_path: pathlib.Path = PATHS.DEFAULT_INSTALL_DIR):
         self.name = name
         self.meta_path = install_path.joinpath('.meta')
+        self.meta = {}
         if self.meta_path.exists():
-            self.meta: Dict = json.load(self.meta_path.open('r'))
-        else:
-            self.meta = {}
+            try:
+                self.meta: Dict = json.load(self.meta_path.open('r'))
+            except json.JSONDecodeError:
+                pass
         self.install_dir = install_path
 
     def __enter__(self):

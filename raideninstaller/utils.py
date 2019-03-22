@@ -123,7 +123,7 @@ def render_options(
     if isinstance(options, list):
         label_description_list = enumerate(options)
     else:
-        label_description_list = list(options.items())
+        label_description_list = list((options).items())
 
     for label, descr in label_description_list:
         choose_long += f'    [{label}]    {descr}\n'
@@ -143,7 +143,8 @@ def user_input(
     console and ask for input again. Otherwise, :attr:`PATHS.INPUT_ACCEPTED` is
     printed instead and the input value returned.
     """
-    render_options(options)
+    if options:
+        render_options(options)
 
     while True:
         response = input(prompt)
@@ -152,7 +153,8 @@ def user_input(
         elif response in options:
             return response
         print(STRINGS.INVALID_SELECTION)
-        render_options(options, short_hand=True)
+        if options:
+            render_options(options, short_hand=True)
 
 
 def create_symlink(bin_path: pathlib.Path, symlink_name: str, flags: Optional[List[str]]=None) -> None:

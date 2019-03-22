@@ -85,13 +85,15 @@ class StepExecutor(ABC):
         TODO: This is a stub.
         """
         if exc_type:
-            if not self.name in self.meta:
+            if self.name not in self.meta:
                 self.meta[self.name] = {'run_count': 1, 'previous_run_success': False}
             else:
                 meta_dict = self.meta[self.name]
                 meta_dict['run_count'] += 1
                 meta_dict['previous_run_success'] = False
             json.dump(self.meta, self.meta_path.open('w'), indent=4)
+            if exc_type == KeyboardInterrupt:
+                print("Setup Interrupted. Progress saved.")
         pass
 
     @property

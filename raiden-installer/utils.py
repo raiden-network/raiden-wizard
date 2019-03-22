@@ -155,18 +155,14 @@ def user_input(
         render_options(options, short_hand=True)
 
 
-def create_symlink(bin_path: pathlib.Path) -> None:
-    """Create a symlink at /usr/local/bin for the given `bin_path`.
-
-    TODO: This is a stub.
-    """
+def create_symlink(bin_path: pathlib.Path, symlink_name: str) -> None:
+    """Create a symlink at /usr/local/bin for the given `bin_path`."""
+    return pathlib.Path(f'/usr/local/bin/{symlink_name}').symlink_to(bin_path)
 
 
-def create_desktop_icon(bin_path: pathlib.Path) -> None:
-    """Create a desktop icon for the given `bin_path`.
-
-    TODO: This is a stub.
-    """
+def create_desktop_icon(bin_path: pathlib.Path, symlink_name: str) -> None:
+    """Create a desktop icon for the given `bin_path`."""
+    return pathlib.Path.home().joinpath(symlink_name).symlink_to(bin_path)
 
 
 def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:

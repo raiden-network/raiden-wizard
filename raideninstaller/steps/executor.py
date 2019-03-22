@@ -87,8 +87,8 @@ class StepExecutor(ABC):
         TODO: This is a stub.
         """
         if self.name not in self.meta:
-            self.meta[self.name] =  {'run_count': 1 }
-        else
+            self.meta[self.name] = {'run_count': 1 }
+        else:
             self.meta[self.name]['run_count'] += 1
 
         self.meta[self.name]['previous_run_success'] = bool(exc_type)
@@ -105,7 +105,6 @@ class StepExecutor(ABC):
         json.dump(self.meta, self.meta_path.open('w'), indent=4)
         if exc_type == KeyboardInterrupt:
             print("Setup Interrupted. Progress saved.")
-        pass
 
     @property
     def is_rerun(self) -> bool:

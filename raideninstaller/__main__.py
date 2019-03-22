@@ -9,7 +9,8 @@ from raideninstaller.steps import (
     TokenAcquisitionStep,
 )
 
-from raideninstaller.utils import user_input, STRINGS, PATHS
+from raideninstaller.utils import user_input
+from raideninstaller.constants import STRINGS, PATHS
 
 # Choose a default installation directory
 tar_dir = user_input(

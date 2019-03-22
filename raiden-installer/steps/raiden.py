@@ -20,6 +20,7 @@ class RaidenInstallationStep(StepExecutor):
         self.archive = None
         self.binary_dir = self.install_dir.joinpath('bin')
         self.binary = None
+        self.execution_flags = []
 
     def download_binary(self) -> None:
         """Download the latest Raiden client binary."""
@@ -31,11 +32,27 @@ class RaidenInstallationStep(StepExecutor):
         with ReleaseArchive(self.archive) as archive:
             self.binary = archive.unpack(self.binary_dir.join(RAIDEN_META.BINARY_NAME))
 
-    def configure_client(self, network: str) -> None:
+    def configure_client(self, network: str, remote: bool=True) -> None:
         """configure the client to use the given `network`.
 
-        TODO: This is a stub.
+        If `remote=True` is passed, we connect to the network via a remote node.
+        Settings, such as the path to the keystore and the RPC url are required
+        from the user.
+
+        TODO: Support remote nodes other than Infura
+        TODO: Support local clients
         """
+        if remote:
+            infura_token = user_input('Please enter your Infura Access Token', short_hand=True)
+            rpc_endpoint = f'https://{network}.infura.io/v3/{infura_token}'
+            keystore = user_input(
+                'Please enter the path to your keystore: [~/.ethereum/testnet/keystore]',
+                default='~/.ethereum/testnet/keystore',
+                short_hand=True
+            )
+            self.execution_flags = [f'--keystore-path {keystore}', f'--eth-rpc-endpoint {rpc_endpoint}']
+        else:
+            raise NotImplementedError
 
     def run(self):
         """Execute the Raiden client installation step.
@@ -64,19 +81,20 @@ class RaidenInstallationStep(StepExecutor):
         # Copy binary to the directory specified in self.install_dir.
         self.install_binary()
 
+        # Configure the client
+        network = user_input("Your selection: [1]", default=1, options=[NETWORKS.ROPSTEN, NETWORKS.KOVAN, NETWORKS.RINKEBY])
+        self.configure_client(network)
+
         # Determine whether or not we should create a symbolic link and desktop icon
         # for the raiden client.
         symbolic_link = user_input("Add a symbolic link to /usr/local/bin for Raiden? [Y/n]", default='yes', options=['yes', 'no'])
         if symbolic_link == 'yes':
-            create_symlink(self.binary)
+            create_symlink(self.binary, 'raiden', flags=self.execution_flags)
 
         desktop_icon = user_input('Would you like to create a desktop icon for the Raiden client?')
         if desktop_icon:
-            create_desktop_icon(self.binary)
+            create_desktop_icon(self.binary, 'raiden')
 
-        # Configure the client
-        network = user_input("Your selection: [1]", default=1, options=['Test Network', 'Main Network'])
-        self.configure_client(network)
 
         # Display the requirements for safe usage and have the user confirm he read them.
         self.show_safe_usage_requirements()

@@ -95,7 +95,8 @@ class StepExecutor(ABC):
             for attr, value in self.__dict__.items():
                 if callable(attr):
                     continue
-                self.meta[self.name][attr] = value
+                # convert everythin to string, to avoid JSONEncodingError.
+                self.meta[self.name][attr] = str(value)
 
             json.dump(self.meta, self.meta_path.open('w'), indent=4)
             if exc_type == KeyboardInterrupt:

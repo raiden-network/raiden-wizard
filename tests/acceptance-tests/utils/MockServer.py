@@ -5,7 +5,7 @@ mock responses for them, avoiding requesting the actual API.
 
 It's importable as a library in .robot files::
 
-    ~/raiden-installer$ cat acceptance-tests/<iteration>/test.robot
+    ~/raideninstaller$ cat acceptance-tests/<iteration>/test.robot
     *** Settings ***
     Library     ../utils/MockServer.py
 

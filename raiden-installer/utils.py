@@ -155,14 +155,23 @@ def user_input(
         render_options(options, short_hand=True)
 
 
-def create_symlink(bin_path: pathlib.Path, symlink_name: str) -> None:
-    """Create a symlink at /usr/local/bin for the given `bin_path`."""
-    return pathlib.Path(f'/usr/local/bin/{symlink_name}').symlink_to(bin_path)
+def create_symlink(bin_path: pathlib.Path, symlink_name: str, flags: Optional[List[str]]=None) -> None:
+    """Create a symlink at /usr/local/bin for the given `bin_path`.
+
+    If `flags` is truthy, we create a script at /usr/local/bin instead, which
+    executes the target using bash and the given flags.
+    """
+    if flags:
+        with open(f'/usr/local/bin/{symlink_name}', 'w+') as f:
+            f.write('#!/usr/bin/bash\n')
+            f.write(f'{bin_path} {" ".join(flags)}')
+    else:
+        pathlib.Path(f'/usr/local/bin/{symlink_name}').symlink_to(bin_path)
 
 
-def create_desktop_icon(bin_path: pathlib.Path, symlink_name: str) -> None:
-    """Create a desktop icon for the given `bin_path`."""
-    return pathlib.Path.home().joinpath(symlink_name).symlink_to(bin_path)
+def create_desktop_icon(target: pathlib.Path, symlink_name: str) -> None:
+    """Create a desktop icon for the given `target`."""
+    return pathlib.Path.home().joinpath(symlink_name).symlink_to(target)
 
 
 def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:

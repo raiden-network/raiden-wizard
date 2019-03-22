@@ -1,6 +1,6 @@
 import pathlib
 
-from raideninstaller.constants import PATHS, RAIDEN_META
+from raideninstaller.constants import PATHS, RAIDEN_META, NETWORKS
 from raideninstaller.steps.executor import StepExecutor
 from raideninstaller.utils import (
     create_symlink,
@@ -16,20 +16,22 @@ class RaidenInstallationStep(StepExecutor):
     def __init__(self, install_dir: pathlib.Path=PATHS.DEFAULT_INSTALL_DIR):
         super(RaidenInstallationStep, self).__init__('raiden', install_dir)
         self.download_dir = self.install_dir.joinpath('download')
+        self.download_dir.mkdir(exist_ok=True)
         self.archive = None
         self.binary_dir = self.install_dir.joinpath('bin')
+        self.binary_dir.mkdir(exist_ok=True)
         self.binary = None
         self.execution_flags = []
 
     def download_binary(self) -> None:
         """Download the latest Raiden client binary."""
         RAIDEN_META.update()
-        self.archive = download_file(self.download_dir, RAIDEN_META.DOWNLOAD_URL)
+        self.archive = download_file(self.download_dir / RAIDEN_META.ARCHIVE, RAIDEN_META.DOWNLOAD_URL)
 
     def install_binary(self) -> None:
         """Install the binary on this machine, unpacking the archive if necessary."""
         with ReleaseArchive(self.archive) as archive:
-            self.binary = archive.unpack(self.binary_dir.join(RAIDEN_META.BINARY_NAME))
+            self.binary = archive.unpack(self.binary_dir / RAIDEN_META.BINARY_NAME)
 
     def configure_client(self, network: str, remote: bool=True) -> None:
         """configure the client to use the given `network`.
@@ -42,10 +44,10 @@ class RaidenInstallationStep(StepExecutor):
         TODO: Support local clients
         """
         if remote:
-            infura_token = user_input('Please enter your Infura Access Token')
+            infura_token = user_input('Please enter your Infura Access Token: ')
             rpc_endpoint = f'https://{network}.infura.io/v3/{infura_token}'
             keystore = user_input(
-                'Please enter the path to your keystore: [~/.ethereum/testnet/keystore]',
+                'Please enter the path to your keystore: [~/.ethereum/testnet/keystore]: ',
                 default='~/.ethereum/testnet/keystore',
             )
             self.execution_flags = [f'--keystore-path {keystore}', f'--eth-rpc-endpoint {rpc_endpoint}']
@@ -80,15 +82,15 @@ class RaidenInstallationStep(StepExecutor):
         self.install_binary()
 
         # Configure the client
-        network = user_input("Your selection: [1]", default=1, options=[NETWORKS.ROPSTEN, NETWORKS.KOVAN, NETWORKS.RINKEBY])
+        network = user_input("Your selection: [1]", default='1', options=[NETWORKS.ROPSTEN, NETWORKS.KOVAN, NETWORKS.RINKEBY])
         self.configure_client(network)
 
         # Determine whether or not we should create a symbolic link and desktop icon
         # for the raiden client.
-        symbolic_link = user_input("Add a symbolic link to /usr/local/bin for Raiden? [Y/n]", default='yes', options=['yes', 'no'])
+        symbolic_link = user_input("Add a symbolic link to /usr/local/bin for Raiden?", default='yes', options=['yes', 'no'])
         if symbolic_link == 'yes':
             create_symlink(self.binary, 'raiden', flags=self.execution_flags)
 
-        desktop_icon = user_input('Would you like to create a desktop icon for the Raiden client?')
-        if desktop_icon:
+        desktop_icon = user_input('Would you like to create a desktop icon for the Raiden client?', default='yes', options=['yes', 'no'])
+        if desktop_icon == 'yes':
             create_desktop_icon(self.binary, 'raiden')

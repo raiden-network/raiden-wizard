@@ -1,11 +1,81 @@
 import pathlib
 
+from tarfile import TarFile
+from zipfile import ZipFile
+
 from typing import List, Dict, Union, Optional, Any
 
 import requests
 import shutil
 
 from raiden_installer.constants import STRINGS
+
+
+class ReleaseArchive:
+    """Wrapper class for extracting a Raiden release from its archive.
+
+    Supplies a context manager and file-type detection, which allows choosing
+    the correct library for opening the archive automatically.
+    """
+    def __init__(self, path: pathlib.Path):
+        self.path = path
+        if self.path.suffix == '.gz':
+            self._context = TarFile.open(self.path, 'r:*')
+        else:
+            self._context = ZipFile(self.path, 'r')
+        self.validate()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __del__(self):
+        self.close()
+
+    @property
+    def files(self):
+        """Return a list of files present in the archive.
+
+        Depending on the file extension, we choose the correct method to access
+        this list.
+        """
+        if self.path.suffix == '.gz':
+            return self._context.getnames()
+        else:
+            return self._context.namelist()
+
+    @property
+    def binary(self):
+        """Return the name of the first file of our list of files.
+
+        Since the archive must only contain a single file, this is automatically
+        assumed to be our binary; this assumption *is not* checked for correctness.
+        """
+        return self.files[0]
+
+    def validate(self):
+        """Confirm there is only one file present in the archive."""
+        if len(self.files()) != 1:
+            raise ValueError(
+                f'Release archive has unexpected content. '
+                f'Expected 1 file, found {len(self.files)}: {", ".join(self.files)}',
+            )
+
+    def unpack(self, target_dir: pathlib.Path):
+        """Unpack this release's archive to the given `target_dir`.
+
+        We also set the x bit on the extracted binary.
+        """
+        self._context.extract(self.binary, target_dir)
+        target_dir.chmod(0o770)
+        return target_dir
+
+    def close(self):
+        """Close the context, if possible."""
+        if self._context and hasattr(self._context, 'close'):
+            self._context.close()
 
 
 def render_options(

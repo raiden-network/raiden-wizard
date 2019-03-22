@@ -8,6 +8,7 @@ from raideninstaller.utils import (
     download_file,
     ReleaseArchive,
     user_input,
+    yes_no_input,
 )
 
 
@@ -22,6 +23,9 @@ class RaidenInstallationStep(StepExecutor):
         self.binary_dir.mkdir(exist_ok=True)
         self.binary = None
         self.execution_flags = []
+        self.use_remote = None
+        self.symlink_created = None
+        self.icon_created = False
 
     def download_binary(self) -> None:
         """Download the latest Raiden client binary."""
@@ -82,15 +86,24 @@ class RaidenInstallationStep(StepExecutor):
         self.install_binary()
 
         # Configure the client
-        network = user_input("Your selection: [1]", default='1', options=[NETWORKS.ROPSTEN, NETWORKS.KOVAN, NETWORKS.RINKEBY])
-        self.configure_client(network)
+        network = user_input(
+            f'Please choose a network to connect to: [{NETWORKS.ROPSTEN}]',
+            default=NETWORKS.ROPSTEN,
+            options=[NETWORKS.ROPSTEN, NETWORKS.KOVAN, NETWORKS.RINKEBY]
+        )
+        self.use_remote = yes_no_input('Would you like to use a remote client? [Yes/no]')
+        self.configure_client(network, self.use_remote)
 
         # Determine whether or not we should create a symbolic link and desktop icon
         # for the raiden client.
-        symbolic_link = user_input("Add a symbolic link to /usr/local/bin for Raiden?", default='yes', options=['yes', 'no'])
-        if symbolic_link == 'yes':
+        symbolic_link = yes_no_input("Add a symbolic link to /usr/local/bin for Raiden?")
+        if symbolic_link:
             create_symlink(self.binary, 'raiden', flags=self.execution_flags)
+        self.symlink_created = symbolic_link
 
-        desktop_icon = user_input('Would you like to create a desktop icon for the Raiden client?', default='yes', options=['yes', 'no'])
-        if desktop_icon == 'yes':
+        desktop_icon = yes_no_input(
+            'Would you like to create a desktop icon for the Raiden client?'
+        )
+        if desktop_icon:
             create_desktop_icon(self.binary, 'raiden')
+        self.icon_created = desktop_icon

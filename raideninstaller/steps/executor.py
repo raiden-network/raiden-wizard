@@ -91,6 +91,12 @@ class StepExecutor(ABC):
                 meta_dict = self.meta[self.name]
                 meta_dict['run_count'] += 1
                 meta_dict['previous_run_success'] = False
+
+            for attr, value in self.__dict__.items():
+                if callable(attr):
+                    continue
+                self.meta[self.name][attr] = value
+
             json.dump(self.meta, self.meta_path.open('w'), indent=4)
             if exc_type == KeyboardInterrupt:
                 print("Setup Interrupted. Progress saved.")

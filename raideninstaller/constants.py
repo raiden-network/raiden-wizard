@@ -80,14 +80,15 @@ class PARITY_META:
 
 class STRINGS:
     # String names of our installation steps
-    STEP_1 = 'Step 1: Raiden Binary Setup'
-    STEP_2 = 'Step 2: Ethereum Client Setup'
-    STEP_3 = 'Step 3: Account Setup'
-    STEP_4 = 'Step 4: Account Funding'
-    STEP_5 = 'Step 5: Token Acquisition'
+    STEP_1 = '\nStep 1: Raiden Binary Setup\n'
+    STEP_2 = '\nStep 2: Ethereum Client Setup\n'
+    STEP_3 = '\nStep 3: Account Setup\n'
+    STEP_4 = '\nStep 4: Account Funding\n'
+    STEP_5 = '\nStep 5: Token Acquisition\n'
 
     # User input parser strings
     CHOOSE_ONE_LONG = ''
     CHOOSE_ONE_SHORT = ''
-    SELECTION_ACCEPTED = ''
-    SELECTION_REJECTED = ''
+    SELECTION_ACCEPTED = '\nInput accepted. Continuing..'
+    SELECTION_REJECTED = '\nInput rejected. Please enter a valid option.'
+    SELECTION_CANNOT_BE_EMPTY = '\nInput CANNOT be empty! Try again..'

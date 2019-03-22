@@ -139,6 +139,7 @@ def user_input(
     prompt: str,
     default: Optional[Union[str, int, float]] = None,
     options: Optional[Union[Dict[str, str], List[str]]] = None,
+    short_hand: bool = False,
 ) -> Any:
     """Ask the user for his input.
 
@@ -149,7 +150,7 @@ def user_input(
     """
     acceptable_input = None
     if options:
-        render_options(options)
+        render_options(options, short_hand)
         acceptable_input = [str(x) for x in range(len(options))] if isinstance(options, list) else options.keys()
 
     while True:
@@ -166,6 +167,18 @@ def user_input(
             print(STRINGS.SELECTION_REJECTED)
         if options:
             render_options(options, short_hand=True)
+
+
+def yes_no_input(prompt, default='yes') -> bool:
+    """Wrapper for asking y/n input from the user.
+
+    Answer is returned as a bool.
+    """
+    assert default in ('yes', 'no')
+    reply = user_input(prompt, default=default, options=['yes', 'no'])
+    if reply == 'yes':
+        return True
+    return False
 
 
 def create_symlink(bin_path: pathlib.Path, symlink_name: str, flags: Optional[List[str]]=None) -> None:

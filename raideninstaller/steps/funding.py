@@ -4,8 +4,8 @@ import getpass
 
 import requests
 
-from raiden_installer.steps.executor import StepExecutor
-from raiden_installer.utils import is_testnet
+from raideninstaller.steps.executor import StepExecutor
+from raideninstaller.utils import is_testnet
 
 
 class AccountFundingStep(StepExecutor):

@@ -1,7 +1,7 @@
 """One-click installer application."""
 import pathlib
 
-from raiden_installer.steps import (
+from raideninstaller.steps import (
     RaidenInstallationStep,
     EthClientInstallationStep,
     AccountSetupStep,
@@ -9,7 +9,7 @@ from raiden_installer.steps import (
     TokenAcquisitionStep,
 )
 
-from raiden_installer.utils import user_input, STRINGS, PATHS
+from raideninstaller.utils import user_input, STRINGS, PATHS
 
 # Choose a default installation directory
 tar_dir = user_input(
@@ -30,6 +30,9 @@ binary_dir = install_root_path.joinpath('bin')
 print(f'{STRINGS.STEP_1}\n')
 with RaidenInstallationStep() as step:
     step.run()
+
+print('Installation complete.')
+exit(0)
 
 ################################################################################
 # Install Ethereum Client

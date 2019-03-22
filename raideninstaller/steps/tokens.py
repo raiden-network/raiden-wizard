@@ -1,5 +1,5 @@
-from raiden_installer.steps.executor import StepExecutor
-from raiden_installer.utils import user_input, is_testnet
+from raideninstaller.steps.executor import StepExecutor
+from raideninstaller.utils import user_input, is_testnet
 
 
 class TokenAcquisitionStep(StepExecutor):

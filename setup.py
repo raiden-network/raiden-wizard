@@ -16,12 +16,12 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 
 setup(
-    name='raiden-installer',
+    name='raideninstaller',
     version='0.0.1',
     description='One-click installer for the Raiden Network Stack.',
     long_description=long_description,
     long_description_content_type='text/rst',
-    url='https://github.com/raiden-network/raiden-installer',
+    url='https://github.com/raiden-network/raideninstaller',
     author='Raiden Network Dev Team',
     author_email='',
     classifiers=[
@@ -54,7 +54,7 @@ setup(
     },
 
     project_urls={
-        'Bug Reports': 'https://github.com/raiden-network/raiden-installer/issues',
-        'Source': 'https://github.com/raiden-network/raiden-installer/',
+        'Bug Reports': 'https://github.com/raiden-network/raideninstaller/issues',
+        'Source': 'https://github.com/raiden-network/raideninstaller/',
     },
 )

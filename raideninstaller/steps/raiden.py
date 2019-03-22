@@ -42,12 +42,11 @@ class RaidenInstallationStep(StepExecutor):
         TODO: Support local clients
         """
         if remote:
-            infura_token = user_input('Please enter your Infura Access Token', short_hand=True)
+            infura_token = user_input('Please enter your Infura Access Token')
             rpc_endpoint = f'https://{network}.infura.io/v3/{infura_token}'
             keystore = user_input(
                 'Please enter the path to your keystore: [~/.ethereum/testnet/keystore]',
                 default='~/.ethereum/testnet/keystore',
-                short_hand=True
             )
             self.execution_flags = [f'--keystore-path {keystore}', f'--eth-rpc-endpoint {rpc_endpoint}']
         else:
@@ -93,7 +92,3 @@ class RaidenInstallationStep(StepExecutor):
         desktop_icon = user_input('Would you like to create a desktop icon for the Raiden client?')
         if desktop_icon:
             create_desktop_icon(self.binary, 'raiden')
-
-
-        # Display the requirements for safe usage and have the user confirm he read them.
-        self.show_safe_usage_requirements()

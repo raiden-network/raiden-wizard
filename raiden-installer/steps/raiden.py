@@ -7,6 +7,7 @@ from raiden_installer.utils import (
     create_desktop_icon,
     download_file,
     extract_archive,
+    ReleaseArchive,
     user_input,
 )
 
@@ -20,19 +21,15 @@ class RaidenInstallationStep(StepExecutor):
         self.binary_dir = self.install_dir.joinpath('bin')
         self.binary = None
 
-    def download_binary(self):
-        """Download the latest Raiden client binary.
+    def download_binary(self) -> None:
+        """Download the latest Raiden client binary."""
+        RAIDEN_META.update()
+        self.archive = download_file(self.download_dir, RAIDEN_META.DOWNLOAD_URL)
 
-        TODO: This is a stub.
-        """
-        self.archive = download_file(self.download_dir, RAIDEN_META.VERSION)
-
-    def install_binary(self):
-        """Install the binary on this machine, unpacking the archive if necessary.
-
-        TODO: This is a stub.
-        """
-        self.binary = extract_archive(self.archive, self.binary_dir)
+    def install_binary(self) -> None:
+        """Install the binary on this machine, unpacking the archive if necessary."""
+        with ReleaseArchive(self.archive) as archive:
+            self.binary = archive.unpack(self.binary_dir.join(RAIDEN_META.BINARY_NAME))
 
     def configure_client(self, network: str) -> None:
         """configure the client to use the given `network`.

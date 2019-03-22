@@ -6,7 +6,6 @@ from raideninstaller.utils import (
     create_symlink,
     create_desktop_icon,
     download_file,
-    extract_archive,
     user_input
 )
 

@@ -16,6 +16,15 @@ class PATHS:
     DEFAULT_INSTALL_DIR = pathlib.Path('/opt/raiden')
 
 
+class NETWORKS:
+    MAINNET = 'mainnet'
+    KOVAN = 'kovan'
+    RINKEBY = 'rinkeby'
+    ROPSTEN = 'ropsten'
+
+    TESTNETS = [ROPSTEN, RINKEBY, KOVAN]
+
+
 class RAIDEN_META:
     NAME = 'raiden'
     VERSION = 'v0.100.2'

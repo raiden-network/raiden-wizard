@@ -3,8 +3,6 @@ import logging
 import pathlib
 import sys
 
-from typing import Union
-
 import requests
 
 
@@ -27,26 +25,28 @@ class RAIDEN_META:
     DOWNLOAD_URL = f'https://github.com/raiden-network/raiden/releases/download/{VERSION}/{ARCHIVE}'
 
     @classmethod
-    def latest(cls) -> Union[str, None]:
+    def update(cls) -> None:
+        """Update meta version for Raiden to refer to the latest release, if available."""
         try:
             resp = requests.get('https://api.github.com/repos/raiden-network/raiden/releases')
+            LATEST = resp.json()[0]['tag_name']
         except requests.HTTPError as e:
             log. exception(e)
             log.error('Could not retrieve latest release data due to an HTTPError!')
+        except json.JSONDecodeError as e:
+            log.exception(e)
+            log.error('Could not retrieve latest release data! It is not valid JSON!')
+        except IndexError as e:
+            log.exception(e)
+            log.error('Could not retrieve data on latest release - response is an empty list!')
+        except KeyError as e:
+            log.exception(e)
+            log.error('Could not retrieve "tag_name" from response!')
         else:
-            try:
-                return resp.json()[0]['tag_name']
-            except json.JSONDecodeError as e:
-                log.exception(e)
-                log.error('Could not retrieve latest release data! It is not valid JSON!')
-            except IndexError as e:
-                log.exception(e)
-                log.error('Could not retrieve data on latest release - response is an empty list!')
-
-            except KeyError as e:
-                log.exception(e)
-                log.error('Could not retrieve "tag_name" from response!')
-        return None
+            cls.VERSION = LATEST
+            cls.BINARY_NAME = f'raiden-{LATEST}'
+            cls.ARCHIVE = f'{cls.BINARY_NAME}-{cls.ARCH}-x86_64.{ARCHIVE_EXT}'
+            cls.DOWNLOAD_URL = f'https://github.com/raiden-network/raiden/releases/download/{LATEST}/{cls.ARCHIVE}'
 
 
 class GETH_META:

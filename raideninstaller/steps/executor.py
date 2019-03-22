@@ -86,23 +86,25 @@ class StepExecutor(ABC):
 
         TODO: This is a stub.
         """
-        if exc_type:
-            if self.name not in self.meta:
-                self.meta[self.name] = {'run_count': 1, 'previous_run_success': False}
-            else:
-                meta_dict = self.meta[self.name]
-                meta_dict['run_count'] += 1
-                meta_dict['previous_run_success'] = False
+        if self.name not in self.meta:
+            self.meta[self.name] =  {'run_count': 1 }
+        else
+            self.meta[self.name]['run_count'] += 1
 
-            for attr, value in self.__dict__.items():
-                if callable(attr):
-                    continue
-                # convert everythin to string, to avoid JSONEncodingError.
+        self.meta[self.name]['previous_run_success'] = bool(exc_type)
+
+        json_serializable = (str, int, float, dict, list)
+        for attr, value in self.__dict__.items():
+            if callable(attr):
+                continue
+            if isinstance(value, json_serializable):
+                self.meta[self.name][attr] = value
+            else:
                 self.meta[self.name][attr] = str(value)
 
-            json.dump(self.meta, self.meta_path.open('w'), indent=4)
-            if exc_type == KeyboardInterrupt:
-                print("Setup Interrupted. Progress saved.")
+        json.dump(self.meta, self.meta_path.open('w'), indent=4)
+        if exc_type == KeyboardInterrupt:
+            print("Setup Interrupted. Progress saved.")
         pass
 
     @property

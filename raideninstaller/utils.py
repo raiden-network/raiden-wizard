@@ -193,7 +193,7 @@ def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:
             resp.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise ValueError(
-                f"Can't download release file {target_file}!",
+                f"Can't download file from {url}!",
             ) from e
 
     with target_path.open('wb+') as release_file:

@@ -175,7 +175,7 @@ def yes_no_input(prompt, default='yes') -> bool:
     Answer is returned as a bool.
     """
     assert default in ('yes', 'no')
-    reply = user_input(prompt, default=default, options=['yes', 'no'])
+    reply = user_input(prompt, default=default, options=['yes', 'no'], short_hand=True)
     if reply == 'yes':
         return True
     return False

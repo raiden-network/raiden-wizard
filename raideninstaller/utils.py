@@ -197,7 +197,7 @@ def create_symlink(bin_path: pathlib.Path, symlink_name: str, flags: Optional[Li
 
 def create_desktop_icon(target: pathlib.Path, symlink_name: str) -> None:
     """Create a desktop icon for the given `target`."""
-    return pathlib.Path.home().joinpath(symlink_name).symlink_to(target)
+    return pathlib.Path.home().joinpath('Desktop', symlink_name).symlink_to(target)
 
 
 def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:

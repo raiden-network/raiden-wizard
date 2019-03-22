@@ -8,7 +8,7 @@ from typing import List, Dict, Union, Optional, Any
 import requests
 import shutil
 
-from raideninstaller.constants import STRINGS, NETWORKS
+from raideninstaller.constants import STRINGS, NETWORKS, RAIDEN_META
 
 
 class ReleaseArchive:
@@ -32,7 +32,11 @@ class ReleaseArchive:
         self.close()
 
     def __del__(self):
-        self.close()
+        # Only try closing our context if it exists.
+        # An error may occur while trying to assign the context, hence it may
+        # end up not being assigned to the instance.
+        if hasattr(self, '_context'):
+            self.close()
 
     @property
     def files(self):
@@ -182,9 +186,19 @@ def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:
     :raises requests.HTTPError:
         if the GET request to the given `url` returns a status code >399.
     """
-    with requests.get(url, stream=True) as resp, target_path.open('wb+') as release_file:
-        resp.raise_for_status()
+    """Download this release's binary from our servers to the given `target_folder`."""
+
+    with requests.get(url, stream=True) as resp:
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise ValueError(
+                f"Can't download release file {target_file}!",
+            ) from e
+
+    with target_path.open('wb+') as release_file:
         shutil.copyfileobj(resp.raw, release_file)
+
     return target_path
 
 

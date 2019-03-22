@@ -8,7 +8,7 @@ from typing import List, Dict, Union, Optional, Any
 import requests
 import shutil
 
-from raiden_installer.constants import STRINGS
+from raiden_installer.constants import STRINGS, NETWORKS
 
 
 class ReleaseArchive:
@@ -178,9 +178,6 @@ def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:
 
 
 def is_testnet(network: str) -> bool:
-    """Check if the given `network` is a test network.
-
-    # TODO: This is a Stub.
-    """
-    return bool(network)
+    """Check if the given `network` is a test network."""
+    return network in NETWORKS.TESTNETS
 

@@ -2,6 +2,9 @@ import pathlib
 
 from typing import List, Dict, Union, Optional, Any
 
+import requests
+import shutil
+
 from raiden_installer.constants import STRINGS
 
 
@@ -99,8 +102,13 @@ def create_desktop_icon(bin_path: pathlib.Path) -> None:
 def download_file(target_path: pathlib.Path, url: str) -> pathlib.Path:
     """Download the file at given `url` to `target_path`.
 
-    TODO: This is a stub.
+    :raises requests.HTTPError:
+        if the GET request to the given `url` returns a status code >399.
     """
+    with requests.get(url, stream=True) as resp, target_path.open('wb+') as release_file:
+        resp.raise_for_status()
+        shutil.copyfileobj(resp.raw, release_file)
+    return target_path
 
 
 def is_testnet(network: str) -> bool:

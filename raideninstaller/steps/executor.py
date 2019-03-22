@@ -16,10 +16,10 @@ import json
 from abc import ABC, abstractmethod
 from typing import Dict
 
-from raiden_install.constants import PATHS
+from raideninstaller.constants import PATHS
 
 
-class StepExecutor(metaclass=ABC):
+class StepExecutor(ABC):
     """Context manager for executing installation steps.
 
     Takes care of the following:
@@ -49,6 +49,7 @@ class StepExecutor(metaclass=ABC):
         self.name = name
         self.meta_path = install_path.joinpath('.meta')
         self.meta: Dict = json.load(self.meta_path.open('r'))
+        self.install_dir = install_path
 
     def __enter__(self):
         """Set up the Executor context.

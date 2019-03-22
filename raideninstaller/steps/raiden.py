@@ -1,8 +1,8 @@
 import pathlib
 
-from raiden_installer.constants import PATHS, RAIDEN_META
-from raiden_installer.steps.executor import StepExecutor
-from raiden_installer.utils import (
+from raideninstaller.constants import PATHS, RAIDEN_META
+from raideninstaller.steps.executor import StepExecutor
+from raideninstaller.utils import (
     create_symlink,
     create_desktop_icon,
     download_file,

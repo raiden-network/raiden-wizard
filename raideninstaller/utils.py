@@ -8,7 +8,7 @@ from typing import List, Dict, Union, Optional, Any
 import requests
 import shutil
 
-from raiden_installer.constants import STRINGS, NETWORKS
+from raideninstaller.constants import STRINGS, NETWORKS
 
 
 class ReleaseArchive:

@@ -50,6 +50,10 @@ class EthClientInstallationStep(StepExecutor):
 
         TODO: This is a stub.
         """
+        if self.meta['raiden']['use_remote']:
+            print('Using a remote client - skipping download and installation of local ethereum client.')
+            return
+
         eth_client = user_input(
             "Use local eth client? [Yes/no]",
             default='yes',
@@ -65,7 +69,7 @@ class EthClientInstallationStep(StepExecutor):
                 short_hand=True
             )
             if make_symlink == 'yes':
-                create_symlink(self.binary)
+                create_symlink(self.binary, 'Ethereum Client')
 
             desktop_icon = user_input(
                 'Would you like to create a desktop icon for the Ethereum client?',
@@ -74,11 +78,11 @@ class EthClientInstallationStep(StepExecutor):
                 short_hand=True
             )
             if desktop_icon == 'yes':
-                create_desktop_icon(self.binary)
+                create_desktop_icon(self.binary, 'Ethereum Client')
         else:
             self.binary = user_input(
                 'Please specify the path to the eth client: [/usr/local/bin/geth]',
-                default=GETH_META.BINARY,
+                default=GETH_META.BIN_PATH,
                 short_hand=True
             )
         # Determine which connection method we should use.

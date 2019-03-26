@@ -120,15 +120,16 @@ def render_options(
 
     TODO: This is a stub
     """
-    choose_long = 'Choose one of the following:\n'
     if short_hand:
         return print(f'Choose one of {[x for x in options]}')
 
+    # Re-pack options for rendering.
     if isinstance(options, list):
         label_description_list = enumerate(options)
     else:
-        label_description_list = list((options).items())
+        label_description_list = list(options.items())
 
+    choose_long = 'Choose one of the following:\n'
     for label, descr in label_description_list:
         choose_long += f'    [{label}]    {descr}\n'
 

@@ -8,7 +8,7 @@ help:
 	@echo "binary - Create a single-file executable."
 
 install:
-	pip install -r dev-requirements.txt
+	pip install -r requirements-dev.txt
 
 run: install
 	python raideninstaller

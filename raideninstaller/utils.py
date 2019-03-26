@@ -162,6 +162,8 @@ def user_input(
             print(STRINGS.SELECTION_CANNOT_BE_EMPTY)
         elif response in acceptable_input:
             print(STRINGS.SELECTION_ACCEPTED)
+            if isinstance(options, (list, tuple)):
+                return options[int(response)]
             return options[response]
         else:
             print(STRINGS.SELECTION_REJECTED)

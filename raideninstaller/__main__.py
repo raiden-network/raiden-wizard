@@ -29,18 +29,15 @@ binary_dir = install_root_path.joinpath('bin')
 ################################################################################
 
 print(f'{STRINGS.STEP_1}\n')
-with RaidenInstallationStep() as step:
+with RaidenInstallationStep(install_root_path) as step:
     step.run()
-
-print('Installation complete.')
-exit(0)
 
 ################################################################################
 # Install Ethereum Client
 ################################################################################
 
 print(f'{STRINGS.STEP_2}\n')
-with EthClientInstallationStep() as step:
+with EthClientInstallationStep(install_root_path) as step:
     step.run()
 
 ################################################################################
@@ -56,7 +53,7 @@ with AccountSetupStep('client') as step:
 ################################################################################
 
 print(f'{STRINGS.STEP_4}\n')
-with AccountFundingStep() as step:
+with AccountFundingStep('funding') as step:
     step.run()
 
 ################################################################################
@@ -64,5 +61,5 @@ with AccountFundingStep() as step:
 ################################################################################
 
 print(f'{STRINGS.STEP_5}\n')
-with TokenAcquisitionStep() as step:
+with TokenAcquisitionStep('acquisition') as step:
     step.run()

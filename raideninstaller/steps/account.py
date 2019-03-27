@@ -24,10 +24,10 @@ class AccountSetupStep(StepExecutor):
         create_account = user_input(
             "Your selection: [1]",
             default=1,
-            options=[
-                'User existing Ethereum user account',
-                'Create a new Ethereum account'
-            ]
+            options={
+                '1': 'Use existing Ethereum user account',
+                '2': 'Create a new Ethereum account'
+            }
         )
 
         if create_account:

@@ -18,6 +18,7 @@ class EthClientInstallationStep(StepExecutor):
         self.archive = None
         self.binary_dir = self.install_dir.joinpath('bin')
         self.binary = None
+        self.client_version = None
 
     def download_binary(self):
         """Download the latest Ethereum client binary.

@@ -40,7 +40,7 @@ class EthClientInstallationStep(StepExecutor):
         TODO: This is a stub.
         """
 
-    def install_private_chain() -> None:
+    def install_private_chain(self) -> None:
         """Install a private chain and connect to it.
 
         TODO: This is a stub (and will probably remain one for quite a while).

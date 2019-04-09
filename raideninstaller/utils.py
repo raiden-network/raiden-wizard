@@ -166,6 +166,9 @@ def user_input(
             if isinstance(options, (list, tuple)):
                 return options[int(response)]
             return options[response]
+        elif response in options:
+            print(STRINGS.SELECTION_ACCEPTED)
+            return response
         else:
             print(STRINGS.SELECTION_REJECTED)
         if options:

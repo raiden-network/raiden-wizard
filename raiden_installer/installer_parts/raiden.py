@@ -1,6 +1,9 @@
+import os
 import requests
 import json
 from pathlib import Path
+from zipfile import ZipFile
+from tarfile import TarFile
 
 
 def latest_raiden_release() -> str:
@@ -69,7 +72,27 @@ def download_raiden_archive(raiden_download_url: str, dest_dir: str) -> str:
         return archive
     except OSError as err:
         print('Unable to download archive')
-    
 
-def unpack_raiden_binary(archive: str) -> str:
-    pass
+
+def unpack_raiden_binary(archive: str, dest_dir: str) -> str:
+    archive_format = Path(archive).suffix
+
+    try:
+        if archive_format == '.zip':
+            with ZipFile(archive) as f:
+                f.extractall(dest_dir)
+                archive_content = f.namelist()[0]
+        elif archive_format == '.gz':
+            with TarFile.open(archive) as f:
+                f.extractall(dest_dir)
+                archive_content = f.getnames()[0]
+        else:
+            raise FileNotFoundError
+        
+        # Delete archive after binary has been extracted
+        os.remove(archive)
+
+        binary = Path(archive).joinpath(archive_content)
+        return binary
+    except FileNotFoundError:
+        print('Unable to find any archive')

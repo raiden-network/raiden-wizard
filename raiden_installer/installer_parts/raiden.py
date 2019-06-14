@@ -69,3 +69,7 @@ def download_raiden_archive(raiden_download_url: str, dest_dir: str) -> str:
         return archive
     except OSError as err:
         print('Unable to download archive')
+    
+
+def unpack_raiden_binary(archive: str) -> str:
+    pass

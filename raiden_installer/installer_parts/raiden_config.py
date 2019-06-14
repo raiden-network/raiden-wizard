@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 class PlainTxtPwd:
     '''
     Provides a method for storing the keystore pwd in a plain txt
@@ -8,10 +11,17 @@ class PlainTxtPwd:
     and pwd.
     '''
     def __init__(self, dest_dir: str, keystore_pwd: str):
-        pass
+        self.dest_dir = dest_dir
+        self.keystore_pwd = keystore_pwd
+        self.pwd_file = None
 
     def create_plain_txt_pwd_file(self):
-        pass
+        pwd_file = Path(self.dest_dir).joinpath('pwd.txt')
+
+        with open(pwd_file, 'w') as f:
+            f.write(self.keystore_pwd)
+
+        self.pwd_file = pwd_file
 
     def delete_plain_txt_pwd_file(self):
         pass

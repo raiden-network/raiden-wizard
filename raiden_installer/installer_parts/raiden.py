@@ -1,6 +1,6 @@
-import os
 import requests
 import json
+from pathlib import Path
 
 
 def latest_raiden_release() -> str:
@@ -59,8 +59,8 @@ def download_raiden_archive(raiden_download_url: str, dest_dir: str) -> str:
             ' please try again later'
         )
 
-    filename = os.path.basename(raiden_download_url)
-    archive = os.path.join(dest_dir, filename)
+    filename = Path(raiden_download_url).name
+    archive = Path(dest_dir).joinpath(filename)
 
     try:
         with open(archive, 'wb') as f:

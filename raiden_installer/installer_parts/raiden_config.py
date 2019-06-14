@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 
@@ -24,4 +25,8 @@ class PlainTxtPwd:
         self.pwd_file = pwd_file
 
     def delete_plain_txt_pwd_file(self):
-        pass
+        try:
+            os.remove(self.pwd_file)
+            self.pwd_file = None
+        except TypeError as err:
+            print('No password file to delete')

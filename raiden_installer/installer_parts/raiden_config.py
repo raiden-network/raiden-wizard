@@ -30,3 +30,10 @@ class PlainTxtPwd:
             self.pwd_file = None
         except (TypeError, FileNotFoundError) as err:
             print('No password file to delete')
+
+
+def build_eth_rpc_endpoint(proj_id: str) -> str:
+    '''
+    Builds the RPC endpoint URL for chosen network
+    '''
+    pass

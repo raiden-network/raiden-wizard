@@ -30,9 +30,19 @@ def latest_raiden_release_name() -> str:
         print('Could not retrieve "tag_name" from JSON response object')
 
 
-def raiden_download_url(raiden_release_name: str, platform: str):
+def raiden_download_url(raiden_release_name: str, platform: str) -> str:
     '''
     Builds the URL from which to download the
     Raiden archive based on the users system.
     '''
-    pass
+    if platform == 'macOS':
+        archive = 'zip'
+    elif platform == 'linux':
+        archive = 'tar.gz'
+
+    raiden_download_url = (
+        'https://github.com/raiden-network/raiden/releases/download/'
+        + f'{raiden_release_name}/raiden-'
+        + f'{raiden_release_name}-{platform}-x86_64.{archive}'
+    )
+    return raiden_download_url

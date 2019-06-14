@@ -3,11 +3,11 @@ from raiden_installer import raiden
 
 
 @patch('raiden_installer.raiden.requests')
-def test_latest_raiden_release_name_get_request_url(mock_requests):
+def test_latest_raiden_release_get_request_url(mock_requests):
     '''
     Tests that requests.get is called with the correct URL
     '''
-    latest_raiden_release_name = raiden.latest_raiden_release_name()
+    latest_raiden_release = raiden.latest_raiden_release()
 
     # Grab args that requests.get was called with
     args = mock_requests.get.call_args
@@ -17,7 +17,7 @@ def test_latest_raiden_release_name_get_request_url(mock_requests):
 
 
 @patch('raiden_installer.raiden.requests')
-def test_latest_raiden_release_name_returns_tag_name(mock_requests):
+def test_latest_raiden_release_returns_tag_name(mock_requests):
     '''
     Tests whether the latest Raiden release data
     is returned from the JSON response object.
@@ -36,8 +36,8 @@ def test_latest_raiden_release_name_returns_tag_name(mock_requests):
         ]
     )
 
-    latest_raiden_release_name = raiden.latest_raiden_release_name()
-    assert latest_raiden_release_name == 'raiden-v3'
+    latest_raiden_release = raiden.latest_raiden_release()
+    assert latest_raiden_release == 'raiden-v3'
 
 
 def test_raiden_download_url_mac_release():

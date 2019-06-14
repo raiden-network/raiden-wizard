@@ -51,3 +51,16 @@ def test_raiden_download_url_mac_release():
         'https://github.com/raiden-network/raiden/releases/download/'
         + 'latest-release/raiden-latest-release-macOS-x86_64.zip'
     )
+
+
+def test_raiden_download_url_linux_release():
+    '''
+    Tests that the correct download URL is generated for linux users
+    '''
+    platform = 'linux'
+
+    raiden_download_url = raiden.raiden_download_url('latest-release', platform)
+    assert raiden_download_url == (
+        'https://github.com/raiden-network/raiden/releases/download/'
+        + 'latest-release/raiden-latest-release-linux-x86_64.tar.gz'
+    )

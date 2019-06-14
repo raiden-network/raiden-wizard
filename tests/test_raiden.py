@@ -11,7 +11,6 @@ def test_latest_raiden_release_name_get_request_url(mock_requests):
 
     # Grab args that requests.get was called with
     args = mock_requests.get.call_args
-
     assert args == call(
         'https://api.github.com/repos/raiden-network/raiden/releases'
     )
@@ -38,9 +37,17 @@ def test_latest_raiden_release_name_returns_tag_name(mock_requests):
     )
 
     latest_raiden_release_name = raiden.latest_raiden_release_name()
-
     assert latest_raiden_release_name == 'raiden-v3'
 
 
-def test_():
-    pass
+def test_raiden_download_url_mac_release():
+    '''
+    Tests that the correct download URL is generated for macOS users
+    '''
+    platform = 'macOS'
+
+    raiden_download_url = raiden.raiden_download_url('latest-release', platform)
+    assert raiden_download_url == (
+        'https://github.com/raiden-network/raiden/releases/download/'
+        + 'latest-release/raiden-latest-release-macOS-x86_64.zip'
+    )

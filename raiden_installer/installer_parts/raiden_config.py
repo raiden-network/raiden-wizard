@@ -28,5 +28,5 @@ class PlainTxtPwd:
         try:
             os.remove(self.pwd_file)
             self.pwd_file = None
-        except TypeError as err:
+        except (TypeError, FileNotFoundError) as err:
             print('No password file to delete')

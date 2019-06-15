@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 
@@ -32,8 +33,15 @@ class PlainTxtPwd:
             print('No password file to delete')
 
 
-def build_eth_rpc_endpoint(proj_id: str) -> str:
+def eth_rpc_endpoint(proj_id: str, network: str) -> str:
     '''
     Builds the RPC endpoint URL for chosen network
     '''
-    pass
+    try:
+        # Check whether proj_id matches a hexadecimal string
+        proj_id = re.match(r'^[a-fA-F0-9]+$', proj_id.strip())[0]
+
+        eth_rpc = f'https://{network}.infura.io/v3/{proj_id}'
+        return eth_rpc
+    except TypeError as err:
+        print('Not a valid project ID')

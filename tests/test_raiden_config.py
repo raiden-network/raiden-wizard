@@ -15,3 +15,17 @@ def test_create_plain_txt_pwd_file_path(mock_open_file):
 
     pwd_file = plain_txt_pwd.pwd_file
     assert str(pwd_file) == '/dest/dir/path/pwd.txt'
+
+
+def test_eth_rpc_endpoint_url():
+    '''
+    Tests that a correctly formatted URL
+    for the ETH RPC endpoint is returned.
+    '''
+    eth_rpc = raiden_config.eth_rpc_endpoint(
+        '  6a9a5919fc3e4d2088b2512b0da8926a  ',
+        'goerli'
+    )
+    assert eth_rpc == (
+        'https://goerli.infura.io/v3/6a9a5919fc3e4d2088b2512b0da8926a'
+    )

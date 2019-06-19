@@ -2,7 +2,7 @@ from pathlib import Path
 from setuptools import setup, find_packages
 
 
-with open('README') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 
@@ -38,12 +38,11 @@ setup(
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: MIT License'
     ],
-    packages=find_packages('raiden_installer'),
-    package_dir={'': 'raiden_installer'},
+    packages=find_packages(exclude=['tests']),
     install_requires=list_requirements('requirements.txt'),
     entry_point={
         'console_scripts': [
-            'raiden_installer=installer_server:main',
+            'raiden_installer=raiden_installer.installer_server:main',
         ]
     }
 )

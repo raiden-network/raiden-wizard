@@ -1,6 +1,8 @@
 import os
 import re
+import toml
 from pathlib import Path
+from eth_utils import to_checksum_address
 
 
 class PlainTxtPwd:
@@ -47,9 +49,39 @@ def eth_rpc_endpoint(proj_id: str, network: str) -> str:
         print('Not a valid project ID')
 
 
-def generate_raiden_config_file(eth_rpc: str) -> str:
+def generate_raiden_config_file(
+    dest_dir: str,
+    eth_rpc: str,
+    address: str,
+    user_deposit_address: str
+) -> str:
     try:
-        # Grab network from ETH RPC endpoint URL
+        # Grab the network from the ETH RPC endpoint URL
         network = re.findall(r'(?<=//).*(?=.infura)', eth_rpc)[0]
     except IndexError as err:
         print('ETH RPC endpoint is not a valid Infura URL')
+    else:
+        config_file = Path(dest_dir).joinpath('config.toml')
+        keystore = Path(dest_dir).joinpath('keystore')
+        pwd_file = Path(dest_dir).joinpath('pwd.txt')
+        
+        toml_data = {
+            "environment-type": "development",
+            "keystore-path": keystore,
+            "address": to_checksum_address(address),
+            "password-file": pwd_file,
+            "user-deposit-contract-address": user_deposit_address,
+            "network-id": network,
+            "accept-disclaimer": True,
+            "eth-rpc-endpoint": eth_rpc,
+            "routing-mode": "pfs",
+            "pathfinding-service-address": (
+                f'https://pfs-{network}.services-dev.raiden-network'
+            ),
+            "enable-monitoring": True
+        }
+
+        with open(config_file, 'w') as f:
+            toml.dump(toml_data, f)
+
+        return config_file

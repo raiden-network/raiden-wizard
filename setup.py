@@ -2,6 +2,10 @@ from pathlib import Path
 from setuptools import setup, find_packages
 
 
+with open('README') as f:
+    long_description = f.read()
+
+
 def list_requirements(req_file: str) -> list:
     '''
     Get all dependency names and versions from
@@ -23,6 +27,23 @@ def list_requirements(req_file: str) -> list:
 
 setup(
     name='raiden-installer',
+    version='0.1',
+    license='MIT',
+    description='Onboarding installer for Raiden',
+    long_description=long_description,
+    author='Brainbot Labs Est.',
+    author_email='contact@brainbot.li',
+    url='https://github.com/raiden-network/raiden-installer',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'License :: OSI Approved :: MIT License'
+    ],
     packages=find_packages('raiden_installer'),
-    package_dir={'': 'raiden_installer'}
+    package_dir={'': 'raiden_installer'},
+    install_requires=list_requirements('requirements.txt'),
+    entry_point={
+        'console_scripts': [
+            'raiden_installer=installer_server:main',
+        ]
+    }
 )

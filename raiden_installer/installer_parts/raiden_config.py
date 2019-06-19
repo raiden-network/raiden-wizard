@@ -35,7 +35,7 @@ class PlainTxtPwd:
 
 def eth_rpc_endpoint(proj_id: str, network: str) -> str:
     '''
-    Builds the RPC endpoint URL for chosen network
+    Builds the ETH RPC endpoint URL for chosen network
     '''
     try:
         # Check whether proj_id matches a hexadecimal string
@@ -45,3 +45,7 @@ def eth_rpc_endpoint(proj_id: str, network: str) -> str:
         return eth_rpc
     except TypeError as err:
         print('Not a valid project ID')
+
+
+def generate_raiden_config_file():
+    pass

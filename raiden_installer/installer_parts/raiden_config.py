@@ -47,5 +47,9 @@ def eth_rpc_endpoint(proj_id: str, network: str) -> str:
         print('Not a valid project ID')
 
 
-def generate_raiden_config_file():
-    pass
+def generate_raiden_config_file(eth_rpc: str) -> str:
+    try:
+        # Grab network from ETH RPC endpoint URL
+        network = re.findall(r'(?<=//).*(?=.infura)', eth_rpc)[0]
+    except IndexError as err:
+        print('ETH RPC endpoint is not a valid Infura URL')

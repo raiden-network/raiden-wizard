@@ -1,5 +1,5 @@
+import socket
 import webbrowser
-from socket import socket
 from flask import Flask
 
 
@@ -16,7 +16,7 @@ def index():
 
 
 if __name__ == '__main__':
-    new_socket = socket(socket.AF_INET, socket.SOCK_STREAM)
+    new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     new_socket.bind(('127.0.0.1', 0))
     port = new_socket.getsockname()[1]
 

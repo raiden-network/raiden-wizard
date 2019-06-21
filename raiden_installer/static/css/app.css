@@ -3,3 +3,29 @@ body {
     margin: 0;
     padding: 0;
 }
+
+.container {
+    display: grid;
+    grid-template-areas:
+        ". . . . . . . . . . . ."
+        ". . . . . . . . . . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . i i i i i i . . ."
+        ". . . . . . . . . . . ."
+        ". . . . . . . . . . . .";
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    height: 100vh;
+}
+
+.installer-window {
+    grid-area: i;
+
+    background: #fff; /* Remove */
+}

@@ -5,20 +5,28 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/app.css') }}"></link>
         <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     </head>
-
     <body>
         <div class="container">
             <div class="installer-window">
                 <form method="POST">
                     <div id="keystore">
                         <div></div>
-                        <div></div>
-                        <div></div>
+                        <div>
+                            <input type="password" name="keystore-pwd">
+                        </div>
+                        <div>
+                            <button type="button">Next</button>
+                        </div>
                     </div>
                     <div id="eth-rpc">
                         <div></div>
-                        <div></div>
-                        <div></div>
+                        <div>
+                            <input type="text" name="eth-rpc-endpoint">
+                        </div>
+                        <div>
+                            <button type="button">Back</button>
+                            <button type="submit">Install Raiden</button>
+                        </div>
                     </div>
                 </form>
             </div>

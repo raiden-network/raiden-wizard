@@ -1,4 +1,5 @@
 import builtins
+from pathlib import Path
 from unittest.mock import patch, mock_open
 from raiden_installer.installer_parts import raiden_config
 
@@ -29,3 +30,41 @@ def test_eth_rpc_endpoint_url():
     assert eth_rpc == (
         'https://goerli.infura.io/v3/6a9a5919fc3e4d2088b2512b0da8926a'
     )
+
+
+@patch('builtins.open', new_callable=mock_open())
+@patch('raiden_installer.installer_parts.raiden_config.toml')
+def test_generate_raiden_config_file_data(mock_toml, mock_open_file):
+    '''
+    Tests that expected configuration
+    data is written to the TOML file.
+    '''
+    config_data = {
+        "environment-type": "development",
+        "keystore-path": Path("/dest/dir/path/keystore"),
+        "address": "0x4a01C085EA70Ae37487641cb78fa973BB6C310a4",
+        "password-file": Path("/dest/dir/path/pwd.txt"),
+        "user-deposit-contract-address": (
+            "0x6978D210a7F69527a210C0942ED7520045FE1a29"
+        ),
+        "network-id": "goerli",
+        "accept-disclaimer": True,
+        "eth-rpc-endpoint": (
+            "https://goerli.infura.io/v3/6a9a5919fc3e4d2088b2512b0da8926a"
+        ),
+        "routing-mode": "pfs",
+        "pathfinding-service-address": (
+            "https://pfs-goerli.services-dev.raiden-network"
+        ),
+        "enable-monitoring": True
+    }
+
+    raiden_config.generate_raiden_config_file(
+        '/dest/dir/path',
+        'https://goerli.infura.io/v3/6a9a5919fc3e4d2088b2512b0da8926a',
+        '4a01c085ea70ae37487641cb78fa973bb6c310a4',
+        '0x6978D210a7F69527a210C0942ED7520045FE1a29'
+    )
+
+    toml_output = mock_toml.dump.call_args[0][0]
+    assert toml_output == config_data

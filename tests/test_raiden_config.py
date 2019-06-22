@@ -68,3 +68,17 @@ def test_generate_raiden_config_file_data(mock_toml, mock_open_file):
 
     toml_output = mock_toml.dump.call_args[0][0]
     assert toml_output == config_data
+
+
+@patch('builtins.open', new_callable=mock_open())
+def test_generate_raiden_config_file_returns_path(mock_open_file):
+    '''
+    Tests that path to the generated config file is returned
+    '''
+    config_file = raiden_config.generate_raiden_config_file(
+        '/dest/dir/path',
+        'https://goerli.infura.io/v3/6a9a5919fc3e4d2088b2512b0da8926a',
+        '4a01c085ea70ae37487641cb78fa973bb6c310a4',
+        '0x6978D210a7F69527a210C0942ED7520045FE1a29'
+    )
+    assert config_file == Path('/dest/dir/path/config.toml')

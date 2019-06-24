@@ -1,35 +1,42 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Raiden Installer</title>
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/app.css') }}"></link>
-        <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    </head>
-    <body>
-        <div class="container">
-            <div class="installer-window">
-                <form method="POST">
-                    <div id="keystore">
-                        <div></div>
-                        <div>
-                            <input type="password" name="keystore-pwd">
-                        </div>
-                        <div>
-                            <button type="button" onclick="inputToggle('eth-rpc')">Next</button>
-                        </div>
-                    </div>
-                    <div id="eth-rpc">
-                        <div></div>
-                        <div>
-                            <input type="text" name="eth-rpc-endpoint">
-                        </div>
-                        <div>
-                            <button type="button" onclick="inputToggle('keystore')">Back</button>
-                            <button type="submit">Install Raiden</button>
-                        </div>
-                    </div>
-                </form>
+{% extends "base.html" %}
+
+{% block content %}
+<form method="POST">
+    <div id="keystore">
+        <div>
+            <h1>Keystore Password</h1>
+        </div>
+        <div class="password-wrapper">
+            <div class="password-input">
+                <input type="password" name="keystore-pwd">
+            </div>
+            <div class="password-error">
+                <p>Please provide a password</p>
             </div>
         </div>
-    </body>
-</html>
+        <div>
+            <button type="button" onclick="inputToggle('proj-id')">Next</button>
+        </div>
+    </div>
+    <div id="proj-id">
+        <div>
+            <h1>Infura Project-ID</h1>
+        </div>
+        <div class="proj-id-wrapper">
+            <div class="network-input">
+                <input type="radio" name="network" value="goerli">G&ouml;rli
+            </div>
+            <div class="proj-id-input">
+                <input type="text" name="proj-id">
+            </div>
+            <div class="proj-id-error">
+                <p>Not a valid project-ID</p>
+            </div>
+        </div>
+        <div>
+            <button type="button" onclick="inputToggle('keystore')">Back</button>
+            <button type="submit">Install Raiden</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

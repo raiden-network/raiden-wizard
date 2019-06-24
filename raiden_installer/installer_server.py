@@ -1,18 +1,36 @@
 import socket
 import webbrowser
-from flask import Flask
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for
+)
 
 
 app = Flask(__name__)
 
 
-@app.route('/', methods=['GET'])
-def index():
-    return (
-        '''
-        Installer Server
-        '''
-    )
+global keystore_pwd
+global network
+global proj_id
+
+
+@app.route('/', methods=['GET', 'POST'])
+def user_input():
+    if request.method == 'POST':
+        keystore_pwd = request.form['keystore-pwd']
+        network = request.form['network']
+        proj_id = request.form['proj-id']
+
+        return redirect(url_for('installation'))
+    return render_template('user-input.html')
+
+
+@app.route('/installation', methods=['GET'])
+def installation():
+    return render_template('installation.html')
 
 
 if __name__ == '__main__':

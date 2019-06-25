@@ -6,36 +6,36 @@
         <div>
             <h1>Keystore Password</h1>
         </div>
-        <div class="password-wrapper">
-            <div class="password-input">
-                <input type="password" name="keystore-pwd">
+        <div class="pwd-input-wrapper">
+            <div class="pwd-input">
+                <input type="password" name="keystore-pwd" onfocus="enableButtons(event)" onblur="inputValidation(event)">
             </div>
-            <div class="password-error">
+            <div class="pwd-error">
                 <p>Please provide a password</p>
             </div>
         </div>
         <div>
-            <button type="button" onclick="inputToggle('proj-id')">Next</button>
+            <button id="to-eth-rpc" type="button" disabled onclick="inputToggle('eth-rpc')">Next</button>
         </div>
     </div>
-    <div id="proj-id">
+    <div id="eth-rpc">
         <div>
             <h1>Infura Project-ID</h1>
         </div>
         <div class="proj-id-wrapper">
-            <div class="network-input">
-                <input type="radio" name="network" value="goerli">G&ouml;rli
-            </div>
             <div class="proj-id-input">
-                <input type="text" name="proj-id">
+                <input type="text" name="proj-id" onfocus="enableButtons(event)" onblur="inputValidation(event)">
+            </div>
+            <div class="network-input">
+                <input type="radio" name="network" value="goerli" checked="checked">G&ouml;rli
             </div>
             <div class="proj-id-error">
                 <p>Not a valid project-ID</p>
             </div>
         </div>
         <div>
-            <button type="button" onclick="inputToggle('keystore')">Back</button>
-            <button type="submit">Install Raiden</button>
+            <button id="to-keystore" type="button" onclick="inputToggle('keystore')">Back</button>
+            <button id="install" type="submit" disabled>Install Raiden</button>
         </div>
     </div>
 </form>

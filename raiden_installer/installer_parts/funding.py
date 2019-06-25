@@ -9,6 +9,10 @@ from raiden_contracts.constants import (
 )
 
 
+def goerli_funding(address: str) -> None:
+    pass
+
+
 class PfsAndMonitoringFunding:
     '''
     Creates a Web3 contract object for the custom token

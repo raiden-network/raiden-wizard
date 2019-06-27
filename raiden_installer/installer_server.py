@@ -14,9 +14,11 @@ from eth_utils import to_checksum_address
 from installer_parts import (
     keystore,
     raiden_config,
-    funding
+    funding,
+    raiden
 )
 from constants import (
+    PLATFORM,
     DEST_DIR,
     TOKEN_AMOUNT,
     GAS_PRICE,
@@ -112,8 +114,39 @@ def user_input():
         '''
         Installation Step 5
 
-        Generate TOML config file
+        Create a plain txt pwd file
+        and generate a TOML config file.
         '''
+        plain_txt_pwd = raiden_config.PlainTxtPwd(DEST_DIR, keystore_pwd)
+        plain_txt_pwd.create_plain_txt_pwd_file()
+
+        config_file = raiden_config.generate_raiden_config_file(
+            DEST_DIR,
+            eth_rpc,
+            address,
+            user_deposit_address
+        )
+
+        '''
+        Installation Step 6
+
+        Download Raiden archive and
+        unpack the Raiden binary.
+        '''
+        latest_raiden_release = raiden.latest_raiden_release()
+        raiden_download_url = raiden.raiden_download_url(
+            latest_raiden_release,
+            PLATFORM,
+        )
+
+        archive = raiden.download_raiden_archive(
+            raiden_download_url,
+            DEST_DIR
+        )
+        raiden_binary = raiden.unpack_raiden_binary(
+            archive,
+            DEST_DIR
+        )
 
     return render_template('user-input.html')
 

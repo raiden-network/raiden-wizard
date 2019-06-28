@@ -13,13 +13,13 @@ from flask import (
 )
 from web3 import Web3, HTTPProvider
 from eth_utils import to_checksum_address
-from installer_parts import (
+from raiden_installer.installer_parts import (
     keystore,
     raiden_config,
     funding,
     raiden
 )
-from constants import (
+from raiden_installer.constants import (
     PLATFORM,
     DEST_DIR,
     TOKEN_AMOUNT,

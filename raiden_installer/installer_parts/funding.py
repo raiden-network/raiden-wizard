@@ -1,3 +1,8 @@
+import hashlib
+import requests
+import json
+from uuid import getnode
+from getpass import getuser
 from raiden_contracts.contract_manager import (
     ContractManager,
     contracts_precompiled_path,
@@ -10,7 +15,23 @@ from raiden_contracts.constants import (
 
 
 def goerli_funding(address: str) -> None:
-    pass
+    '''
+    Fund address with Gö-ETH from faucet
+    '''
+    mac_address = getnode()
+    current_user = getuser()
+    client_hash = hashlib.sha256(
+        f'{mac_address}-{current_user}'.encode()
+    ).hexdigest()
+
+    try:
+        res = requests.post(
+            'https://faucet.workshop.raiden.network/',
+            json={'address': address, 'client_hash': client_hash}
+        )
+        print(res)
+    except requests.exceptions.RequestException as err:
+        print(err)
 
 
 class PfsAndMonitoringFunding:
@@ -66,7 +87,7 @@ class PfsAndMonitoringFunding:
                 'chainId': self.chain_id,
                 'gas': gas,
                 'gasPrice': gas_price,
-                'nonce': w3.eth.getTransactionCount(self.address)
+                'nonce': self.w3.eth.getTransactionCount(self.address)
             }
         )
         sign_mint = self.w3.eth.account.signTransaction(
@@ -99,7 +120,7 @@ class PfsAndMonitoringFunding:
                 'chainId': self.chain_id,
                 'gas': gas,
                 'gasPrice': gas_price,
-                'nonce': w3.eth.getTransactionCount(self.address)
+                'nonce': self.w3.eth.getTransactionCount(self.address)
             }
         )
         sign_approve = self.w3.eth.account.signTransaction(
@@ -132,7 +153,7 @@ class PfsAndMonitoringFunding:
                 'chainId': self.chain_id,
                 'gas': gas,
                 'gasPrice': gas_price,
-                'nonce': w3.eth.getTransactionCount(self.address)
+                'nonce': self.w3.eth.getTransactionCount(self.address)
             }
         )
         sign_deposit = self.w3.eth.account.signTransaction(

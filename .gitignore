@@ -1,10 +1,14 @@
 __pycache__
 
+# VS Code
+*.code-workspace
+
 # System
 .DS_Store
 
 # Environments
 .venv
 
-# VS Code
-*.code-workspace
+# Distribution
+build
+dist

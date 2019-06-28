@@ -1,7 +1,9 @@
+import sys
 import json
 import time
 import socket
 import webbrowser
+from pathlib import Path
 from flask import (
     Flask,
     render_template,
@@ -28,7 +30,32 @@ from constants import (
 )
 
 
-app = Flask(__name__)
+def static_absolute_path(static_relative_path: str) -> str:
+    '''
+    Provides PyInstaller with an
+    absolute path to static files.
+    '''
+    installer_server = Path(__file__).resolve()
+    raiden_installer = installer_server.parent
+    base_path = getattr(sys, '_MEIPASS', raiden_installer)
+
+    static_absolute_path = Path(base_path).joinpath(static_relative_path)
+    return static_absolute_path
+
+
+if getattr(sys, 'frozen', False):
+    # Installer running in a bundle
+    template_folder = static_absolute_path('templates')
+    static_folder = static_absolute_path('static')
+
+    app = Flask(
+        __name__,
+        template_folder=template_folder,
+        static_folder=static_folder
+    )
+else:
+    # Installer running live
+    app = Flask(__name__)
 
 
 @app.route('/', methods=['GET', 'POST'])

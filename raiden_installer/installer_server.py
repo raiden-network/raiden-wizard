@@ -35,7 +35,7 @@ app = Flask(__name__)
 def user_input():
     if request.method == 'POST':
         keystore_pwd = request.form['keystore-pwd']
-        network = request.form['network']
+        network = 'goerli'
         proj_id = request.form['proj-id']
 
         '''

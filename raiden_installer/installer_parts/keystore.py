@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from uuid import uuid4
-from eth_keyfile import create_keyfile_json
+from eth_keyfile import create_keyfile_json, decode_keyfile_json
 
 
 def generate_keyfile_name() -> str:
@@ -14,7 +14,7 @@ def generate_keyfile_name() -> str:
     return keyfile_name
 
 
-def make_keystore(dest_dir: str, keyfile_name: str, keystore_pwd: str) -> dict:
+def make_keystore(dest_dir: str, keyfile_name: str, keystore_pwd: str) -> str:
     '''
     Creates a keystore directory with a
     passphrase encrypted keystore file.
@@ -28,4 +28,9 @@ def make_keystore(dest_dir: str, keyfile_name: str, keystore_pwd: str) -> dict:
     with open(keyfile, 'w') as f:
         json.dump(keyfile_content, f)
 
-    return keyfile_content
+    return keyfile
+
+
+def get_private_key(keyfile_content: dict, keystore_pwd: str) -> bytes:
+    private_key = decode_keyfile_json(keyfile_content, keystore_pwd.encode())
+    return private_key

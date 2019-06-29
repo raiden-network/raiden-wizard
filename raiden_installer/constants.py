@@ -1,16 +1,31 @@
 import sys
-from raiden_contracts.constants import GAS_REQUIRED_FOR_UDC_DEPOSIT
+from pathlib import Path
+from xdg import XDG_DATA_HOME, XDG_CONFIG_HOME
 
 
-PLATFORM = 'macOS' if sys.platform == 'darwin'  else 'linux'
+'''
+Raiden installer uses the XDG Base Directory standard for
+storing its files. XDG_DATA_HOME is used for storing user
+keystore files whilst XDG_CONFIG_HOME stores config files
+necessary for initializing Raiden.
+'''
+BINARY_DIR = Path('/usr/local/bin')
+CONFIG_DIR = Path(XDG_CONFIG_HOME).joinpath('Raiden')
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+KEYSTORE_DIR = Path(XDG_DATA_HOME).joinpath('Raiden')
+KEYSTORE_DIR.mkdir(parents=True, exist_ok=True)
 
-DEST_DIR = '/Users/taleldayekh/desktop/installer'
+
+PLATFORM = 'macOS' if sys.platform == 'darwin' else 'linux'
 
 
-# Constants for PFS and Monitoring funding
-GAS_PRICE = 2_000_000_000
-GAS_MINT = 70_000
-GAS_APPROVE = 70_000
-GAS_DEPOSIT = GAS_REQUIRED_FOR_UDC_DEPOSIT * 2
-
+'''
+Constants for interacting with smart contracts used
+for funding the Pathfinding and Monitoring services.
+'''
 TOKEN_AMOUNT = 10 ** 18
+GAS_PRICE = 2_000_000_000
+
+GAS_REQUIRED_FOR_MINT = 70_000
+GAS_REQUIRED_FOR_APPROVE = 70_000
+GAS_REQUIRED_FOR_DEPOSIT = 200_000

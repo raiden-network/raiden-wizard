@@ -10,17 +10,14 @@ class PlainTxtPwd:
     Provides a method for storing the keystore pwd in a plain txt
     file which is necessary when initializing Raiden and a method
     for deleting that very same file.
-
-    Intended for testnet use only with throwaway keystore account
-    and pwd.
     '''
-    def __init__(self, dest_dir: str, keystore_pwd: str):
-        self.dest_dir = dest_dir
+    def __init__(self, config_dir: Path, keystore_pwd: str) -> None:
+        self.config_dir = config_dir
         self.keystore_pwd = keystore_pwd
         self.pwd_file = None
 
     def create_plain_txt_pwd_file(self):
-        pwd_file = Path(self.dest_dir).joinpath('pwd.txt')
+        pwd_file = Path(self.config_dir).joinpath('pwd.txt')
 
         with open(pwd_file, 'w') as f:
             f.write(self.keystore_pwd)
@@ -50,33 +47,34 @@ def eth_rpc_endpoint(proj_id: str, network: str) -> str:
 
 
 def generate_raiden_config_file(
-    dest_dir: str,
+    config_dir: Path,
+    keystore_dir: Path,
     eth_rpc: str,
     address: str,
     user_deposit_address: str
-) -> str:
+) -> Path:
     try:
         # Grab the network from the ETH RPC endpoint URL
         network = re.findall(r'(?<=//).*(?=.infura)', eth_rpc)[0]
     except IndexError as err:
         print('ETH RPC endpoint is not a valid Infura URL')
     else:
-        config_file = Path(dest_dir).joinpath('config.toml')
-        keystore = Path(dest_dir).joinpath('keystore')
-        pwd_file = Path(dest_dir).joinpath('pwd.txt')
+        config_file = Path(config_dir).joinpath('config.toml')
+        pwd_file = Path(config_dir).joinpath('pwd.txt')
+        keystore = Path(keystore_dir).joinpath('keystore')
         
         toml_data = {
             "environment-type": "development",
-            "keystore-path": keystore,
+            "keystore-path": str(keystore),
             "address": to_checksum_address(address),
-            "password-file": pwd_file,
+            "password-file": str(pwd_file),
             "user-deposit-contract-address": user_deposit_address,
             "network-id": network,
             "accept-disclaimer": True,
             "eth-rpc-endpoint": eth_rpc,
             "routing-mode": "pfs",
             "pathfinding-service-address": (
-                f'https://pfs-{network}.services-dev.raiden-network'
+                f'https://pfs-{network}.services-dev.raiden.network'
             ),
             "enable-monitoring": True
         }

@@ -9,15 +9,15 @@ from eth_utils import to_checksum_address
 from flask import (
     Flask,
     render_template,
-    request
+    request,
+    redirect,
+    url_for
 )
 from installer_parts import (
     keystore,
     raiden_config,
     funding,
-    raiden,
-    redirect,
-    url_for
+    raiden
 )
 from constants import (
     PLATFORM,

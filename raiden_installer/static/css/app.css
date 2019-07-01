@@ -241,3 +241,10 @@ button.installation-btn {
     flex: 1;
     width: 300px;
 }
+
+#raiden-init {
+    display: grid;
+    grid-template-rows: repeat(3, 1fr);
+    height: 100%;
+    width: 100%;
+}

@@ -14,13 +14,17 @@ def generate_keyfile_name() -> str:
     return keyfile_name
 
 
-def make_keystore(dest_dir: str, keyfile_name: str, keystore_pwd: str) -> str:
+def make_keystore(
+    keystore_dir: Path,
+    keyfile_name: str,
+    keystore_pwd: str
+) -> Path:
     '''
     Creates a keystore directory with a
     passphrase encrypted keystore file.
     '''
-    keystore = Path(dest_dir).joinpath('keystore')
-    keystore.mkdir(exist_ok=True)
+    keystore = Path(keystore_dir).joinpath('keystore')
+    keystore.mkdir(exists_ok=True)
 
     keyfile = Path(keystore).joinpath(keyfile_name)
     keyfile_content = create_keyfile_json(os.urandom(32), keystore_pwd.encode())

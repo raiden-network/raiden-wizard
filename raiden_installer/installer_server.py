@@ -125,21 +125,24 @@ def install_raiden():
             GAS_REQUIRED_FOR_MINT,
             GAS_PRICE
         )
-        print('Status\n' + mint_tokens)
+        print('Status')
+        print(mint_tokens)
 
         approve_deposit = pfs_monitoring_funding.approve_deposit(
             TOKEN_AMOUNT,
             GAS_REQUIRED_FOR_APPROVE,
             GAS_PRICE
         )
-        print('Status\n' + approve_deposit)
+        print('Status')
+        print(approve_deposit)
 
         make_deposit = pfs_monitoring_funding.make_deposit(
             TOKEN_AMOUNT,
             GAS_REQUIRED_FOR_DEPOSIT,
             GAS_PRICE
         )
-        print('Status\n' + make_deposit)
+        print('Status')
+        print(make_deposit)
 
         '''
         Installer Step 5

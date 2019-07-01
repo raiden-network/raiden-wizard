@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import subprocess
 from pathlib import Path
 from zipfile import ZipFile
 from tarfile import TarFile
@@ -52,7 +53,7 @@ def raiden_download_url(raiden_release: str, platform: str) -> str:
     return raiden_download_url
 
 
-def download_raiden_archive(raiden_download_url: str, dest_dir: str) -> str:
+def download_raiden_archive(raiden_download_url: str, binary_dir: Path) -> Path:
     try:
         res = requests.get(raiden_download_url)
         file_content = res.content
@@ -63,7 +64,7 @@ def download_raiden_archive(raiden_download_url: str, dest_dir: str) -> str:
         )
 
     filename = Path(raiden_download_url).name
-    archive = Path(dest_dir).joinpath(filename)
+    archive = Path(binary_dir).joinpath(filename)
 
     try:
         with open(archive, 'wb') as f:
@@ -74,17 +75,17 @@ def download_raiden_archive(raiden_download_url: str, dest_dir: str) -> str:
         print('Unable to download archive')
 
 
-def unpack_raiden_binary(archive: str, dest_dir: str) -> str:
+def unpack_raiden_binary(archive: Path, binary_dir: Path) -> Path:
     archive_format = Path(archive).suffix
 
     try:
         if archive_format == '.zip':
             with ZipFile(archive) as f:
-                f.extractall(dest_dir)
+                f.extractall(binary_dir)
                 archive_content = f.namelist()[0]
         elif archive_format == '.gz':
             with TarFile.open(archive) as f:
-                f.extractall(dest_dir)
+                f.extractall(binary_dir)
                 archive_content = f.getnames()[0]
         else:
             raise FileNotFoundError
@@ -92,7 +93,14 @@ def unpack_raiden_binary(archive: str, dest_dir: str) -> str:
         # Delete archive after binary has been extracted
         os.remove(archive)
 
-        binary = Path(archive).joinpath(archive_content)
+        binary = Path(binary_dir).joinpath(archive_content)
         return binary
     except FileNotFoundError:
         print('Unable to find any archive')
+
+
+def initialize_raiden(binary: Path, config_file: Path) -> None:
+    # Set permissions to run binary
+    os.chmod(binary, 0o770)
+
+    subprocess.Popen([binary, '--config-file', config_file])

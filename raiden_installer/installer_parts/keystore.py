@@ -24,7 +24,7 @@ def make_keystore(
     passphrase encrypted keystore file.
     '''
     keystore = Path(keystore_dir).joinpath('keystore')
-    keystore.mkdir(exists_ok=True)
+    keystore.mkdir(exist_ok=True)
 
     keyfile = Path(keystore).joinpath(keyfile_name)
     keyfile_content = create_keyfile_json(os.urandom(32), keystore_pwd.encode())

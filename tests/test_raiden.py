@@ -1,8 +1,8 @@
 from unittest.mock import patch, call
-from raiden_installer import raiden
+from raiden_installer.installer_parts import raiden
 
 
-@patch('raiden_installer.raiden.requests')
+@patch('raiden_installer.installer_parts.raiden.requests')
 def test_latest_raiden_release_get_request_url(mock_requests):
     '''
     Tests that requests.get is called with the correct URL
@@ -16,7 +16,7 @@ def test_latest_raiden_release_get_request_url(mock_requests):
     )
 
 
-@patch('raiden_installer.raiden.requests')
+@patch('raiden_installer.installer_parts.raiden.requests')
 def test_latest_raiden_release_returns_tag_name(mock_requests):
     '''
     Tests whether the latest Raiden release data
@@ -49,7 +49,7 @@ def test_raiden_download_url_mac_release():
     raiden_download_url = raiden.raiden_download_url('latest-release', platform)
     assert raiden_download_url == (
         'https://github.com/raiden-network/raiden/releases/download/'
-        + 'latest-release/raiden-latest-release-macOS-x86_64.zip'
+        'latest-release/raiden-latest-release-macOS-x86_64.zip'
     )
 
 
@@ -62,5 +62,5 @@ def test_raiden_download_url_linux_release():
     raiden_download_url = raiden.raiden_download_url('latest-release', platform)
     assert raiden_download_url == (
         'https://github.com/raiden-network/raiden/releases/download/'
-        + 'latest-release/raiden-latest-release-linux-x86_64.tar.gz'
+        'latest-release/raiden-latest-release-linux-x86_64.tar.gz'
     )

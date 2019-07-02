@@ -104,3 +104,5 @@ def initialize_raiden(binary: Path, config_file: Path) -> None:
     os.chmod(binary, 0o770)
 
     subprocess.Popen([binary, '--config-file', config_file])
+
+# Comment

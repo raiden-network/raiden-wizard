@@ -11,7 +11,7 @@ def test_create_plain_txt_pwd_file_path(mock_open_file):
     from the class variable once a plain txt pwd file
     has been created.
     '''
-    plain_txt_pwd = raiden_config.PlainTxtPwd('/config/dir/path', 'password')
+    plain_txt_pwd = raiden_config.PlainTextPassword('/config/dir/path', 'password')
     plain_txt_pwd.create_plain_txt_pwd_file()
 
     pwd_file = plain_txt_pwd.pwd_file

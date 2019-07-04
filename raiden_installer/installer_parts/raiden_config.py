@@ -5,7 +5,7 @@ from pathlib import Path
 from eth_utils import to_checksum_address
 
 
-class PlainTxtPwd:
+class PlainTextPassword:
     '''
     Provides a method for storing the keystore pwd in a plain txt
     file which is necessary when initializing Raiden and a method

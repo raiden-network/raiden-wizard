@@ -150,7 +150,7 @@ def install_raiden():
         Create a plain txt pwd file
         and generate a TOML config.
         '''
-        plain_txt_pwd = raiden_config.PlainTxtPwd(CONFIG_DIR, keystore_pwd)
+        plain_txt_pwd = raiden_config.PlainTextPassword(CONFIG_DIR, keystore_pwd)
         plain_txt_pwd.create_plain_txt_pwd_file()
 
         global config_file

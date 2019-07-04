@@ -1,6 +1,5 @@
 import hashlib
 import requests
-import json
 from uuid import getnode
 from getpass import getuser
 from raiden_contracts.contract_manager import (
@@ -80,9 +79,8 @@ class PfsAndMonitoringFunding:
         gas: int,
         gas_price: int
     ) -> tuple:
-        mint = self.custom_token_contract.functions.mint(
-            token_amount
-        ).buildTransaction(
+        mint = self.custom_token_contract.functions.mint(token_amount)
+        mint.buildTransaction(
             {
                 'chainId': self.chain_id,
                 'gas': gas,
@@ -115,7 +113,8 @@ class PfsAndMonitoringFunding:
         approve = self.custom_token_contract.functions.approve(
             self.user_deposit_address,
             token_amount
-        ).buildTransaction(
+        )
+        approve.buildTransaction(
             {
                 'chainId': self.chain_id,
                 'gas': gas,
@@ -148,7 +147,8 @@ class PfsAndMonitoringFunding:
         deposit = self.user_deposit_contract.functions.deposit(
             self.address,
             token_amount
-        ).buildTransaction(
+        )
+        deposit.buildTransaction(
             {
                 'chainId': self.chain_id,
                 'gas': gas,

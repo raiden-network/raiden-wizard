@@ -35,6 +35,13 @@ def make_keystore(
     return keyfile
 
 
+def get_keyfile_content(keyfile: Path) -> dict:
+    with open(keyfile, 'r') as f:
+        keyfile_content = json.load(f)
+
+    return keyfile_content
+
+
 def get_private_key(keyfile_content: dict, keystore_pwd: str) -> bytes:
     private_key = decode_keyfile_json(keyfile_content, keystore_pwd.encode())
     return private_key

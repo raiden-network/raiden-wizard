@@ -13,8 +13,10 @@ from flask import (
     redirect,
     url_for
 )
+from installer_steps import (
+    set_up_keystore
+)
 from installer_parts import (
-    keystore,
     raiden_config,
     funding,
     raiden
@@ -65,25 +67,11 @@ else:
 @app.route('/', methods=['GET', 'POST'])
 def install_raiden():
     if request.method == 'POST':
-        keystore_pwd = request.form['keystore-pwd']
+        keystore_password = request.form['keystore-pwd']
         proj_id = request.form['proj-id']
         network = 'goerli'
 
-        '''
-        Installer Step 1
-
-        Create keystore directory and
-        retrieve keyfile and address.
-        '''
-        keyfile = keystore.make_keystore(
-            KEYSTORE_DIR,
-            keystore.generate_keyfile_name(),
-            keystore_pwd
-        )
-
-        with open(keyfile, 'r') as f:
-            keyfile_content = json.load(f)
-
+        keyfile_content = set_up_keystore(keystore_password)
         address = keyfile_content['address']
 
         '''
@@ -112,7 +100,7 @@ def install_raiden():
         Acquire tokens for PFS and Monitoring services
         and retrieve the user deposit contract address.
         '''
-        private_key = keystore.get_private_key(keyfile_content, keystore_pwd)
+        private_key = keystore.get_private_key(keyfile_content, keystore_password)
         pfs_monitoring_funding = funding.PfsAndMonitoringFunding(
             w3,
             to_checksum_address(address),
@@ -150,7 +138,7 @@ def install_raiden():
         Create a plain txt pwd file
         and generate a TOML config.
         '''
-        plain_txt_pwd = raiden_config.PlainTextPassword(CONFIG_DIR, keystore_pwd)
+        plain_txt_pwd = raiden_config.PlainTextPassword(CONFIG_DIR, keystore_password)
         plain_txt_pwd.create_plain_txt_pwd_file()
 
         global config_file

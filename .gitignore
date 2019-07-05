@@ -1,14 +1,90 @@
-__pycache__
+# ignore private keys
+*.pem
 
-# VS Code
-*.code-workspace
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
 
-# System
-.DS_Store
+# C extensions
+*.so
 
-# Environments
-.venv
+# Distribution / packaging
+.Python
+env/
+devenv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-wheel-metadata/
 
-# Distribution
-build
-dist
+# Local dev-requirements
+requirements/requirements-local.txt
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.pytest_cache/
+mypy-out.txt
+.hypothesis/
+
+# Pyenv
+.python-version
+
+# mypy
+.mypy_cache
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# never check in .static-abi.json files
+*.static-abi.json
+
+# editors
+.idea
+.vscode
+
+# Our logs
+raiden-debug_*.log
+
+# direnv virtual envs
+.direnv
+.envrc
+
+# venvs
+venv/

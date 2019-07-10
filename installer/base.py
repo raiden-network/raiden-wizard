@@ -70,6 +70,19 @@ class Account:
         w3 = Web3(HTTPProvider(ethereum_rpc_endpoint))
         return w3.eth.getBalance(to_checksum_address(self.address))
 
+    def check_passphrase(self, passphrase):
+        try:
+            decode_keyfile_json(self.content, passphrase.encode())
+            return True
+        except Exception:
+            return False
+
+    def unlock(self, passphrase):
+        if self.check_passphrase(passphrase):
+            self.passphrase = passphrase
+        else:
+            raise ValueError("Invalid Passphrase")
+
     @classmethod
     def create(cls, passphrase):
         time_stamp = (
@@ -126,7 +139,13 @@ class RaidenConfigurationFile:
         self.user_deposit_address = self.network.user_deposit_address
 
     def save(self):
+        if not self.account.check_passphrase(self.account.passphrase):
+            raise ValueError("no valid passphrase for account collected")
+
         self.FOLDER_PATH.mkdir(exist_ok=True)
+
+        passphrase_file = PassphraseFile(self.passphrase_file_path)
+        passphrase_file.store(self.account.passphrase)
 
         with open(self.path, "w") as config_file:
             toml.dump(self.configuration_data, config_file)
@@ -162,6 +181,18 @@ class RaidenConfigurationFile:
     @property
     def passphrase_file_path(self):
         return self.FOLDER_PATH.joinpath(f"{self.account.address}.passphrase.txt")
+
+    @property
+    def balance(self):
+        return self.account.get_balance(self.ethereum_client_rpc_endpoint)
+
+    @property
+    def short_description(self):
+        account_description = f"{self.account.address} ({self.balance})"
+        network_description = (
+            f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
+        )
+        return " - ".join((account_description, network_description))
 
     @classmethod
     def get_available_configurations(cls):
@@ -215,7 +246,8 @@ class RaidenClient:
         action = (
             self._extract_gzip if download_url.endswith("gz") else self._extract_zip
         )
-        action(BytesIO(download.content))
+        action(BytesIO(download.content), self.install_path)
+        os.chmod(self.install_path, 0o770)
 
     def launch(self, configuration_file):
         pass
@@ -234,38 +266,34 @@ class RaidenClient:
         return self.BINARY_NAME_FORMAT.format(release=self.release)
 
     @property
-    def install_path(self):
-        return Path(self.BINARY_FOLDER_PATH).joinpath(self.binary_name)
+    def is_installed(self):
+        return self.install_path.exists()
 
     @property
-    def balance(self):
-        return self.account.get_balance(self.ethereum_client_rpc_endpoint)
+    def install_path(self):
+        return Path(self.BINARY_FOLDER_PATH).joinpath(self.binary_name)
 
     @property
     def has_funds(self):
         return self.balance >= self.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
 
-    @property
-    def short_description(self):
-        account_description = f"{self.account.address} ({self.balance})"
-        network_description = (
-            f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
-        )
-        return " - ".join((account_description, network_description))
-
-    def _extract_zip(self, compressed_data):
+    def _extract_zip(self, compressed_data, destination_path):
         zipped = zipfile.ZipFile(compressed_data)
-        zipped.extract(zipped.filelist[0], path=self.install_path)
+        zipped.extract(zipped.filelist[0], path=destination_path)
 
-    def _extract_gzip(self, compressed_data):
+    def _extract_gzip(self, compressed_data, destination_path):
         with gzip.open(compressed_data) as compressed_file:
-            with self.install_path.open("wb") as binary_file:
+            with destination_path.open("wb") as binary_file:
                 binary_file.write(compressed_file.read())
 
     @classmethod
     def get_latest_release(cls):
+        return cls.get_available_releases()[0]
+
+    @classmethod
+    def get_available_releases(cls):
         response = requests.get(cls.RELEASES_URL)
-        return cls(response.json()[0].get("tag_name"))
+        return [cls(release.get("tag_name")) for release in response.json()]
 
     @classmethod
     def get_installed_releases(cls):

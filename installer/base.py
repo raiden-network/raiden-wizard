@@ -6,6 +6,7 @@ import hashlib
 import logging
 import json
 import uuid
+import functools
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
@@ -231,6 +232,7 @@ class RaidenClient:
     RELEASES_URL = "https://api.github.com/repos/raiden-network/raiden/releases"
     DOWNLOADS_URL = "https://github.com/raiden-network/raiden/releases/download"
     BINARY_NAME_FORMAT = "raiden-{release}"
+    LATEST_RELEASE = "v0.100.4"
 
     def __init__(self, release):
         self.release = release
@@ -248,6 +250,10 @@ class RaidenClient:
         )
         action(BytesIO(download.content), self.install_path)
         os.chmod(self.install_path, 0o770)
+
+    def uninstall(self):
+        if self.install_path.exists():
+            self.install_path.unlink()
 
     def launch(self, configuration_file):
         pass
@@ -291,13 +297,14 @@ class RaidenClient:
         return cls.get_available_releases()[0]
 
     @classmethod
+    @functools.lru_cache()
     def get_available_releases(cls):
         response = requests.get(cls.RELEASES_URL)
         return [cls(release.get("tag_name")) for release in response.json()]
 
     @classmethod
     def get_installed_releases(cls):
-        all_raiden_glob = cls.BINARY_FOLDER_PATH.format(release="*")
+        all_raiden_glob = cls.BINARY_NAME_FORMAT.format(release="*")
         installed_raidens = [
             os.path.basename(raiden_path)
             for raiden_path in glob.glob(
@@ -305,7 +312,7 @@ class RaidenClient:
             )
         ]
 
-        installed_releases = [raiden.split("-")[-1] for raiden in installed_raidens]
+        installed_releases = [raiden.split("-", 1)[-1] for raiden in installed_raidens]
 
         return [cls(release) for release in installed_releases]
 

@@ -3,6 +3,7 @@ import sys
 import glob
 import gzip
 import hashlib
+import logging
 import json
 import uuid
 from io import BytesIO
@@ -11,11 +12,16 @@ from pathlib import Path
 from typing import Optional
 import zipfile
 
-import requests
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils import to_checksum_address
 from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import get_contracts_deployment_info
+import requests
+import toml
 from xdg import XDG_DATA_HOME
+
+
+logger = logging.getLogger(__name__)
 
 
 class InstallerError(Exception):
@@ -26,7 +32,7 @@ class PassphraseFile:
     # FIXME: Right now we are writing/reading to a plain text file, which
     # may be a security risk and put the user's funds at risk.
 
-    def __init__(self, file_path):
+    def __init__(self, file_path: Path):
         self.file_path = file_path
 
     def store(self, passphrase):
@@ -88,28 +94,28 @@ class Account:
 
 
 class RaidenConfigurationFile:
-    CONFIG_FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
+    FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
-    def __init__(self, account, ethereum_client, network, **kw):
+    def __init__(self, account, network, ethereum_client_rpc_endpoint, **kw):
         self.account = account
-        self.ethereum_client = ethereum_client
         self.network = network
+        self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", True)
         self.routing_mode = kw.get("routing_mode", "pfs")
         self.environment_type = kw.get("environment_type", "development")
 
-        self.user_deposit_address = self.network.get_user_deposit_address()
+        self.user_deposit_address = self.network.user_deposit_address
 
     def save(self):
-        self.CONFIG_FOLDER_PATH.mkdir(exist_ok=True)
+        self.FOLDER_PATH.mkdir(exist_ok=True)
 
         with open(self.path, "w") as config_file:
             toml.dump(self.configuration_data, config_file)
 
     @property
     def path_finding_service_url(self):
-        return f"https://pfs-{self.network.NAME}.services-dev.raiden.network"
+        return f"https://pfs-{self.network.name}.services-dev.raiden.network"
 
     @property
     def configuration_data(self):
@@ -119,9 +125,9 @@ class RaidenConfigurationFile:
             "address": to_checksum_address(self.account.address),
             "password-file": str(self.passphrase_file_path),
             "user-deposit-contract-address": self.user_deposit_address,
-            "network-id": self.network.NAME,
+            "network-id": self.network.name,
             "accept-disclaimer": self.accept_disclaimer,
-            "eth-rpc-endpoint": self.ethereum_client.rpc_endpoint,
+            "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,
             "routing-mode": self.routing_mode,
             "pathfinding-service-address": self.path_finding_service_url,
             "enable-monitoring": self.enable_monitoring,
@@ -129,39 +135,45 @@ class RaidenConfigurationFile:
 
     @property
     def file_name(self):
-        return "config-{self.account.address}-{self.network.NAME}-{self.ethereum_client.name}.toml"
+        return f"config-{self.account.address}-{self.network.name}.toml"
 
     @property
     def path(self):
-        return self.CONFIG_FOLDER_PATH.joinpath(self.file_name)
+        return self.FOLDER_PATH.joinpath(self.file_name)
 
     @property
     def passphrase_file_path(self):
-        return self.CONFIG_FOLDER_PATH.joinpath(
-            f"{self.account.address}.passphrase.txt"
-        )
+        return self.FOLDER_PATH.joinpath(f"{self.account.address}.passphrase.txt")
 
     @classmethod
     def get_available_configurations(cls):
-        config_glob = str(cls.CONFIG_FOLDER_PATH.joinpath("config-*.toml"))
+        config_glob = str(cls.FOLDER_PATH.joinpath("config-*.toml"))
 
         configurations = []
         for config_file_path in glob.glob(config_glob):
-            file_name, _ = os.path.splitext(os.path.basename(config_file_path))
+            try:
+                file_name, _ = os.path.splitext(os.path.basename(config_file_path))
 
-            _, address, network_name, ethereum_client_name = file_name.split("-")
+                _, address, network_name = file_name.split("-")
 
-            with Path(config_file_path).open() as config_file:
-                data = toml.load(config_file)
-                passphrase = Passphrase(data["password-file"]).retrieve()
+                with Path(config_file_path).open() as config_file:
+                    data = toml.load(config_file)
+                    passphrase = PassphraseFile(Path(data["password-file"])).retrieve()
 
-                configurations.append(
-                    cls(
-                        account=Account(data["keystore-path"], passphrase=passphrase),
-                        ethereum_client=EthereumClient.get_by_name(ethreum_client_name),
-                        network=Network.get_by_name(network_by_name),
+                    configurations.append(
+                        cls(
+                            account=Account(
+                                data["keystore-path"], passphrase=passphrase
+                            ),
+                            ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
+                            network=Network.get_by_name(network_name),
+                        )
                     )
+            except (ValueError, KeyError) as exc:
+                logger.warn(
+                    f"Failed to load {config_file_path} as configuration file: {exc}"
                 )
+
         return configurations
 
 
@@ -236,67 +248,40 @@ class RaidenClient:
         return [cls(release) for release in installed_releases]
 
 
-class EthereumClient:
-    @staticmethod
-    def get_by_name(name):
-        return {"geth": Geth, "parity": Parity, "infura": Infura}[name]
-
-    @classmethod
-    def get_data_folder_path(cls) -> Path:
-        home = Path.home()
-
-        if sys.platform == "darwin":
-            folder_path = home.joinpath("Library", "Ethereum")
-        elif sys.platform in ("win32", "cygwin"):
-            folder_path = home.joinpath("AppData", "Roaming", "Ethereum")
-        elif os.name == "posix":
-            folder_path = home.joinpath(".ethereum")
-        else:
-            raise RuntimeError("Unsupported Operating System")
-
-        if not folder_path.is_dir():
-            raise ValueError("{folder_path} is not a directory")
-        return folder_path
-
-
-class Geth(EthereumClient):
-    pass
-
-
-class Parity(EthereumClient):
-    pass
-
-
-class Infura(EthereumClient):
-    pass
-
-
 class Network:
     MININUM_ETHEREUM_BALANCE_REQUIRED = 0.1
     CONTRACT_TOKEN_NAME = CONTRACT_CUSTOM_TOKEN
     FUNDING_TOKEN_AMOUNT = 0
-    NAME = None
+    CHAIN_ID_MAPPING = {
+        "mainnet": 1,
+        "ropsten": 3,
+        "rinkeby": 4,
+        "goerli": 5,
+        "kovan": 42,
+    }
 
-    @classmethod
-    def fund(cls, account):
-        raise NotImplementedError
+    def __init__(self, name):
+        self.name = name
+        self.chain_id = self.CHAIN_ID_MAPPING[name.lower()]
 
-    @classmethod
-    def mint_token(self, account, token, amount):
-        pass
-
-    @classmethod
-    def get_user_deposit_address(cls):
-        contracts = get_contracts_deployment_info(cls.CHAIN_ID)["contracts"]
+    @property
+    def user_deposit_address(self):
+        contracts = get_contracts_deployment_info(self.chain_id)["contracts"]
         return contracts[CONTRACT_USER_DEPOSIT]["address"]
+
+    @staticmethod
+    def get_by_name(name):
+
+        network_class = {"goerli": Goerli}.get(name, Network)
+
+        return network_class(name)
 
 
 class Goerli(Network):
     FUNDING_TOKEN_AMOUNT = 10 ** 18
-    NAME = "goerli"
 
-    @classmethod
-    def fund(cls, account):
+    @staticmethod
+    def fund(account):
         client_hash = hashlib.sha256(uuid.getnode().encode()).hexdigest()
 
         requests.post(

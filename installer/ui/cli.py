@@ -61,6 +61,11 @@ def list_installed_releases():
     return main_prompt()
 
 
+def run_action_configuration_list():
+    for config in base.RaidenConfigurationFile.get_available_configurations():
+        print(config.short_description)
+
+
 def run_action_release_manager():
     release_selection = prompt(
         {
@@ -225,6 +230,7 @@ def run():
         action = {
             Messages.action_launch_raiden: run_action_launch_raiden,
             Messages.action_configuration_create: set_new_config_prompt,
+            Messages.action_configuration_list: run_action_configuration_list,
             Messages.action_account_create: set_new_account_prompt,
             Messages.action_release_list_installed: list_installed_releases,
             Messages.action_release_install_latest: install_latest_release,

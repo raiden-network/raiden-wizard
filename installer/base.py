@@ -19,7 +19,7 @@ from raiden_contracts.contract_manager import get_contracts_deployment_info
 import requests
 import toml
 from xdg import XDG_DATA_HOME
-
+from web3 import Web3, HTTPProvider
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,10 @@ class Account:
     @property
     def address(self):
         return self.content.get("address")
+
+    def get_balance(self, ethereum_rpc_endpoint):
+        w3 = Web3(HTTPProvider(ethereum_rpc_endpoint))
+        return w3.eth.getBalance(to_checksum_address(self.address))
 
     @classmethod
     def create(cls, passphrase):
@@ -219,6 +223,14 @@ class RaidenClient:
     def install_path(self):
         return Path(self.BINARY_FOLDER_PATH).joinpath(self.binary_name)
 
+    @property
+    def balance(self):
+        return self.account.get_balance(self.ethereum_client_rpc_endpoint)
+
+    @property
+    def has_funds(self):
+        return self.balance >= self.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
+
     def _extract_zip(self, compressed_data):
         zipped = zipfile.ZipFile(compressed_data)
         zipped.extract(zipped.filelist[0], path=self.install_path)
@@ -249,7 +261,7 @@ class RaidenClient:
 
 
 class Network:
-    MININUM_ETHEREUM_BALANCE_REQUIRED = 0.1
+    MININUM_ETHEREUM_BALANCE_REQUIRED = 0.01
     CONTRACT_TOKEN_NAME = CONTRACT_CUSTOM_TOKEN
     FUNDING_TOKEN_AMOUNT = 0
     CHAIN_ID_MAPPING = {

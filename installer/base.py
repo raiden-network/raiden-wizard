@@ -189,7 +189,7 @@ class RaidenConfigurationFile:
 
     @property
     def short_description(self):
-        account_description = f"{self.account.address} ({self.balance})"
+        account_description = f"{self.account.address} (Balance: {self.balance})"
         network_description = (
             f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
         )

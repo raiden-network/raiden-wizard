@@ -45,8 +45,6 @@ class PassphraseFile:
 
 
 class Account:
-    KEYSTORE_FOLDER_PATH = XDG_DATA_HOME
-
     def __init__(self, keystore_file_path: Path, passphrase: Optional[str] = None):
         self.passphrase = passphrase
         self.keystore_file_path = Path(keystore_file_path)
@@ -79,7 +77,7 @@ class Account:
         )
         uid = uuid.uuid4()
 
-        keystore_file_path = Path(cls.KEYSTORE_FOLDER_PATH).joinpath(
+        keystore_file_path = Path(cls.find_keystore_folder_path()).joinpath(
             f"UTC--{time_stamp}Z--{uid}"
         )
 
@@ -93,8 +91,24 @@ class Account:
         return cls(keystore_file_path, passphrase=passphrase)
 
     @classmethod
+    def find_keystore_folder_path(cls):
+        home = Path.home()
+
+        if sys.platform == "darwin":
+            return home.joinpath("Library", "Ethereum", "keystore")
+        elif sys.platform in ("win32", "cygwin"):
+            return home.joinpath("AppData", "Roaming", "Ethereum", "keystore")
+        elif os.name == "posix":
+            return home.joinpath(".ethereum", "keystore")
+        else:
+            raise RuntimeError("Unsupported Operating System")
+
+    @classmethod
     def get_user_accounts(cls):
-        pass
+        keystore_glob = glob.glob(
+            str(cls.find_keystore_folder_path().joinpath("UTC--*"))
+        )
+        return [cls(keystore_file_path=Path(f)) for f in keystore_glob]
 
 
 class RaidenConfigurationFile:
@@ -231,6 +245,14 @@ class RaidenClient:
     def has_funds(self):
         return self.balance >= self.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
 
+    @property
+    def short_description(self):
+        account_description = f"{self.account.address} ({self.balance})"
+        network_description = (
+            f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
+        )
+        return " - ".join((account_description, network_description))
+
     def _extract_zip(self, compressed_data):
         zipped = zipfile.ZipFile(compressed_data)
         zipped.extract(zipped.filelist[0], path=self.install_path)
@@ -282,10 +304,12 @@ class Network:
         return contracts[CONTRACT_USER_DEPOSIT]["address"]
 
     @staticmethod
+    def get_network_names():
+        return list(Network.CHAIN_ID_MAPPING.keys())
+
+    @staticmethod
     def get_by_name(name):
-
         network_class = {"goerli": Goerli}.get(name, Network)
-
         return network_class(name)
 
 

@@ -275,7 +275,7 @@ def set_new_account_prompt():
     return main_prompt()
 
 
-def run():
+def main():
     current_prompt = main_prompt()
     while current_prompt:
         answer = single_question_prompt(current_prompt)
@@ -289,3 +289,7 @@ def run():
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)
         current_prompt = action()
+
+
+if __name__ == "__main__":
+    main()

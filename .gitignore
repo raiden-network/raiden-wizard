@@ -1,3 +1,6 @@
+# OS
+.DS_Store
+
 # ignore private keys
 *.pem
 
@@ -78,6 +81,7 @@ target/
 # editors
 .idea
 .vscode
+*.code-workspace
 
 # Our logs
 raiden-debug_*.log
@@ -88,3 +92,4 @@ raiden-debug_*.log
 
 # venvs
 venv/
+.venv

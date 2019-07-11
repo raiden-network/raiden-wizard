@@ -6,10 +6,9 @@ from .. import base
 class Messages:
     action_launch_raiden = "Launch raiden"
     action_account_create = "Create new ethereum account"
-    action_account_list = "List existing accounts"
+    action_account_list = "List existing ethereum accounts"
     action_configuration_create = "Create new raiden setup"
     action_configuration_list = "List existing raiden setups"
-    action_release_install_latest = "Install latest raiden release"
     action_release_manager = "Install/Uninstall raiden releases"
     action_release_list_installed = "List installed raiden releases"
     action_release_update_info = "Check for updates in raiden"
@@ -24,17 +23,22 @@ class Messages:
     input_ethereum_rpc_endpoint = "Please provide the URL of your ethereum client RPC:"
 
 
+def single_question_prompt(question_data: dict):
+    key = "single_question"
+    question_data["name"] = key
+
+    return prompt(question_data).get(key)
+
+
+def print_invalid_option():
+    print("Invalid option. Try again")
+
+
 def main_prompt():
 
     configuration_choices = [Messages.action_configuration_create]
     account_choices = [Messages.action_account_create]
     raiden_release_management_choices = [Messages.action_release_manager]
-
-    latest_release = base.RaidenClient.get_latest_release()
-    if not latest_release.is_installed:
-        raiden_release_management_choices.insert(
-            0, Messages.action_release_install_latest
-        )
 
     if base.RaidenConfigurationFile.get_launchable_configurations():
         configuration_choices.insert(0, Messages.action_launch_raiden)
@@ -43,7 +47,7 @@ def main_prompt():
         configuration_choices.append(Messages.action_configuration_list)
 
     if base.Account.get_user_accounts():
-        account_choices.insert(0, Messages.action_account_list)
+        account_choices.append(Messages.action_account_list)
 
     available_choices = (
         configuration_choices + account_choices + raiden_release_management_choices
@@ -56,13 +60,6 @@ def main_prompt():
         "message": "What would you like to do?",
         "choices": available_choices,
     }
-
-
-def list_installed_releases():
-    for raiden in base.RaidenClient.get_available_releases():
-        print(f"{raiden.release} - Installed: {'Y' if raiden.is_installed else 'N'}")
-
-    return main_prompt()
 
 
 def run_action_configuration_list():
@@ -112,31 +109,6 @@ def run_action_release_manager():
         base.RaidenClient(release).uninstall()
 
     return main_prompt()
-
-
-def install_latest_release():
-    latest = base.RaidenClient.get_latest_release()
-    if latest.is_installed:
-        print(f"Raiden {latest.release} is already installed")
-    else:
-        print(
-            f"Downloading and installing raiden {latest.release}. This may take some time"
-        )
-        latest.install()
-        print("Installation Complete")
-
-    return main_prompt()
-
-
-def single_question_prompt(question_data: dict):
-    key = "single_question"
-    question_data["name"] = key
-
-    return prompt(question_data).get(key)
-
-
-def print_invalid_option():
-    print("Invalid option. Try again")
 
 
 def run_action_account_list():
@@ -283,8 +255,6 @@ def run():
             Messages.action_configuration_list: run_action_configuration_list,
             Messages.action_account_create: set_new_account_prompt,
             Messages.action_account_list: run_action_account_list,
-            Messages.action_release_list_installed: list_installed_releases,
-            Messages.action_release_install_latest: install_latest_release,
             Messages.action_release_manager: run_action_release_manager,
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)

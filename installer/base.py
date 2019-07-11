@@ -188,12 +188,22 @@ class RaidenConfigurationFile:
         return self.account.get_balance(self.ethereum_client_rpc_endpoint)
 
     @property
+    def is_launchable(self):
+        return self.balance >= self.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
+
+    @property
     def short_description(self):
-        account_description = f"{self.account.address} (Balance: {self.balance})"
+        account_description = (
+            f"Account {self.account.address} (Balance: {self.balance})"
+        )
         network_description = (
             f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
         )
-        return " - ".join((account_description, network_description))
+        return " - ".join((str(self.path), account_description, network_description))
+
+    @classmethod
+    def get_launchable_configurations(cls):
+        return [cfg for cfg in cls.get_available_configurations() if cfg.is_launchable]
 
     @classmethod
     def get_available_configurations(cls):
@@ -279,10 +289,6 @@ class RaidenClient:
     def install_path(self):
         return Path(self.BINARY_FOLDER_PATH).joinpath(self.binary_name)
 
-    @property
-    def has_funds(self):
-        return self.balance >= self.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
-
     def _extract_zip(self, compressed_data, destination_path):
         zipped = zipfile.ZipFile(compressed_data)
         zipped.extract(zipped.filelist[0], path=destination_path)
@@ -318,7 +324,7 @@ class RaidenClient:
 
 
 class Network:
-    MININUM_ETHEREUM_BALANCE_REQUIRED = 0.01
+    MINIMUM_ETHEREUM_BALANCE_REQUIRED = 0.01
     CONTRACT_TOKEN_NAME = CONTRACT_CUSTOM_TOKEN
     FUNDING_TOKEN_AMOUNT = 0
     CHAIN_ID_MAPPING = {

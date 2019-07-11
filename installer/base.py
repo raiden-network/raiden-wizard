@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import glob
 import gzip
@@ -27,6 +28,18 @@ logger = logging.getLogger(__name__)
 
 class InstallerError(Exception):
     pass
+
+
+# Type annotation not accepting Network maybe because the Network class is declared later
+def build_infura_url(network, project_id: str) -> str:
+    try:
+        # Check whether proj_id matches a hexadecimal string
+        project_id = re.match(r"^[a-fA-F0-9]+$", project_id.strip())[0]
+
+        eth_rpc = f"https://{network}.infura.io/v3/{project_id}"
+        return eth_rpc
+    except TypeError as err:
+        print("Not a valid project ID")
 
 
 class PassphraseFile:
@@ -143,7 +156,7 @@ class RaidenConfigurationFile:
         if not self.account.check_passphrase(self.account.passphrase):
             raise ValueError("no valid passphrase for account collected")
 
-        self.FOLDER_PATH.mkdir(exist_ok=True)
+        self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
         passphrase_file = PassphraseFile(self.passphrase_file_path)
         passphrase_file.store(self.account.passphrase)

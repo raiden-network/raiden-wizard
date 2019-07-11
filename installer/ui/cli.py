@@ -6,20 +6,32 @@ from .. import base
 class Messages:
     action_launch_raiden = "Launch raiden"
     action_account_create = "Create new ethereum account"
-    action_account_list = "List existing accounts"
+    action_account_list = "List existing ethereum accounts"
     action_configuration_create = "Create new raiden setup"
     action_configuration_list = "List existing raiden setups"
-    action_release_install_latest = "Install latest raiden release"
     action_release_manager = "Install/Uninstall raiden releases"
     action_release_list_installed = "List installed raiden releases"
     action_release_update_info = "Check for updates in raiden"
     action_quit = "Quit this raiden launcher"
     input_account_verify_passphrase = "Please provide the passphrase"
-    input_release_manager = "Check/Uncheck all releases you want to install/unsinstall"
+    input_launch_configuration = "Select setup to launch raiden"
+    input_launch_release = "Select raiden version to be run"
+    input_release_manager = "Check/Uncheck all releases you want to install/uninstall"
     input_passphrase = "Please provide a passphrase:"
     input_use_infura = "Use infura.io for ethereum chain operations?"
     input_ethereum_infura_project_id = "Please provide your Infura Project Id:"
     input_ethereum_rpc_endpoint = "Please provide the URL of your ethereum client RPC:"
+
+
+def single_question_prompt(question_data: dict):
+    key = "single_question"
+    question_data["name"] = key
+
+    return prompt(question_data).get(key)
+
+
+def print_invalid_option():
+    print("Invalid option. Try again")
 
 
 def main_prompt():
@@ -28,18 +40,14 @@ def main_prompt():
     account_choices = [Messages.action_account_create]
     raiden_release_management_choices = [Messages.action_release_manager]
 
-    latest_release = base.RaidenClient.get_latest_release()
-    if not latest_release.is_installed:
-        raiden_release_management_choices.insert(
-            0, Messages.action_release_install_latest
-        )
+    if base.RaidenConfigurationFile.get_launchable_configurations():
+        configuration_choices.insert(0, Messages.action_launch_raiden)
 
     if base.RaidenConfigurationFile.get_available_configurations():
-        configuration_choices.insert(0, Messages.action_launch_raiden)
         configuration_choices.append(Messages.action_configuration_list)
 
     if base.Account.get_user_accounts():
-        account_choices.insert(0, Messages.action_account_list)
+        account_choices.append(Messages.action_account_list)
 
     available_choices = (
         configuration_choices + account_choices + raiden_release_management_choices
@@ -54,16 +62,15 @@ def main_prompt():
     }
 
 
-def list_installed_releases():
-    for raiden in base.RaidenClient.get_available_releases():
-        print(f"{raiden.release} - Installed: {'Y' if raiden.is_installed else 'N'}")
-
-    return main_prompt()
-
-
 def run_action_configuration_list():
+    print(
+        "\nAvailable setups (Not necessarily satisfying conditions for running raiden)\n"
+    )
     for config in base.RaidenConfigurationFile.get_available_configurations():
-        print(config.short_description)
+        print("\t", config.short_description)
+
+    print("\n")
+    return main_prompt()
 
 
 def run_action_release_manager():
@@ -86,7 +93,16 @@ def run_action_release_manager():
 
     for release in to_install:
         print(f"Installing {release}. This might take some time...")
-        base.RaidenClient(release).install()
+        try:
+            raiden_client = base.RaidenClient(release)
+            raiden_client.install()
+        except (base.InstallerError, OSError) as exc:
+            print(f"Failed to install {release}: {exc}")
+            try:
+                base.RaidenClient.get_available_releases.clear_cache()
+                raiden_client.install_path().unlink()
+            except Exception:
+                pass
 
     for release in to_uninstall:
         print(f"Uninstalling {release}")
@@ -95,40 +111,46 @@ def run_action_release_manager():
     return main_prompt()
 
 
-def install_latest_release():
-    latest = base.RaidenClient.get_latest_release()
-    if latest.is_installed:
-        print(f"Raiden {latest.release} is already installed")
-    else:
-        print(
-            f"Downloading and installing raiden {latest.release}. This may take some time"
-        )
-        latest.install()
-        print("Installation Complete")
+def run_action_account_list():
+    print("\nAvailable accounts:\n")
+    for account in base.Account.get_user_accounts():
+        print("\t", account.keystore_file_path, account.address)
 
+    print("\n")
     return main_prompt()
 
 
-def single_question_prompt(question_data: dict):
-    key = "single_question"
-    question_data["name"] = key
-
-    return prompt(question_data).get(key)
-
-
-def print_invalid_option():
-    print("Invalid option. Try again")
-
-
 def run_action_launch_raiden():
-    return {
-        "type": "list",
-        "message": "These are the available setups to launch raiden",
-        "choices": [
-            f"{cfg.short_description}"
-            for cfg in base.RaidenConfigurationFile.get_available_configurations()
-        ],
-    }
+    selected_setup = prompt(
+        [
+            {
+                "name": "configuration",
+                "type": "list",
+                "message": Messages.input_launch_configuration,
+                "choices": [
+                    {"name": f"{cfg.short_description}", "value": cfg}
+                    for cfg in base.RaidenConfigurationFile.get_launchable_configurations()
+                ],
+            },
+            {
+                "name": "raiden",
+                "type": "list",
+                "message": Messages.input_launch_release,
+                "choices": [
+                    {"name": raiden.release, "value": raiden}
+                    for raiden in base.RaidenClient.get_installed_releases()
+                ],
+                "filter": lambda answer: base.RaidenClient(answer),
+            },
+        ]
+    )
+
+    raiden = selected_setup["raiden"]
+    configuration = selected_setup["configuration"]
+
+    print("Launching raiden...")
+    raiden.launch(configuration)
+    print("Launch successful...")
 
 
 def set_new_config_prompt():
@@ -232,8 +254,7 @@ def run():
             Messages.action_configuration_create: set_new_config_prompt,
             Messages.action_configuration_list: run_action_configuration_list,
             Messages.action_account_create: set_new_account_prompt,
-            Messages.action_release_list_installed: list_installed_releases,
-            Messages.action_release_install_latest: install_latest_release,
+            Messages.action_account_list: run_action_account_list,
             Messages.action_release_manager: run_action_release_manager,
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)

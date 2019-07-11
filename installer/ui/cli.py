@@ -1,4 +1,4 @@
-from whaaaaat import prompt
+from whaaaaat import prompt, Validator, ValidationError
 
 from .. import base
 
@@ -21,6 +21,35 @@ class Messages:
     input_use_infura = "Use infura.io for ethereum chain operations?"
     input_ethereum_infura_project_id = "Please provide your Infura Project Id:"
     input_ethereum_rpc_endpoint = "Please provide the URL of your ethereum client RPC:"
+
+
+# FIXME: Some issues with the whaaaaat library and the `validate` property of
+# the `question` method not working as described and causing different types of
+# errors.
+
+# Digging a little bit on the documentation and you can find these Validator
+# classes should be used by raising a ValidationError. To overcome these
+# issues, the current method employed consists of
+# - implementing the validator class
+# - adding the validator class as `validator` to the question dict
+# - Using the function `validate_prompt` instead of simple `prompt`
+class InfuraProjectIdValidator(Validator):
+    def validate(self):
+        error_message = "A Infura Project ID is a sequence of 32 hex characters long"
+        if not base.is_valid_infura_project_id(self.text):
+            raise ValidationError(error_message)
+
+
+def validate_prompt(questions, error_message=None):
+    is_validated = False
+    while not is_validated:
+        try:
+            answers = prompt(questions)
+            is_validated = True
+        except (ValidationError, TypeError):
+            msg = error_message or "Error validating provided information, try again."
+            print(msg)
+    return answers
 
 
 def single_question_prompt(question_data: dict):
@@ -204,10 +233,12 @@ def set_new_config_prompt():
             "message": Messages.input_use_infura,
         },
         {
-            "name": "ethereum_rpc_endpoint",
+            "name": "infura_project_id",
             "type": "input",
             "message": Messages.input_ethereum_infura_project_id,
             "when": lambda answers: answers["will_use_infura"],
+            "filter": lambda answer: answer.strip(),
+            "validator": InfuraProjectIdValidator,
         },
         {
             "name": "ethereum_rpc_endpoint",
@@ -217,12 +248,11 @@ def set_new_config_prompt():
         },
     ]
 
-    ethereum_rpc_answers = prompt(ethereum_rpc_questions)
+    ethereum_rpc_answers = validate_prompt(ethereum_rpc_questions)
 
     if ethereum_rpc_answers["will_use_infura"]:
-        project_id = ethereum_rpc_answers["ethereum_rpc_endpoint"]
-
-        client_rpc_endpoint = f"https://{network.name}.infura.io/v3/{project_id}"
+        project_id = ethereum_rpc_answers["infura_project_id"]
+        client_rpc_endpoint = base.build_infura_url(network, project_id)
     else:
         client_rpc_endpoint = ethereum_rpc_answers["ethereum_rpc_endpoint"]
 

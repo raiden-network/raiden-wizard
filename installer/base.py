@@ -365,3 +365,16 @@ class Goerli(Network):
             "https://faucet.workshop.raiden.network/",
             json={"address": account.address, "client_hash": client_hash},
         )
+
+
+def build_infura_url(network: Network, project_id: str) -> str:
+    return f"https://{network.name}.infura.io/v3/{project_id}"
+
+
+def is_valid_infura_project_id(id_string: str) -> bool:
+    try:
+        # It should an hex string
+        int(id_string, 16)
+        return len(id_string) == 32
+    except ValueError:
+        return False

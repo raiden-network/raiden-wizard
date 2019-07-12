@@ -143,7 +143,7 @@ class RaidenConfigurationFile:
         if not self.account.check_passphrase(self.account.passphrase):
             raise ValueError("no valid passphrase for account collected")
 
-        self.FOLDER_PATH.mkdir(exist_ok=True)
+        self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
         passphrase_file = PassphraseFile(self.passphrase_file_path)
         passphrase_file.store(self.account.passphrase)

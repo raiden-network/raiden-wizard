@@ -7,6 +7,7 @@ class Messages:
     action_launch_raiden = "Launch raiden"
     action_account_create = "Create new ethereum account"
     action_account_list = "List existing ethereum accounts"
+    action_account_fund = "Add funds to account (some test networks only)"
     action_configuration_create = "Create new raiden setup"
     action_configuration_list = "List existing raiden setups"
     action_release_manager = "Install/Uninstall raiden releases"
@@ -14,6 +15,8 @@ class Messages:
     action_release_update_info = "Check for updates in raiden"
     action_quit = "Quit this raiden launcher"
     input_account_verify_passphrase = "Please provide the passphrase"
+    input_account_fund_select_account = "Please select which account to fund"
+    input_account_fund_select_network = "Which ethereum network to use?"
     input_launch_configuration = "Select setup to launch raiden"
     input_launch_release = "Select raiden version to be run"
     input_release_manager = "Check/Uncheck all releases you want to install/uninstall"
@@ -77,6 +80,7 @@ def main_prompt():
 
     if base.Account.get_user_accounts():
         account_choices.append(Messages.action_account_list)
+        account_choices.append(Messages.action_account_fund)
 
     available_choices = (
         configuration_choices + account_choices + raiden_release_management_choices
@@ -146,6 +150,44 @@ def run_action_account_list():
         print("\t", account.keystore_file_path, account.address)
 
     print("\n")
+    return main_prompt()
+
+
+def run_action_account_fund():
+    questions = [
+        {
+            "name": "account",
+            "type": "list",
+            "message": Messages.input_account_fund_select_account,
+            "choices": [
+                {"name": account.address, "value": account}
+                for account in base.Account.get_user_accounts()
+            ],
+        },
+        {
+            "name": "network",
+            "type": "list",
+            "message": Messages.input_account_fund_select_network,
+            "choices": [
+                {"name": network.capitalized_name, "value": network}
+                for network in base.Network.all()
+                if network.FAUCET_AVAILABLE
+            ],
+        },
+    ]
+
+    answers = prompt(questions)
+
+    account = answers["account"]
+    network = answers["network"]
+
+    print(f"Attempting to add funds to {account.address} on {network.capitalized_name}")
+
+    try:
+        network.fund(account)
+    except base.FundingError as exc:
+        print(f"Failed: {exc}")
+
     return main_prompt()
 
 
@@ -285,6 +327,7 @@ def main():
             Messages.action_configuration_list: run_action_configuration_list,
             Messages.action_account_create: set_new_account_prompt,
             Messages.action_account_list: run_action_account_list,
+            Messages.action_account_fund: run_action_account_fund,
             Messages.action_release_manager: run_action_release_manager,
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)

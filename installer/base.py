@@ -29,6 +29,10 @@ class InstallerError(Exception):
     pass
 
 
+class FundingError(Exception):
+    pass
+
+
 class PassphraseFile:
     # FIXME: Right now we are writing/reading to a plain text file, which
     # may be a security risk and put the user's funds at risk.
@@ -327,6 +331,7 @@ class Network:
     MINIMUM_ETHEREUM_BALANCE_REQUIRED = 0.01
     CONTRACT_TOKEN_NAME = CONTRACT_CUSTOM_TOKEN
     FUNDING_TOKEN_AMOUNT = 0
+    FAUCET_AVAILABLE = False
     CHAIN_ID_MAPPING = {
         "mainnet": 1,
         "ropsten": 3,
@@ -344,27 +349,57 @@ class Network:
         contracts = get_contracts_deployment_info(self.chain_id)["contracts"]
         return contracts[CONTRACT_USER_DEPOSIT]["address"]
 
+    @property
+    def capitalized_name(self):
+        return self.name.capitalize()
+
+    def fund(self, account):
+        raise NotImplementedError(
+            "Each network should implement its own method to fund an account"
+        )
+
     @staticmethod
     def get_network_names():
         return list(Network.CHAIN_ID_MAPPING.keys())
 
     @staticmethod
+    def all():
+        return [Network.get_by_name(n) for n in Network.get_network_names()]
+
+    @staticmethod
     def get_by_name(name):
-        network_class = {"goerli": Goerli}.get(name, Network)
+        network_class = {"goerli": Goerli, "ropsten": Ropsten}.get(name, Network)
         return network_class(name)
 
 
 class Goerli(Network):
     FUNDING_TOKEN_AMOUNT = 10 ** 18
+    FAUCET_AVAILABLE = True
 
-    @staticmethod
-    def fund(account):
-        client_hash = hashlib.sha256(uuid.getnode().encode()).hexdigest()
+    def fund(self, account):
+        try:
+            client_hash = hashlib.sha256(str(uuid.getnode()).encode()).hexdigest()
+            response = requests.post(
+                "https://faucet.workshop.raiden.network/",
+                json={"address": account.address, "client_hash": client_hash},
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            raise FundingError(f"Failed to get funds from faucet: {exc}")
 
-        requests.post(
-            "https://faucet.workshop.raiden.network/",
-            json={"address": account.address, "client_hash": client_hash},
-        )
+
+class Ropsten(Network):
+    FUNDING_TOKEN_AMOUNT = 0
+    FAUCET_AVAILABLE = True
+
+    def fund(self, account):
+        try:
+            response = requests.get(
+                f"https://faucet.ropsten.be/donate/{account.address}"
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            raise FundingError(f"Failed to get funds from faucet: {exc}")
 
 
 def build_infura_url(network: Network, project_id: str) -> str:

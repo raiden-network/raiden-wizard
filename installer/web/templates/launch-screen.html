@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div>
+    <ul>
+        {% for configuration_file in configuration_files %}
+        <li>
+            0x{{ configuration_file.account.address }}
+            <ul>
+                <li>Balance: {{ configuration_file.balance }}&nbsp;&nbsp;&nbsp;&nbsp;Network: {{ configuration_file.network.name}}</li>
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

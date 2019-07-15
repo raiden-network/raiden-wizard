@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+{% if configuration_files %}
+<h2>Launch from given configuration files</h2>
+<ul>
+{% for conf_file in configuration_files %}
+  <li>
+    <span class="configuration-file-name">{{ conf_file.short_description }}</span>
+    <form action="{{ url_for('launch', configuration_file_name=conf_file.file_name) }}" method="POST">
+      <button type="submit">Launch</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2>Quick Setup</h2>
+<div class="configuration-wizard">
+  <form action="{{ url_for('launch') }}" method="POST">
+    <span>Infura Project Id (or valid URL for your own ethereum rpc client)</span>
+    <input name="network-name" type="hidden" value="goerli" />
+    <input name="rpc-or-infura-project-id" type="text" />    
+    <button type="submit">Launch</button>
+  </form>
+</div>
+  <!--
+       <form method="POST">
+       <div id="keystore">
+       <div class="heading-wrapper">
+       <div class="heading">
+       <h1>Choose a keystore password</h1>
+       </div>
+       <div class="description">
+       <p>Do not forget this password, there are no options for recovering a lost password.</p>
+       </div>
+       </div>
+       <div class="keystore-input-wrapper">
+       <div class="pwd-input">
+       <input class="pwd" type="password" name="keystore-pwd" data-lpignore="true" onfocus="enableButtons(event)" onblur="inputValidation(event)">
+       </div>
+       <div class="pwd-error">
+       <p>Please provide a password</p>
+       </div>
+       </div>
+       <div class="button-wrapper">
+       <button id="to-eth-rpc" type="button" disabled onclick="inputToggle('eth-rpc')">Next</button>
+       </div>
+       </div>
+
+       <div id="eth-rpc">
+       <div class="heading-wrapper">
+       <div class="heading">
+       <h1>Enter your Infura Project ID</h1>
+       </div>
+       <div class="description">
+       <p>Don't have a Infura account? Sign up here to create one and get a projct ID.</p>
+       </div>
+       </div>
+       <div class="eth-rpc-input-wrapper">
+       <div class="proj-id-input">
+       <input type="text" name="proj-id" data-lpignore="true" onfocus="enableButtons(event)" onblur="inputValidation(event)">
+       </div>
+       <div class="proj-id-error">
+       <p>Not a valid Infura Project ID</p>
+       </div>
+       </div>
+       <div class="button-wrapper">
+       <button class="keystore-btn" type="button" onclick="inputToggle('keystore')">Back</button>
+       <button class="installation-btn" id="to-installation" type="submit" disabled onclick="inputToggle('installation')">Install</button>
+       </div>
+       </div>
+
+       <div id="installation">
+       <div>
+       </div>
+       <div class="spinner-wrapper">
+       <div class="spinner"></div>
+       </div>
+       <div class="installation-progress">
+       <p>Downloading and preparing Raiden, this might take a couple of minutes.</p>
+       </div>
+       </div>
+       </form> -->
+{% endblock %}

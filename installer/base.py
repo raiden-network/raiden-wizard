@@ -6,12 +6,19 @@ import hashlib
 import logging
 import json
 import uuid
+import time
 import functools
+import random
 from io import BytesIO
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
+import socket
+import string
+import subprocess
 from typing import Optional
 from urllib.parse import urlparse
+import tarfile
 import zipfile
 
 from raiden_contracts.contract_manager import (
@@ -29,6 +36,12 @@ from web3 import Web3, HTTPProvider
 from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
 
 logger = logging.getLogger(__name__)
+
+
+def make_random_string(length=32):
+    return "".join(
+        random.choice(string.ascii_letters + string.digits) for _ in range(length)
+    )
 
 
 class InstallerError(Exception):
@@ -109,7 +122,10 @@ class Account:
             raise ValueError("Invalid Passphrase")
 
     @classmethod
-    def create(cls, passphrase):
+    def create(cls, passphrase=None):
+        if passphrase is None:
+            passphrase = make_random_string()
+
         time_stamp = (
             datetime.utcnow().replace(microsecond=0).isoformat().replace(":", "-")
         )
@@ -158,6 +174,7 @@ class RaidenClient:
     DOWNLOADS_URL = "https://github.com/raiden-network/raiden/releases/download"
     BINARY_NAME_FORMAT = "raiden-{release}"
     LATEST_RELEASE = "v0.100.4"
+    WEB_UI_INDEX_URL = "http://127.0.0.1:5001"
 
     def __init__(self, release):
         self.release = release
@@ -169,10 +186,12 @@ class RaidenClient:
 
         download_url = self.get_download_url()
         download = requests.get(download_url)
+        download.raise_for_status()
 
         action = (
             self._extract_gzip if download_url.endswith("gz") else self._extract_zip
         )
+
         action(BytesIO(download.content), self.install_path)
         os.chmod(self.install_path, 0o770)
 
@@ -181,7 +200,22 @@ class RaidenClient:
             self.install_path.unlink()
 
     def launch(self, configuration_file):
-        pass
+
+        uri = urlparse(self.WEB_UI_INDEX_URL)
+        subprocess.Popen(
+            [str(self.install_path), "--config-file", str(configuration_file.path)]
+        )
+
+        while True:
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
+                logger.info("Waiting for raiden to start...")
+                time.sleep(1)
+                try:
+                    connected = sock.connect_ex((uri.netloc, uri.port)) == 0
+                    if connected:
+                        return
+                except socket.gaierror as exc:
+                    logger.error(exc)
 
     def get_download_url(self, system=None):
         system_platform = system or sys.platform
@@ -209,18 +243,22 @@ class RaidenClient:
         zipped.extract(zipped.filelist[0], path=destination_path)
 
     def _extract_gzip(self, compressed_data, destination_path):
-        with gzip.open(compressed_data) as compressed_file:
+        with tarfile.open(mode="r:*", fileobj=compressed_data) as tar:
             with destination_path.open("wb") as binary_file:
-                binary_file.write(compressed_file.read())
+                binary_file.write(tar.extractfile(tar.getmembers()[0]).read())
 
     @classmethod
     def get_latest_release(cls):
-        return cls.get_available_releases()[0]
+        try:
+            return cls.get_available_releases()[0]
+        except Exception:
+            return cls(cls.LATEST_RELEASE)
 
     @classmethod
     @functools.lru_cache()
     def get_available_releases(cls):
         response = requests.get(cls.RELEASES_URL)
+        response.raise_for_status()
         return [cls(release.get("tag_name")) for release in response.json()]
 
     @classmethod
@@ -276,6 +314,16 @@ class Network:
         return [Network.get_by_name(n) for n in Network.get_network_names()]
 
     @staticmethod
+    def get_by_chain_id(chain_id):
+        return Network.get_by_name(
+            [
+                name
+                for name, cid in Network.CHAIN_ID_MAPPING.items()
+                if cid == chain_id
+            ].pop()
+        )
+
+    @staticmethod
     def get_by_name(name):
         network_class = {"goerli": Goerli, "ropsten": Ropsten}.get(name, Network)
         return network_class(name)
@@ -286,7 +334,8 @@ class Goerli(Network):
 
     def fund(self, account):
         try:
-            client_hash = hashlib.sha256(str(uuid.getnode()).encode()).hexdigest()
+            # client_hash = hashlib.sha256(str(uuid.getnode()).encode()).hexdigest()
+            client_hash = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
             response = requests.post(
                 "https://faucet.workshop.raiden.network/",
                 json={"address": account.address, "client_hash": client_hash},
@@ -350,6 +399,12 @@ class Infura(EthereumRPCProvider):
     def project_id(self):
         return self.url.split("/")[-1]
 
+    @classmethod
+    def make(cls, network: Network, project_id: str):
+        return cls(
+            cls.URL_PATTERN.format(network_name=network.name, project_id=project_id)
+        )
+
     @staticmethod
     def is_valid_project_id(id_string: str) -> bool:
         try:
@@ -364,15 +419,15 @@ class Token:
     TOKEN_AMOUNT = 10 ** 18
     USER_DEPOSIT_CONTRACT_NAME = CONTRACT_USER_DEPOSIT
     CUSTOM_TOKEN_CONTRACT_NAME = CONTRACT_CUSTOM_TOKEN
-    GAS_PRICE = 2_000_000_000
 
     GAS_REQUIRED_FOR_APPROVE = 70_000
     GAS_REQUIRED_FOR_DEPOSIT = 200_000
 
-    def __init__(self, ethereum_rpc_endppoint, account):
-        web3_provider = account.get_web3_provider(ethereum_rpc_endppoint)
-        user_deposit_contract_address = self._get_deposit_contract_address(
-            web3_provider
+    def __init__(self, ethereum_rpc_endpoint, account):
+        web3_provider = account.get_web3_provider(ethereum_rpc_endpoint)
+        network = Network.get_by_chain_id(int(web3_provider.net.version))
+        user_deposit_contract_address = network.get_contract_address(
+            self.USER_DEPOSIT_CONTRACT_NAME
         )
         deposit_proxy = self._get_proxy(
             web3_provider,
@@ -407,7 +462,7 @@ class Token:
             {
                 "chainId": chain_id,
                 "gas": gas_amount,
-                "gasPrice": self.web3_provider.eth.gasPrice,
+                "gasPrice": 2 * self.web3_provider.eth.gasPrice,
                 "nonce": self.web3_provider.eth.getTransactionCount(self.owner),
             }
         )
@@ -419,15 +474,7 @@ class Token:
 
         return self.web3_provider.eth.waitForTransactionReceipt(tx_hash)
 
-    def _get_deposit_contract_address(self, web3_provider):
-        chain_id = int(web3_provider.net.version)
-        return get_contracts_deployment_info(chain_id)["contracts"][
-            self.USER_DEPOSIT_CONTRACT_NAME
-        ]["address"]
-
     def _get_proxy(self, web3_provider, contract_name, contract_address):
-        chain_id = int(web3_provider.net.version)
-
         contract_manager = ContractManager(contracts_precompiled_path())
 
         return web3_provider.eth.contract(
@@ -462,13 +509,11 @@ class RaidenConfigurationFile:
         account: Account,
         network: Network,
         ethereum_client_rpc_endpoint: str,
-        token: Token,
         **kw,
     ):
         self.account = account
         self.network = network
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
-        self.token = token
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", True)
         self.routing_mode = kw.get("routing_mode", "pfs")
@@ -494,10 +539,13 @@ class RaidenConfigurationFile:
     def configuration_data(self):
         return {
             "environment-type": self.environment_type,
-            "keystore-path": str(self.account.keystore_file_path),
+            "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
+            "keystore-file-path": str(self.account.keystore_file_path),
             "address": to_checksum_address(self.account.address),
             "password-file": str(self.passphrase_file_path),
-            "user-deposit-contract-address": self.token.deposit_proxy.address,
+            "user-deposit-contract-address": self.network.get_contract_address(
+                CONTRACT_USER_DEPOSIT
+            ),
             "network-id": self.network.name,
             "accept-disclaimer": self.accept_disclaimer,
             "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,
@@ -544,28 +592,33 @@ class RaidenConfigurationFile:
         configurations = []
         for config_file_path in glob.glob(config_glob):
             try:
-                file_name, _ = os.path.splitext(os.path.basename(config_file_path))
-
-                _, address, network_name = file_name.split("-")
-
-                with Path(config_file_path).open() as config_file:
-                    data = toml.load(config_file)
-                    passphrase = PassphraseFile(Path(data["password-file"])).retrieve()
-                    account = Account(data["keystore-path"], passphrase=passphrase)
-                    configurations.append(
-                        cls(
-                            account=account,
-                            ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
-                            token=Token(data["eth-rpc-endpoint"], account),
-                            network=Network.get_by_name(network_name),
-                        )
-                    )
+                configurations.append(cls.load(Path(config_file_path)))
             except (ValueError, KeyError) as exc:
                 logger.warn(
                     f"Failed to load {config_file_path} as configuration file: {exc}"
                 )
 
         return configurations
+
+    @classmethod
+    def load(cls, file_path: Path):
+        file_name, _ = os.path.splitext(os.path.basename(file_path))
+
+        _, address, network_name = file_name.split("-")
+
+        with file_path.open() as config_file:
+            data = toml.load(config_file)
+            passphrase = PassphraseFile(Path(data["password-file"])).retrieve()
+            account = Account(data["keystore-file-path"], passphrase=passphrase)
+            return cls(
+                account=account,
+                ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
+                network=Network.get_by_name(network_name),
+            )
+
+    @classmethod
+    def get_by_filename(cls, file_name):
+        return cls.load(cls.FOLDER_PATH.joinpath(file_name))
 
     @classmethod
     def get_launchable_configurations(cls):
@@ -583,7 +636,3 @@ class RaidenConfigurationFile:
                     EthereumRPCProvider.make_from_url(data["eth-rpc-endpoint"])
                 )
         return endpoints
-
-
-def build_infura_url(network: Network, project_id: str) -> str:
-    return f"https://{network.name}.infura.io/v3/{project_id}"

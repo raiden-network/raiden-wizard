@@ -52,7 +52,8 @@ p {
 }
 
 .installer-window {
-    background: #141414;
+    background-color: white;
+    # background: #141414;
     grid-area: i;
 }
 

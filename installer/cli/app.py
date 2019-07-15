@@ -1,4 +1,5 @@
 from whaaaaat import prompt, Validator, ValidationError
+from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
 
 from .. import base
 
@@ -8,15 +9,17 @@ class Messages:
     action_account_create = "Create new ethereum account"
     action_account_list = "List existing ethereum accounts"
     action_account_fund = "Add funds to account (some test networks only)"
-    action_configuration_create = "Create new raiden setup"
+    action_configuration_setup = "Create new raiden setup"
     action_configuration_list = "List existing raiden setups"
     action_release_manager = "Install/Uninstall raiden releases"
     action_release_list_installed = "List installed raiden releases"
     action_release_update_info = "Check for updates in raiden"
     action_quit = "Quit this raiden launcher"
+    input_account_select = "Please select account"
+    input_network_select = "Which ethereum network to use?"
+
     input_account_verify_passphrase = "Please provide the passphrase"
-    input_account_fund_select_account = "Please select which account to fund"
-    input_account_fund_select_network = "Which ethereum network to use?"
+
     input_launch_configuration = "Select setup to launch raiden"
     input_launch_release = "Select raiden version to be run"
     input_release_manager = "Check/Uncheck all releases you want to install/uninstall"
@@ -39,7 +42,7 @@ class Messages:
 class InfuraProjectIdValidator(Validator):
     def validate(self):
         error_message = "A Infura Project ID is a sequence of 32 hex characters long"
-        if not base.is_valid_infura_project_id(self.text):
+        if not base.Infura.is_valid_project_id(self.text):
             raise ValidationError(error_message)
 
 
@@ -62,13 +65,62 @@ def single_question_prompt(question_data: dict):
     return prompt(question_data).get(key)
 
 
+def prompt_account_selection(validate_passphrase=True):
+
+    account = single_question_prompt(
+        {
+            "type": "list",
+            "message": Messages.input_account_select,
+            "choices": [
+                {"name": account.address, "value": account}
+                for account in base.Account.get_user_accounts()
+            ],
+        }
+    )
+
+    if validate_passphrase:
+        validated = False
+
+        while not validated:
+            try:
+                account.unlock(
+                    single_question_prompt(
+                        {
+                            "name": "passphrase",
+                            "type": "password",
+                            "message": Messages.input_account_verify_passphrase,
+                        }
+                    )
+                )
+                validated = True
+            except ValueError:
+                pass
+
+    return account
+
+
+def prompt_network_selection(network_list=None):
+    networks = network_list or base.Network.all()
+    return single_question_prompt(
+        {
+            "name": "network",
+            "type": "list",
+            "message": Messages.input_network_select,
+            "choices": [
+                {"name": network.capitalized_name, "value": network}
+                for network in networks
+            ],
+        }
+    )
+
+
 def print_invalid_option():
     print("Invalid option. Try again")
 
 
 def main_prompt():
 
-    configuration_choices = [Messages.action_configuration_create]
+    configuration_choices = [Messages.action_configuration_setup]
     account_choices = [Messages.action_account_create]
     raiden_release_management_choices = [Messages.action_release_manager]
 
@@ -154,32 +206,12 @@ def run_action_account_list():
 
 
 def run_action_account_fund():
-    questions = [
-        {
-            "name": "account",
-            "type": "list",
-            "message": Messages.input_account_fund_select_account,
-            "choices": [
-                {"name": account.address, "value": account}
-                for account in base.Account.get_user_accounts()
-            ],
-        },
-        {
-            "name": "network",
-            "type": "list",
-            "message": Messages.input_account_fund_select_network,
-            "choices": [
-                {"name": network.capitalized_name, "value": network}
-                for network in base.Network.all()
-                if network.FAUCET_AVAILABLE
-            ],
-        },
-    ]
-
-    answers = prompt(questions)
-
-    account = answers["account"]
-    network = answers["network"]
+    account = prompt_account_selection(validate_passphrase=False)
+    network = prompt_network_selection(
+        network_list=[
+            network for network in base.Network.all() if network.FAUCET_AVAILABLE
+        ]
+    )
 
     print(f"Attempting to add funds to {account.address} on {network.capitalized_name}")
 
@@ -224,48 +256,9 @@ def run_action_launch_raiden():
     print("Launch successful...")
 
 
-def set_new_config_prompt():
-    def get_keystore_file_path(answer):
-        return answer.split(" - ")[0]
-
-    passphrase_verified = False
-
-    while not passphrase_verified:
-        account_questions = [
-            {
-                "name": "keystore",
-                "type": "list",
-                "message": "Which account would you like to use?",
-                "choices": [
-                    f"{account.keystore_file_path} - {account.address}"
-                    for account in base.Account.get_user_accounts()
-                ],
-                "filter": get_keystore_file_path,
-            },
-            {
-                "name": "passphrase",
-                "type": "password",
-                "message": Messages.input_account_verify_passphrase,
-            },
-        ]
-
-        account_answers = prompt(account_questions)
-        passphrase = account_answers["passphrase"]
-        account = base.Account(keystore_file_path=account_answers["keystore"])
-        passphrase_verified = account.check_passphrase(passphrase)
-
-    account.passphrase = passphrase
-
-    network = single_question_prompt(
-        {
-            "name": "network",
-            "type": "list",
-            "choices": base.Network.get_network_names(),
-            "message": "Which network would you like to use?",
-            "default": "goerli",
-            "filter": lambda answer: base.Network.get_by_name(answer),
-        }
-    )
+def run_action_configuration_setup():
+    account = prompt_account_selection()
+    network = prompt_network_selection()
 
     ethereum_rpc_questions = [
         {
@@ -298,17 +291,32 @@ def set_new_config_prompt():
     else:
         client_rpc_endpoint = ethereum_rpc_answers["ethereum_rpc_endpoint"]
 
+    user_deposit_contract_address = self.network.get_contract_address(
+        CONTRACT_USER_DEPOSIT
+    )
+
     config = base.RaidenConfigurationFile(
         account=account,
         network=network,
         ethereum_client_rpc_endpoint=client_rpc_endpoint,
+        user_deposit_contract_address=user_deposit_contract_address,
     )
     config.save()
+
+    ethereum_rpc_provider = base.EthereumRPCProvider.make_from_url(client_rpc_endpoint)
+
+    token_contract = base.TokenContract(
+        web3_provider=ethereum_rpc_provider.make_web3_provider(account),
+        account=account,
+        user_deposit_contract_address=user_deposit_contract_address,
+    )
+
+    token_contract.mint(token_contract.TOKEN_AMOUNT)
 
     return main_prompt()
 
 
-def set_new_account_prompt():
+def run_action_account_create():
     passphrase = single_question_prompt(
         {"type": "password", "message": Messages.input_passphrase}
     )
@@ -323,15 +331,37 @@ def main():
         answer = single_question_prompt(current_prompt)
         action = {
             Messages.action_launch_raiden: run_action_launch_raiden,
-            Messages.action_configuration_create: set_new_config_prompt,
+            Messages.action_configuration_setup: run_action_configuration_setup,
             Messages.action_configuration_list: run_action_configuration_list,
-            Messages.action_account_create: set_new_account_prompt,
+            Messages.action_account_create: run_action_account_create,
             Messages.action_account_list: run_action_account_list,
             Messages.action_account_fund: run_action_account_fund,
             Messages.action_release_manager: run_action_release_manager,
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)
         current_prompt = action()
+
+
+def test():
+    import os
+
+    ETHEREUM_RPC_ENDPOINT = os.getenv("TEST_RAIDEN_INSTALLER_ETH_RPC_URL")
+    ETHEREUM_NETWORK_NAME = os.getenv("TEST_RAIDEN_INSTALLER_ETHEREUM_NETWORK")
+    account = prompt_account_selection()
+    network = base.Network.get_by_name(ETHEREUM_NETWORK_NAME)
+    print("Getting ETH balance...")
+    print("ETH: ", account.get_balance(ETHEREUM_RPC_ENDPOINT))
+    token = base.Token(ethereum_rpc_endppoint=ETHEREUM_RPC_ENDPOINT, account=account)
+    print("Getting token balance")
+    print("TOKEN: ", token.balance)
+    print("ADDRESS:", token.deposit_proxy.address)
+    if token.balance == 0:
+        token.mint(token.TOKEN_AMOUNT)
+    else:
+        print(f"Tokens already minted for {token.owner}")
+        print("Making deposit")
+        tx = token.deposit(int(token.TOKEN_AMOUNT / 100))
+        print(tx)
 
 
 if __name__ == "__main__":

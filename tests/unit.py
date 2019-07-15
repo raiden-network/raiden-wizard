@@ -20,10 +20,15 @@ class AccountTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             empty_account.private_key
 
+    def test_can_get_web3_provider(self):
+        web3_provider = self.account.get_web3_provider("http://localhost:8545")
+        self.assertIsNotNone(web3_provider)
+
     def tearDown(self):
         self.account.keystore_file_path.unlink()
 
 
+@unittest.skip("Still need to make mock functions for w3")
 class RaidenConfigurationTestCase(unittest.TestCase):
     def setUp(self):
         temp_folder_path = Path(tempfile.gettempdir())
@@ -32,11 +37,13 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         self.account = base.Account.create(passphrase="test_raiden_config")
         self.network = base.Network.get_by_name("goerli")
         self.ethereum_client_rpc_endpoint = "http://localhost:8545"
+        self.token = base.Token(self.ethereum_client_rpc_endpoint, self.account)
 
         self.configuration_file = base.RaidenConfigurationFile(
             account=self.account,
             network=self.network,
             ethereum_client_rpc_endpoint=self.ethereum_client_rpc_endpoint,
+            token=self.token,
         )
 
         passphrase_file = base.PassphraseFile(

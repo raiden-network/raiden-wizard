@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 import tarfile
 import zipfile
 
+import psutil
 from raiden_contracts.contract_manager import (
     ContractManager,
     get_contracts_deployment_info,
@@ -48,6 +49,10 @@ class InstallerError(Exception):
 
 
 class FundingError(Exception):
+    pass
+
+
+class RaidenClientError(Exception):
     pass
 
 
@@ -177,6 +182,7 @@ class RaidenClient:
 
     def __init__(self, release):
         self.release = release
+        self._process_id = self.get_process_id()
 
     def install(self, force=False):
 
@@ -199,13 +205,24 @@ class RaidenClient:
             self.install_path.unlink()
 
     def launch(self, configuration_file):
-
-        uri = urlparse(self.WEB_UI_INDEX_URL)
-        subprocess.Popen(
+        proc = subprocess.Popen(
             [str(self.install_path), "--config-file", str(configuration_file.path)]
         )
+        self._process_id = proc.pid
+
+    def wait_for_web_ui_ready(self):
+        if not self.is_running:
+            raise RuntimeError("Raiden is not running")
+
+        uri = urlparse(self.WEB_UI_INDEX_URL)
 
         while True:
+            self._process_id = self.get_process_id()
+            if not self.is_running:
+                raise RaidenClientError(
+                    "client process terminated while waiting for web ui"
+                )
+
             with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
                 logger.info("Waiting for raiden to start...")
                 time.sleep(1)
@@ -214,7 +231,7 @@ class RaidenClient:
                     if connected:
                         return
                 except socket.gaierror as exc:
-                    logger.error(exc)
+                    pass
 
     def get_download_url(self, system=None):
         system_platform = system or sys.platform
@@ -225,6 +242,22 @@ class RaidenClient:
         filename = f"raiden-{self.release}-{label}-x86_64.{extension}"
         return f"{self.DOWNLOADS_URL}/{self.release}/{filename}"
 
+    def get_process_id(self):
+
+        failed_process_status = [psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE]
+
+        processes = [
+            p
+            for p in psutil.process_iter()
+            if self.binary_name.lower() == p.name().lower()
+            and p.status() not in failed_process_status
+        ]
+
+        try:
+            return max(p.pid for p in processes)
+        except ValueError:
+            return None
+
     @property
     def binary_name(self):
         return self.BINARY_NAME_FORMAT.format(release=self.release)
@@ -232,6 +265,10 @@ class RaidenClient:
     @property
     def is_installed(self):
         return self.install_path.exists()
+
+    @property
+    def is_running(self):
+        return self.get_process_id() is not None
 
     @property
     def install_path(self):

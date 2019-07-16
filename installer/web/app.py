@@ -116,8 +116,17 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
             self._send_status_update("Installation complete", message_type="success")
 
         self._send_status_update("Launching raiden")
-        latest.launch(configuration_file)
-        self._send_status_update("Raiden is ready!", complete=True)
+
+        if not latest.is_running:
+            latest.launch(configuration_file)
+
+        try:
+            latest.wait_for_web_ui_ready()
+            self._send_status_update("Raiden is ready!", complete=True)
+        except base.RaidenClientError as exc:
+            self._send_status_update(f"Raiden process failed to start: {exc}")
+        else:
+            sys.exit()
 
 
 class IndexHandler(RequestHandler):

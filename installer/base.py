@@ -1,7 +1,6 @@
 import os
 import sys
 import glob
-import gzip
 import hashlib
 import logging
 import json
@@ -573,7 +572,6 @@ class RaidenConfigurationFile:
 
     @property
     def is_launchable(self):
-        has_token_deposit = self.account
         return self.balance >= self.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
 
     @property

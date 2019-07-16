@@ -1,99 +1,186 @@
+import os
+import sys
+import json
 import logging
+from pathlib import Path
 from urllib.parse import urlparse
 import webbrowser
 
-from flask import Flask, render_template, request, redirect
-from flask.logging import default_handler
+import tornado.ioloop
+from tornado.log import enable_pretty_logging
+from tornado.web import Application, RequestHandler, url
+from tornado.websocket import WebSocketHandler
+
+import wtforms
+from wtforms_tornado import Form
 
 from .. import base
 
-
-app = Flask(__name__)
-
-for logger in (app.logger, base.logger):
-    logger.addHandler(default_handler)
+DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
+PORT = 8888
 
 
-def build_configuration_file(req):
-    network = base.Network.get_by_name(req.form["network-name"])
-
-    endpoint_url = req.form["rpc-or-infura-project-id"].strip()
-
-    def is_valid_url(url):
-        parsed_url = urlparse(url)
-        return bool(parsed_url.scheme) and bool(parsed_url.netloc)
-
-    if base.Infura.is_valid_project_id(endpoint_url):
-        ethereum_rpc_provider = base.Infura.make(network, endpoint_url)
-    elif is_valid_url(endpoint_url):
-        ethereum_rpc_provider = base.EthereumRPCProvider(endpoint_url)
-    else:
-        raise ValueError("Not a valid Project ID / Endpoint URL")
-
-    account = base.Account.create()
-    conf_file = base.RaidenConfigurationFile(
-        account, network, ethereum_rpc_provider.url
-    )
-    conf_file.save()
-    return conf_file
+log = logging.getLogger("tornado.application")
+log.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+enable_pretty_logging()
 
 
-@app.route("/", methods=["GET"])
-def index():
-    configuration_files = base.RaidenConfigurationFile.get_available_configurations()
-    return render_template("index.html", configuration_files=configuration_files)
+AVAILABLE_NETWORKS = [n for n in base.Network.all() if n.FAUCET_AVAILABLE]
 
 
-@app.route("/launch", methods=["POST"])
-@app.route("/launch/<configuration_file_name>", methods=["POST"])
-def launch(configuration_file_name=None):
-    if configuration_file_name is not None:
+def get_current_folder_path():
+    return getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
+
+
+class QuickSetupForm(Form):
+    network = wtforms.HiddenField(default=base.Network.get_by_name("goerli").name)
+    endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
+
+    def validate_network(self, field):
+        network_name = field.data
+        if network_name not in [n.name for n in AVAILABLE_NETWORKS]:
+            raise wtforms.ValidationError(
+                f"Can not run quick setup raiden with {network_name}"
+            )
+
+    def validate_endpoint(self, field):
+        data = field.data.strip()
+        parsed_url = urlparse(data)
+        is_valid_url = bool(parsed_url.scheme) and bool(parsed_url.netloc)
+        is_valid_project_id = base.Infura.is_valid_project_id(data)
+
+        if not (is_valid_project_id or is_valid_url):
+            raise wtforms.ValidationError("Not a valid URL nor Infura Project ID")
+
+
+class LauncherStatusNotificationHandler(WebSocketHandler):
+    def _send_status_update(self, message_text, message_type="info", complete=False):
+        self.write_message(
+            json.dumps(
+                {"type": message_type, "text": message_text, "complete": complete}
+            )
+        )
+        log.info(message_text)
+
+    def open(self, configuration_file_name):
         configuration_file = base.RaidenConfigurationFile.get_by_filename(
             configuration_file_name
         )
-    else:
+
+        account = configuration_file.account
+        network = configuration_file.network
+
         try:
-            configuration_file = build_configuration_file(request)
-        except ValueError as exc:
-            return render_template("index.html", error_message=exc.message)
-
-    latest = base.RaidenClient.get_latest_release()
-    if not latest.is_installed:
-        latest.install()
-
-    account = configuration_file.account
-    network = configuration_file.network
-
-    try:
-        if configuration_file.balance == 0:
-            app.logger.info(f"Low balance. Adding funds to {account.address}")
-            network.fund(account)
-    except Exception as exc:
-        app.logger.exception(exc)
-
-    app.logger.info(
-        f"Current balance for {account.address}: ETH {configuration_file.balance}"
-    )
-
-    token = base.Token(
-        ethereum_rpc_endpoint=configuration_file.ethereum_client_rpc_endpoint,
-        account=configuration_file.account,
-    )
-    try:
-        if token.balance == 0:
-            app.logger.info(
-                f"Minting and depositing {token.TOKEN_AMOUNT} tokens for {token.owner}"
+            if configuration_file.balance == 0:
+                self._send_status_update(f"No ETH funds in account.")
+                self._send_status_update(
+                    f"Obtaining ETH from {network.capitalized_name} faucet"
+                )
+                network.fund(account)
+                self._send_status_update(
+                    f"ETH acquired for {account.address}", message_type="success"
+                )
+            self._send_status_update(
+                f"Current balance: {configuration_file.balance} WEI"
             )
-            token.mint(token.TOKEN_AMOUNT)
-            token.deposit(token.TOKEN_AMOUNT)
-    except Exception as exc:
-        app.logger.exception(exc)
+        except Exception as exc:
+            self._send_status_update(
+                f"Failed to add funds to account: {exc}", message_type="warning"
+            )
 
-    latest.launch(configuration_file)
-    return redirect(base.RaidenClient.WEB_UI_INDEX_URL)
+        token = base.Token(
+            ethereum_rpc_endpoint=configuration_file.ethereum_client_rpc_endpoint,
+            account=configuration_file.account,
+        )
+        try:
+            if token.balance == 0:
+                self._send_status_update(
+                    f"Minting and depositing {token.TOKEN_AMOUNT} tokens for {token.owner}"
+                )
+                token.mint(token.TOKEN_AMOUNT)
+                token.deposit(token.TOKEN_AMOUNT)
+                self._send_status_update(
+                    "Raiden account funded and able to operate", message_type="success"
+                )
+        except Exception as exc:
+            self._send_status_update(
+                f"Failed to execute token contracts: {exc}", message_type="error"
+            )
+
+        latest = base.RaidenClient.get_latest_release()
+        if not latest.is_installed:
+            self._send_status_update(
+                f"Downloading and installing raiden {latest.release}"
+            )
+            latest.install()
+            self._send_status_update("Installation complete", message_type="success")
+
+        self._send_status_update("Launching raiden")
+        latest.launch(configuration_file)
+        self._send_status_update("Raiden is ready!", complete=True)
+
+
+class IndexHandler(RequestHandler):
+    def get(self):
+        configuration_files = (
+            base.RaidenConfigurationFile.get_available_configurations()
+        )
+        self.render(
+            "index.html",
+            configuration_files=configuration_files,
+            setup_form=QuickSetupForm(),
+            errors=[],
+        )
+
+
+class LaunchHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        websocket_url = "ws://{host}{path}".format(
+            host=self.request.host,
+            path=self.reverse_url("status", configuration_file_name),
+        )
+
+        self.render(
+            "launch.html",
+            websocket_url=websocket_url,
+            raiden_url=base.RaidenClient.WEB_UI_INDEX_URL,
+        )
+
+
+class QuickSetupHandler(LaunchHandler):
+    def post(self):
+        form = QuickSetupForm(self.request.arguments)
+        if form.validate():
+            network = base.Network.get_by_name(form.data["network"])
+            url_or_infura_id = form.data["endpoint"].strip()
+
+            if base.Infura.is_valid_project_id(url_or_infura_id):
+                ethereum_rpc_provider = base.Infura.make(network, url_or_infura_id)
+            else:
+                ethereum_rpc_provider = base.EthereumRPCProvider(url_or_infura_id)
+
+            account = base.Account.create()
+            conf_file = base.RaidenConfigurationFile(
+                account, network, ethereum_rpc_provider.url
+            )
+            conf_file.save()
+            return self.redirect(self.reverse_url("launch", conf_file.file_name))
 
 
 if __name__ == "__main__":
-    if not app.debug:
-        webbrowser.open_new("http://localhost:5000")
-    app.run()
+    app = Application(
+        [
+            url(r"/", IndexHandler),
+            url(r"/launch/(.*)", LaunchHandler, name="launch"),
+            url(r"/setup", QuickSetupHandler, name="quick_setup"),
+            url(r"/ws/(.*)", LauncherStatusNotificationHandler, name="status"),
+        ],
+        debug=DEBUG,
+        static_path=os.path.join(get_current_folder_path(), "static"),
+        template_path=os.path.join(get_current_folder_path(), "templates"),
+    )
+    app.listen(PORT)
+
+    if not DEBUG:
+        webbrowser.open_new(f"http://localhost:{PORT}")
+    tornado.ioloop.IOLoop.current().start()

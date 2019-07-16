@@ -239,8 +239,9 @@ class RaidenClient:
         return Path(self.BINARY_FOLDER_PATH).joinpath(self.binary_name)
 
     def _extract_zip(self, compressed_data, destination_path):
-        zipped = zipfile.ZipFile(compressed_data)
-        zipped.extract(zipped.filelist[0], path=destination_path)
+        with zipfile.ZipFile(compressed_data) as zipped:
+            with destination_path.open("wb") as binary_file:
+                binary_file.write(zipped.read(zipped.filelist[0]))
 
     def _extract_gzip(self, compressed_data, destination_path):
         with tarfile.open(mode="r:*", fileobj=compressed_data) as tar:

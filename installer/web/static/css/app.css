@@ -7,6 +7,12 @@ body {
   padding: 0;
 }
 
+body h1 {
+  font-size: 32px;
+  font-weight: 500;
+  margin: 0;
+}
+
 body p {
   font-size: 16px;
   margin: 0;
@@ -37,10 +43,33 @@ body .container .launcher-window {
 body .container .launcher-window #welcome-screen {
   display: -ms-grid;
   display: grid;
-  -ms-grid-rows: ()[3];
-      grid-template-rows: repeat(3);
+  -ms-grid-rows: auto 1fr 1fr;
+      grid-template-rows: auto 1fr 1fr;
   height: 100%;
   width: 100%;
+}
+
+body .container .launcher-window #welcome-screen .heading-wrapper {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+body .container .launcher-window #welcome-screen .heading-wrapper .heading {
+  -webkit-box-flex: 0;
+      -ms-flex: none;
+          flex: none;
+}
+
+body .container .launcher-window #welcome-screen .heading-wrapper .description {
+  border-bottom: solid 1.5px #0a6e87;
+  -webkit-box-flex: 0;
+      -ms-flex: none;
+          flex: none;
 }
 
 body .container .launcher-window #welcome-screen .configuration-files-wrapper {
@@ -74,7 +103,7 @@ body .container .launcher-window #welcome-screen .configuration-files-wrapper .c
   -ms-flex-item-align: end;
       -ms-grid-row-align: end;
       align-self: end;
-  color: #ffffff;
+  color: #fff;
   font-weight: 500;
   -ms-grid-row: 1;
   -ms-grid-column: 1;
@@ -117,12 +146,24 @@ body .container .launcher-window #welcome-screen .configuration-files-wrapper .c
 }
 
 body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration .launch-configuration-button {
-  background-color: yellow;
-  border: 0;
+  background-color: transparent;
+  border: 2px solid #28a5c8;
   border-radius: 29px;
-  color: blue;
-  font-weight: 500;
-  height: 35px;
-  width: 135px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 33px;
+  width: 100px;
+}
+
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration .launch-configuration-button:hover {
+  background-color: #28a5c8;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 33px;
+  width: 100px;
 }
 /*# sourceMappingURL=app.css.map */

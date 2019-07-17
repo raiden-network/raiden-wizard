@@ -40,7 +40,8 @@
   {% end%}
   <form action="{{ reverse_url('quick_setup') }}" method="POST">
     <div>
-      {% raw setup_form.endpoint.label %} {% raw setup_form.endpoint %}
+      <div>{% raw setup_form.endpoint.label %} {% raw setup_form.endpoint %}</div>
+      <div>{% raw setup_form.use_rsb %} {% raw setup_form.use_rsb.label %}</div>
       {% raw setup_form.network %}
     </div>
     <button type="submit">Launch</button>

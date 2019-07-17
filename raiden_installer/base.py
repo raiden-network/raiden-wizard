@@ -225,13 +225,13 @@ class RaidenClient:
 
             with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
                 logger.info("Waiting for raiden to start...")
-                time.sleep(1)
                 try:
-                    connected = sock.connect_ex((uri.netloc, uri.port)) == 0
+                    connected = sock.connect_ex((uri.hostname, uri.port)) == 0
                     if connected:
                         return
-                except socket.gaierror as exc:
+                except socket.gaierror:
                     pass
+                time.sleep(1)
 
     def get_download_url(self, system=None):
         system_platform = system or sys.platform
@@ -243,14 +243,13 @@ class RaidenClient:
         return f"{self.DOWNLOADS_URL}/{self.release}/{filename}"
 
     def get_process_id(self):
-
-        failed_process_status = [psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE]
+        def is_dead(process):
+            return process.status() is [psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE]
 
         processes = [
             p
             for p in psutil.process_iter()
-            if self.binary_name.lower() == p.name().lower()
-            and p.status() not in failed_process_status
+            if self.binary_name.lower() == p.name().lower() and not is_dead(p)
         ]
 
         try:
@@ -417,7 +416,7 @@ class EthereumRPCProvider:
 
 
 class Infura(EthereumRPCProvider):
-    URL_PATTERN = "https://{network_name}.infura.io/v3/{project_id}"
+    URL_PATTERN = "https://{network_name}.infura.io:443/v3/{project_id}"
 
     def __init__(self, url):
         super().__init__(url)
@@ -574,7 +573,7 @@ class RaidenConfigurationFile:
 
     @property
     def configuration_data(self):
-        return {
+        base_config = {
             "environment-type": self.environment_type,
             "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
             "keystore-file-path": str(self.account.keystore_file_path),
@@ -587,9 +586,15 @@ class RaidenConfigurationFile:
             "accept-disclaimer": self.accept_disclaimer,
             "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,
             "routing-mode": self.routing_mode,
-            "pathfinding-service-address": self.path_finding_service_url,
             "enable-monitoring": self.enable_monitoring,
         }
+
+        if self.routing_mode == "pfs":
+            base_config.update(
+                {"pathfinding-service-address": self.path_finding_service_url}
+            )
+
+        return base_config
 
     @property
     def file_name(self):
@@ -650,6 +655,8 @@ class RaidenConfigurationFile:
                 account=account,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
                 network=Network.get_by_name(network_name),
+                routing_mode=data["routing-mode"],
+                enable_monitoring=data["enable-monitoring"],
             )
 
     @classmethod

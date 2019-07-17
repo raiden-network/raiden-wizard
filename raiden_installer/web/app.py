@@ -38,6 +38,7 @@ def get_data_folder_path():
 
 class QuickSetupForm(Form):
     network = wtforms.HiddenField(default=base.Network.get_by_name("goerli").name)
+    use_rsb = wtforms.BooleanField("Use Raiden Service Bundle", default=True)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -173,8 +174,13 @@ class QuickSetupHandler(LaunchHandler):
                 ethereum_rpc_provider = base.EthereumRPCProvider(url_or_infura_id)
 
             account = base.Account.create()
+
             conf_file = base.RaidenConfigurationFile(
-                account, network, ethereum_rpc_provider.url
+                account,
+                network,
+                ethereum_rpc_provider.url,
+                routing_mode="pfs" if form.data["use_rsb"] else "local",
+                enable_monitoring=form.data["use_rsb"],
             )
             conf_file.save()
             return self.redirect(self.reverse_url("launch", conf_file.file_name))

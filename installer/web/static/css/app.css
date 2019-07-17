@@ -1,251 +1,128 @@
-@import url('https://fonts://googleapis.com/css?family=Roboto:100,100i,300&display=swap');
-
-* {
-    font-family: 'Roboto', sans-serif;
-}
-
+@import url("https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap");
 body {
-    background: linear-gradient(to right, #313030, #000000);
-    margin: 0;
-    padding: 0;
+  background: -webkit-gradient(linear, left top, right top, from(#313030), to(#000000));
+  background: linear-gradient(90deg, #313030 0%, #000000 100%);
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-    color: #28A5C8;
-    font-size: 28px;
-    font-weight: 300;
-    letter-spacing: 1.2px;
-    margin: 0;
-    padding-top: 70px;
-    text-align: center;
+body p {
+  font-size: 16px;
+  margin: 0;
 }
 
-p {
-    color: #E6E6E6;
-    font-size: 14px;
-    font-weight: 100;
-    letter-spacing: 1px;
-    line-height: 20px;
-    margin: 0;
-    padding-top: 30px;
-    text-align: center;
+body .container {
+  display: -ms-grid;
+  display: grid;
+      grid-template-areas: ". . . . . . . . . . . ." ". . . . . . . . . . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . . . . . . . . . ." ". . . . . . . . . . . .";
+  -ms-grid-columns: (1fr)[12];
+      grid-template-columns: repeat(12, 1fr);
+  -ms-grid-rows: (1fr)[12];
+      grid-template-rows: repeat(12, 1fr);
+  height: 100vh;
 }
 
-.container {
-    display: grid;
-    grid-template-areas:
-        ". . . . . . . . . . . ."
-        ". . . . . . . . . . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . . . . . . . . . ."
-        ". . . . . . . . . . . .";
-    grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: repeat(12, 1fr);
-    height: 100vh;
+body .container .launcher-window {
+  background-color: #0f0e10;
+  -ms-grid-row: 3;
+  -ms-grid-row-span: 8;
+  -ms-grid-column: 4;
+  -ms-grid-column-span: 6;
+  grid-area: i;
+  width: 620px;
+  /* BREAKS LAYOUT !! */
 }
 
-.installer-window {
-    background-color: white;
-    # background: #141414;
-    grid-area: i;
+body .container .launcher-window #welcome-screen {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-rows: ()[3];
+      grid-template-rows: repeat(3);
+  height: 100%;
+  width: 100%;
 }
 
-form {
-    height: 100%;
-    width: 100%;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  overflow: auto;
 }
 
-input {
-    background-color: rgba(50, 50, 50, .7);
-    border: 0;
-    border-radius: 20px;
-    color: #28A5C8;
-    height: 28px;
-    padding: 0px 10px 0px 10px;
-    transition: background-color .4s;
-    transition: box-shadow .3s ease-in-out;
-    width: 300px;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item {
+  background-color: #1e1e1e;
+  display: -ms-grid;
+  display: grid;
+  -webkit-box-flex: 0;
+      -ms-flex: none;
+          flex: none;
+      grid-template-areas: "account-address account-address account-address account-address launch-configuration" "network account-balance account-balance account-balance launch-configuration";
+  -ms-grid-columns: 130px 1fr 1fr 1fr 1fr;
+      grid-template-columns: 130px 1fr 1fr 1fr 1fr;
+  -ms-grid-rows: 35px 35px;
+      grid-template-rows: 35px 35px;
+  margin-bottom: 2px;
+  padding: 0px 20px 0px 20px;
 }
 
-input:focus {
-    background-color: rgba(50, 50, 50, .4);
-    box-shadow: 0 0 10px 5px rgba(40, 165, 200, .25);
-    outline: none;
-    transition: background-color .4s;
-    transition: box-shadow .3s ease-in-out;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .account-address {
+  -ms-flex-item-align: end;
+      -ms-grid-row-align: end;
+      align-self: end;
+  color: #ffffff;
+  font-weight: 500;
+  -ms-grid-row: 1;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: account-address;
 }
 
-input.pwd {
-    text-align: center;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .account-balance {
+  -ms-flex-item-align: start;
+      -ms-grid-row-align: start;
+      align-self: start;
+  color: #646464;
+  font-weight: 400;
+  -ms-grid-row: 2;
+  -ms-grid-column: 2;
+  -ms-grid-column-span: 3;
+  grid-area: account-balance;
 }
 
-button {
-    background-color: #28A5C8;
-    border: 0;
-    border-radius: 20px;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 300;
-    height: 28px;
-    letter-spacing: 1.5px;
-    margin: 0;
-    padding: 0;
-    transition: .4s;
-    width: 100px;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .network {
+  -ms-flex-item-align: start;
+      -ms-grid-row-align: start;
+      align-self: start;
+  color: #646464;
+  font-weight: 400;
+  -ms-grid-row: 2;
+  -ms-grid-column: 1;
+  grid-area: network;
 }
 
-button:focus {
-    outline: none;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration {
+  text-align: center;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 1;
+  -ms-grid-row-span: 2;
+  -ms-grid-column: 5;
+  grid-area: launch-configuration;
 }
 
-button:disabled {
-    background-color: #173B48;
-    color: #646464;
-    transition: .4s;
+body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration .launch-configuration-button {
+  background-color: yellow;
+  border: 0;
+  border-radius: 29px;
+  color: blue;
+  font-weight: 500;
+  height: 35px;
+  width: 135px;
 }
-
-button.keystore-btn {
-    margin-right: 10px;
-}
-
-button.installation-btn {
-    margin-left: 10px;
-}
-
-#keystore {
-    display: grid;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
-}
-
-.keystore-input-wrapper {
-    display: flex;
-    flex-direction: column;
-}
-
-.pwd-input {
-    align-items: center;
-    display: flex;
-    flex: 2;
-    justify-content: center;
-}
-
-.pwd-error {
-    display: flex;
-    flex: 1;
-    justify-content: center;
-}
-
-.pwd-error p {
-    color: #ef5350;
-    font-size: 14px;
-    font-style: italic;
-    font-weight: 100;
-    letter-spacing: 1.2px;
-    visibility: hidden;
-}
-
-#eth-rpc {
-    display: none;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
-}
-
-.eth-rpc-input-wrapper {
-    display: flex;
-    flex-direction: column;
-}
-
-.proj-id-input {
-    align-items: center;
-    display: flex;
-    flex: 2;
-    justify-content: center;
-}
-
-.proj-id-error {
-    display: flex;
-    flex: 1;
-    justify-content: center;
-}
-
-.proj-id-error p {
-    color: #ef5350;
-    font-size: 14px;
-    font-style: italic;
-    font-weight: 100;
-    letter-spacing: 1.2px;
-    visibility: hidden;
-}
-
-#installation {
-    display: none;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
-}
-
-.spinner-wrapper {
-    display: grid;
-    align-self: center;
-    justify-content: center;
-}
-
-.spinner {
-    animation: .8s spin infinite;
-    border: 4px solid rgba(50, 50, 50, 1);
-    border-bottom-color: #28A5C8;
-    border-radius: 50%;
-    border-right-color: #28A5C8;
-    border-top-color: #28A5C8;
-    box-shadow: 8px 0px 15px 0px rgba(40, 165, 200, .5);
-    height: 100px;
-    width: 100px;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.installation-progress {
-    display: flex;
-    justify-content: center;
-}
-
-.button-wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-.heading-wrapper {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-}
-
-.heading {
-    flex: none;
-}
-
-.description {
-    flex: 1;
-    width: 300px;
-}
-
-#raiden-init {
-    display: grid;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
-}
+/*# sourceMappingURL=app.css.map */

@@ -95,5 +95,5 @@ def launch(configuration_file_name=None):
 
 if __name__ == "__main__":
     if not app.debug:
-        webbrowser.open_new("http://localhost:5000")
+        webbrowser.open_new("http://127.0.0.1:5000")
     app.run()

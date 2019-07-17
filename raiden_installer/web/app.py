@@ -14,7 +14,7 @@ from tornado.websocket import WebSocketHandler
 import wtforms
 from wtforms_tornado import Form
 
-from .. import base
+from raiden_installer import base
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8888
@@ -28,7 +28,11 @@ enable_pretty_logging()
 AVAILABLE_NETWORKS = [n for n in base.Network.all() if n.FAUCET_AVAILABLE]
 
 
-def get_current_folder_path():
+def get_data_folder_path():
+    # Find absolute path for non-code resources (static files, templates) When
+    # we are running in development, it will just be the same folder as this
+    # file, but when bundled by pyinstaller, it will be placed on the folder
+    # indicated by sys._MEIPASS
     return getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
 
 
@@ -185,8 +189,8 @@ if __name__ == "__main__":
             url(r"/ws/(.*)", LauncherStatusNotificationHandler, name="status"),
         ],
         debug=DEBUG,
-        static_path=os.path.join(get_current_folder_path(), "static"),
-        template_path=os.path.join(get_current_folder_path(), "templates"),
+        static_path=os.path.join(get_data_folder_path(), "static"),
+        template_path=os.path.join(get_data_folder_path(), "templates"),
     )
     app.listen(PORT)
 

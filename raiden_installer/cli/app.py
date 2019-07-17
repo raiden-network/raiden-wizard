@@ -1,5 +1,5 @@
 from whaaaaat import prompt, Validator, ValidationError
-from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
+from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
 
 from .. import base
 
@@ -291,9 +291,7 @@ def run_action_configuration_setup():
     else:
         client_rpc_endpoint = ethereum_rpc_answers["ethereum_rpc_endpoint"]
 
-    user_deposit_contract_address = self.network.get_contract_address(
-        CONTRACT_USER_DEPOSIT
-    )
+    user_deposit_contract_address = network.get_contract_address(CONTRACT_USER_DEPOSIT)
 
     config = base.RaidenConfigurationFile(
         account=account,
@@ -340,28 +338,6 @@ def main():
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)
         current_prompt = action()
-
-
-def test():
-    import os
-
-    ETHEREUM_RPC_ENDPOINT = os.getenv("TEST_RAIDEN_INSTALLER_ETH_RPC_URL")
-    ETHEREUM_NETWORK_NAME = os.getenv("TEST_RAIDEN_INSTALLER_ETHEREUM_NETWORK")
-    account = prompt_account_selection()
-    network = base.Network.get_by_name(ETHEREUM_NETWORK_NAME)
-    print("Getting ETH balance...")
-    print("ETH: ", account.get_balance(ETHEREUM_RPC_ENDPOINT))
-    token = base.Token(ethereum_rpc_endppoint=ETHEREUM_RPC_ENDPOINT, account=account)
-    print("Getting token balance")
-    print("TOKEN: ", token.balance)
-    print("ADDRESS:", token.deposit_proxy.address)
-    if token.balance == 0:
-        token.mint(token.TOKEN_AMOUNT)
-    else:
-        print(f"Tokens already minted for {token.owner}")
-        print("Making deposit")
-        tx = token.deposit(int(token.TOKEN_AMOUNT / 100))
-        print(tx)
 
 
 if __name__ == "__main__":

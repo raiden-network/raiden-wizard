@@ -6,30 +6,35 @@ $background-colors: (
     launcher: #0f0e10,
     main: linear-gradient(90deg, #313030 0%, #000000 100%),
 );
-
 $text-colors: (
-    standard-bright-text: #ffffff,
+    standard-bright-text: #fff,
     standard-dark-text: #646464,
 );
+$element-colors: (
+    blue-border: #0a6e87,
+);
 $button-colors: (
-    button-inactive-background: transparent,
-    button-regular-background: #28A5C8,
+    button-standard-background: transparent,
+    button-hover-background: #28a5c8,
+    button-standard-text: #fff,
+    button-standard-border: #28a5c8,
 );
 
 
-@mixin button($background-color, $text-color) {
+@mixin launch-configuration-button($background-color, $border-color, $text-color) {
     background-color: $background-color;
-    border: 0;
+    border: 2px solid $border-color;
     border-radius: 29px;
     color: $text-color;
-    font-weight: 500;
-    height: 35px;
-    width: 135px;
+    font-weight: 400;
+    font-size: 14px;
+    height: 33px;
+    width: 100px;
 }
 
 
 @function color($color-type) {
-    @return map-get($background-colors, $color-type), map-get($text-colors, $color-type)
+    @return map-get($background-colors, $color-type), map-get($text-colors, $color-type), map-get($element-colors, $color-type), map-get($button-colors, $color-type)
 }
 
 
@@ -38,6 +43,14 @@ body {
     font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
+
+    h1 {
+        font-size: 32px;
+        font-weight: 500;
+        margin: 0;
+
+        // background-color: blue;
+    }
 
     p {
         font-size: 16px;
@@ -70,17 +83,34 @@ body {
 
             #welcome-screen {
                 display: grid;
-                grid-template-rows: repeat(3);
+                grid-template-rows: auto 1fr 1fr;
                 height: 100%;
                 width: 100%;
+
+                .heading-wrapper {
+                    display: flex;
+                    flex-direction: column;
+
+                    // background-color: pink;
+
+                    .heading {
+                        flex: none;
+
+                        // background: orange;
+                    }
+
+                    .description {
+                        border-bottom: solid 1.5px nth(color(blue-border), 3);
+                        flex: none;
+
+                        // background: lime;
+                    }
+                }
 
                 .configuration-files-wrapper {
                     display: flex;
                     flex-direction: column;
                     overflow: auto;
-
-                    // .heading {
-                    // }
 
                     .configuration-file-list-item {
                         background-color: nth(color(configuration-list), 1);
@@ -118,7 +148,10 @@ body {
                             align-self: center;
                             grid-area: launch-configuration;
                             .launch-configuration-button {
-                                @include button(yellow, blue);
+                                @include launch-configuration-button(nth(color(button-standard-background), 4), nth(color(button-standard-border), 4), nth(color(button-standard-text), 4));
+                            }
+                            .launch-configuration-button:hover {
+                                @include launch-configuration-button(nth(color(button-hover-background), 4), nth(color(button-standard-border), 4), nth(color(button-standard-text), 4));
                             }
                         }
                     }
@@ -126,5 +159,4 @@ body {
             }
         }
     }
-
 }

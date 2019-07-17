@@ -2,8 +2,13 @@
 
 {% block content %}
 <div id="welcome-screen">
-    <div class="heading">
-        <h1>Launch Raiden from Configuration</h1>
+    <div class="heading-wrapper">
+        <div class="heading">
+            <h1>Launch Raiden from configuration</h1>
+        </div>
+        <div class="description">
+            <p>Launch Raiden from an existing account and configuration</p>
+        </div>
     </div>
 
     <div class="configuration-files-wrapper">
@@ -19,7 +24,7 @@
                 <p>Balance: {{ configuration_file.balance }} ETH</p>
             </div>
             <div class="launch-configuration">
-                <button class="launch-configuration-button"><p>Launch</p></button>
+                <button class="launch-configuration-button">Launch</button>
             </div>
         </div>
         {% endfor %}

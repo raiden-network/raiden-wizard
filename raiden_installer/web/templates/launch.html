@@ -1,38 +1,34 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Quick Setup</title>
-    <link rel="stylesheet" type="text/css" href="{{ static_url('css/app.css') }}"/>
-    <script type="text/javascript">
-     var ws = new WebSocket("{{ websocket_url }}");
+{% extends "base.html" %}
 
-     ws.onmessage = function(evt) {
-       var message = JSON.parse(evt.data);
-       var li = document.createElement("li");
-       li.classList.add(message.type);
-       li.textContent = message.text;
-       document.querySelector("ul.messages").appendChild(li);
-       
-       if (message.complete){
-         var status_icon = document.querySelector("div.tracker");
-         status_icon.classList.remove("spinner");
-         status_icon.classList.add("complete");
+{% block content %}
+<script type="text/javascript">
+    var ws = new WebSocket("{{ websocket_url }}");
 
-         console.log("will redirect now");
-         setTimeout(function(){
-           document.location = "{{ raiden_url }}";
-         }, 2000);
-       }
-       
-     };
-    </script>
-  </head>
-  <body>
-    <div class="container">
-      <div class="installer-window">
-        <div class="spinner tracker">&nbsp;</div>
-        <ul class="messages"></ul>
-      </div>
+    ws.onmessage = function(evt) {
+      var message = JSON.parse(evt.data);
+      var li = document.createElement("li");
+      li.classList.add(message.type);
+      li.textContent = message.text;
+      document.querySelector("ul.messages").appendChild(li);
+      
+      if (message.complete){
+        var status_icon = document.querySelector("div.tracker");
+        status_icon.classList.remove("spinner");
+        status_icon.classList.add("complete");
+
+        console.log("will redirect now");
+        setTimeout(function(){
+          document.location = "{{ raiden_url }}";
+        }, 2000);
+      }
+      
+    };
+</script>
+<div id="launcher-screen">
+    <div class="spinner-wrapper">
+      <div class="spinner tracker"></div>
     </div>
-  </body>
-</html>
+    <ul class="messages">
+    </ul>
+</div>
+{% end %}

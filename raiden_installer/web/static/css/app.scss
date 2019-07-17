@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap');
+
+
+$background-colors: (
+    configuration-list: #1e1e1e,
+    launcher: #0f0e10,
+    main: linear-gradient(90deg, #313030 0%, #000000 100%),
+);
+
+$text-colors: (
+    standard-bright-text: #ffffff,
+    standard-dark-text: #646464,
+);
+$button-colors: (
+    button-inactive-background: transparent,
+    button-regular-background: #28A5C8,
+);
+
+
+@mixin button($background-color, $text-color) {
+    background-color: $background-color;
+    border: 0;
+    border-radius: 29px;
+    color: $text-color;
+    font-weight: 500;
+    height: 35px;
+    width: 135px;
+}
+
+
+@function color($color-type) {
+    @return map-get($background-colors, $color-type), map-get($text-colors, $color-type)
+}
+
+
+body {
+    background: nth(color(main), 1);
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+
+    p {
+        font-size: 16px;
+        margin: 0;
+    }
+
+    .container {
+        display: grid;
+        grid-template-areas:
+            ". . . . . . . . . . . ."
+            ". . . . . . . . . . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . . . . . . . . . ."
+            ". . . . . . . . . . . .";
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: repeat(12, 1fr);
+        height: 100vh;
+
+        .launcher-window {
+            background-color: nth(color(launcher), 1);
+            grid-area: i;
+            width: 620px; /* BREAKS LAYOUT !! */
+
+            #welcome-screen {
+                display: grid;
+                grid-template-rows: repeat(3);
+                height: 100%;
+                width: 100%;
+
+                .configuration-files-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    overflow: auto;
+
+                    // .heading {
+                    // }
+
+                    .configuration-file-list-item {
+                        background-color: nth(color(configuration-list), 1);
+                        display: grid;
+                        flex: none;
+                        grid-template-areas:
+                            "account-address account-address account-address account-address launch-configuration"
+                            "network account-balance account-balance account-balance launch-configuration";
+                        grid-template-columns: 130px 1fr 1fr 1fr 1fr;
+                        grid-template-rows: 35px 35px;
+                        margin-bottom: 2px;
+                        padding: 0px 20px 0px 20px;
+                        .account-address {
+                            align-self: end;
+                            color: nth(color(standard-bright-text), 2);
+                            font-weight: 500;
+                            grid-area: account-address;
+
+                            // background: pink;
+                        }
+                        .account-balance {
+                            align-self: start;
+                            color: nth(color(standard-dark-text), 2);
+                            font-weight: 400;
+                            grid-area: account-balance;
+                        }
+                        .network {
+                            align-self: start;
+                            color: nth(color(standard-dark-text), 2);
+                            font-weight: 400;
+                            grid-area: network;
+                        }
+                        .launch-configuration {
+                            text-align: center;
+                            align-self: center;
+                            grid-area: launch-configuration;
+                            .launch-configuration-button {
+                                @include button(yellow, blue);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}

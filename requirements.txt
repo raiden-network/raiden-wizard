@@ -33,7 +33,7 @@ pycodestyle==2.5.0
 pycparser==2.19
 pycryptodome==3.8.2
 pytest==5.0.1
-raiden-contracts==0.25.1
+raiden-contracts==0.26.0
 requests==2.22.0
 rlp==1.1.0
 semantic-version==2.6.0

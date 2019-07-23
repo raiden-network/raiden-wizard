@@ -1,20 +1,18 @@
-import os
-import sys
 import json
 import logging
+import os
+import sys
+import webbrowser
 from pathlib import Path
 from urllib.parse import urlparse
-import webbrowser
 
 import tornado.ioloop
+import wtforms
+from raiden_installer import RAIDEN_CLIENT_DEFAULT_CLASS, base
 from tornado.log import enable_pretty_logging
 from tornado.web import Application, RequestHandler, url
 from tornado.websocket import WebSocketHandler
-
-import wtforms
 from wtforms_tornado import Form
-
-from raiden_installer import base
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8888
@@ -112,7 +110,7 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
                 f"Failed to execute token contracts: {exc}", message_type="error"
             )
 
-        latest = base.RaidenClient.get_latest_release()
+        latest = RAIDEN_CLIENT_DEFAULT_CLASS.get_latest_release()
         if not latest.is_installed:
             self._send_status_update(
                 f"Downloading and installing raiden {latest.release}"
@@ -157,7 +155,7 @@ class LaunchHandler(RequestHandler):
         self.render(
             "launch.html",
             websocket_url=websocket_url,
-            raiden_url=base.RaidenClient.WEB_UI_INDEX_URL,
+            raiden_url=RAIDEN_CLIENT_DEFAULT_CLASS.WEB_UI_INDEX_URL,
         )
 
 

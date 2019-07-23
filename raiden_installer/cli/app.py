@@ -1,7 +1,8 @@
-from whaaaaat import prompt, Validator, ValidationError
 from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
 
-from .. import base
+from whaaaaat import ValidationError, Validator, prompt
+
+from .. import RAIDEN_CLIENT_DEFAULT_CLASS, base
 
 
 class Messages:
@@ -159,39 +160,40 @@ def run_action_configuration_list():
 
 
 def run_action_release_manager():
+
+    all_releases = {
+        raiden.release: raiden
+        for raiden in RAIDEN_CLIENT_DEFAULT_CLASS.get_available_releases()
+    }
+
     release_selection = prompt(
         {
             "name": "releases",
             "type": "checkbox",
             "message": Messages.input_release_manager,
             "choices": [
-                {"name": raiden.release, "checked": raiden.is_installed}
-                for raiden in base.RaidenClient.get_available_releases()
+                {
+                    "name": raiden.release,
+                    "value": raiden,
+                    "checked": raiden.is_installed,
+                }
+                for raiden in all_releases.values()
             ],
         }
     )
 
-    installed_releases = [r.release for r in base.RaidenClient.get_installed_releases()]
+    to_install = [release_name for release_name in release_selection["releases"]]
 
-    to_install = set(release_selection["releases"]) - set(installed_releases)
-    to_uninstall = set(installed_releases) - set(release_selection["releases"])
+    for raiden in all_releases.values():
+        if raiden.is_installed and raiden.release not in to_install:
+            print(f"Uninstalling {raiden.release}")
+            raiden.uninstall()
+            continue
 
-    for release in to_install:
-        print(f"Installing {release}. This might take some time...")
-        try:
-            raiden_client = base.RaidenClient(release)
-            raiden_client.install()
-        except (base.InstallerError, OSError) as exc:
-            print(f"Failed to install {release}: {exc}")
-            try:
-                base.RaidenClient.get_available_releases.clear_cache()
-                raiden_client.install_path().unlink()
-            except Exception:
-                pass
-
-    for release in to_uninstall:
-        print(f"Uninstalling {release}")
-        base.RaidenClient(release).uninstall()
+        if not raiden.is_installed and raiden.release in to_install:
+            print(f"Installing {raiden.release}. This might take some time...")
+            raiden.install()
+            continue
 
     return main_prompt()
 
@@ -241,9 +243,8 @@ def run_action_launch_raiden():
                 "message": Messages.input_launch_release,
                 "choices": [
                     {"name": raiden.release, "value": raiden}
-                    for raiden in base.RaidenClient.get_installed_releases()
+                    for raiden in RAIDEN_CLIENT_DEFAULT_CLASS.get_installed_releases()
                 ],
-                "filter": lambda answer: base.RaidenClient(answer),
             },
         ]
     )

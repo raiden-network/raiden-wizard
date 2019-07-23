@@ -1,39 +1,42 @@
-import os
-import sys
+import datetime
+import functools
 import glob
 import hashlib
-import logging
 import json
-import uuid
-import time
-import functools
+import logging
+import os
 import random
-from io import BytesIO
-from contextlib import closing
-from datetime import datetime
-from pathlib import Path
+import re
 import socket
 import string
 import subprocess
+import sys
+import tarfile
+import time
+import uuid
+import zipfile
+from contextlib import closing
+from io import BytesIO
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
-import tarfile
-import zipfile
+from xml.etree import ElementTree
 
 import psutil
-from raiden_contracts.contract_manager import (
-    ContractManager,
-    get_contracts_deployment_info,
-    contracts_precompiled_path,
-)
-from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
-from eth_keyfile import create_keyfile_json, decode_keyfile_json
-from eth_utils import to_checksum_address
 import requests
 import toml
+from eth_keyfile import create_keyfile_json, decode_keyfile_json
+from eth_utils import to_checksum_address
+from raiden_contracts.constants import (CONTRACT_CUSTOM_TOKEN,
+                                        CONTRACT_USER_DEPOSIT)
+from raiden_contracts.contract_manager import (ContractManager,
+                                               contracts_precompiled_path,
+                                               get_contracts_deployment_info)
+from web3 import HTTPProvider, Web3
+from web3.middleware import (construct_sign_and_send_raw_middleware,
+                             geth_poa_middleware)
+
 from xdg import XDG_DATA_HOME
-from web3 import Web3, HTTPProvider
-from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +134,10 @@ class Account:
             passphrase = make_random_string()
 
         time_stamp = (
-            datetime.utcnow().replace(microsecond=0).isoformat().replace(":", "-")
+            datetime.datetime.utcnow()
+            .replace(microsecond=0)
+            .isoformat()
+            .replace(":", "-")
         )
         uid = uuid.uuid4()
 
@@ -174,15 +180,15 @@ class Account:
 
 class RaidenClient:
     BINARY_FOLDER_PATH = Path.home().joinpath(".local", "bin")
-    RELEASES_URL = "https://api.github.com/repos/raiden-network/raiden/releases"
-    DOWNLOADS_URL = "https://github.com/raiden-network/raiden/releases/download"
     BINARY_NAME_FORMAT = "raiden-{release}"
-    LATEST_RELEASE = "v0.100.4"
     WEB_UI_INDEX_URL = "http://127.0.0.1:5001"
 
-    def __init__(self, release):
+    def __init__(self, release, **kw):
         self.release = release
         self._process_id = self.get_process_id()
+
+        for attr, value in kw.items():
+            setattr(self, attr, value)
 
     def install(self, force=False):
 
@@ -233,15 +239,6 @@ class RaidenClient:
                     pass
                 time.sleep(1)
 
-    def get_download_url(self, system=None):
-        system_platform = system or sys.platform
-
-        extension = "tar.gz" if system_platform == "linux" else "zip"
-        label = {"darwin": "macOS", "linux": "linux"}[system_platform]
-
-        filename = f"raiden-{self.release}-{label}-x86_64.{extension}"
-        return f"{self.DOWNLOADS_URL}/{self.release}/{filename}"
-
     def get_process_id(self):
         def is_dead(process):
             return process.status() is [psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE]
@@ -285,17 +282,14 @@ class RaidenClient:
 
     @classmethod
     def get_latest_release(cls):
-        try:
-            return cls.get_available_releases()[0]
-        except Exception:
-            return cls(cls.LATEST_RELEASE)
+        return max(cls.get_available_releases())
 
     @classmethod
     @functools.lru_cache()
     def get_available_releases(cls):
-        response = requests.get(cls.RELEASES_URL)
+        response = requests.get(cls.RELEASE_INDEX_URL)
         response.raise_for_status()
-        return [cls(release.get("tag_name")) for release in response.json()]
+        return sorted(cls._make_releases(response), reverse=True)
 
     @classmethod
     def get_installed_releases(cls):
@@ -310,6 +304,161 @@ class RaidenClient:
         installed_releases = [raiden.split("-", 1)[-1] for raiden in installed_raidens]
 
         return [cls(release) for release in installed_releases]
+
+
+class RaidenRelease(RaidenClient):
+    RELEASE_INDEX_URL = "https://api.github.com/repos/raiden-network/raiden/releases"
+    DOWNLOAD_INDEX_URL = "https://github.com/raiden-network/raiden/releases/download"
+
+    @property
+    def version(self):
+        return f"{self.major}.{self.minor}.{self.revision}"
+
+    @property
+    def major(self):
+        return int(self.release.split(".")[0].strip("v"))
+
+    @property
+    def minor(self):
+        return int(self.release.split(".")[1])
+
+    @property
+    def revision(self):
+        return int(self.release.split(".")[2])
+
+    def __eq__(self, other):
+        return all(
+            [
+                self.major == other.major,
+                self.minor == other.minor,
+                self.revision == other.revision,
+            ]
+        )
+
+    def __lt__(self, other):
+        if self.major != other.major:
+            return self.major < other.major
+
+        if self.minor != other.minor:
+            return self.minor < other.minor
+
+        return self.revision < other.revision
+
+    def __gt__(self, other):
+        if self.major != other.major:
+            return self.major > other.major
+
+        if self.minor != other.minor:
+            return self.minor > other.minor
+
+        return self.revision > other.revision
+
+    def __cmp__(self, other):
+        if self.__gt__(other):
+            return 1
+        elif self.__lt__(other):
+            return -1
+        else:
+            return 0
+
+    def get_download_url(self, system=None):
+        system_platform = system or sys.platform
+
+        extension = "tar.gz" if system_platform == "linux" else "zip"
+        release_os = {"darwin": "macOS", "linux": "linux"}[system_platform]
+
+        filename = f"raiden-{self.release}-{release_os}-x86_64.{extension}"
+        return f"{self.DOWNLOAD_INDEX_URL}/{self.release}/{filename}"
+
+    @classmethod
+    def _make_releases(cls, index_response):
+        releases = [r for r in index_response.json() if not r.get("prerelease")]
+        return [cls(release.get("tag_name")) for release in releases]
+
+
+class RaidenNightly(RaidenClient):
+    RELEASE_INDEX_URL = "https://raiden-nightlies.ams3.digitaloceanspaces.com"
+    DOWNLOAD_URL_PATTERN = (
+        r"raiden-nightly-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)"
+        r"T(?P<hour>\d+)-(?P<minute>\d+)-(?P<second>\d+)-"
+        r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)\.(?P<extra>.+)-"
+        r"(?P<release_os>macOS|linux)-x86_64.(?P<extension>tar\.gz|zip)"
+    )
+
+    @property
+    def release_date(self):
+        return datetime.date(
+            year=int(self.year), month=int(self.month), day=int(self.day)
+        )
+
+    def get_download_url(self, system=None):
+        system_platform = system or sys.platform
+
+        extension = "tar.gz" if system_platform == "linux" else "zip"
+        release_os = {"darwin": "macOS", "linux": "linux"}[system_platform]
+
+        filename = (
+            f"raiden-nightly-"
+            f"{self.year:04}-{self.month:02}-{self.day:02}"
+            f"T{self.hour}-{self.minute}-{self.second}-"
+            f"v{self.major}.{self.minor}.{self.revision}.{self.extra}-"
+            f"{release_os}-x86_64.{extension}"
+        )
+        return f"{self.RELEASE_INDEX_URL}/{filename}"
+
+    def __eq__(self, other):
+        return self.release == other.release and self.release_date == other.release_date
+
+    def __lt__(self, other):
+        return self.release_date < other.release_date
+
+    def __gt__(self, other):
+        return self.release_date > other.release_date
+
+    def __cmp__(self, other):
+        if self.release_date > other.release_date:
+            return 1
+        elif self.release_date < other.release_date:
+            return -1
+        else:
+            return 0
+
+    @classmethod
+    def _make_releases(cls, index_response):
+        xmlns = "http://s3.amazonaws.com/doc/2006-03-01/"
+
+        release_os = {"darwin": "macOS", "linux": "linux"}[sys.platform]
+
+        def get_children_by_tag(node, tag):
+            return node.findall(f"{{{xmlns}}}{tag}", namespaces={"xmlns": xmlns})
+
+        tree = ElementTree.fromstring(index_response.content)
+
+        content_nodes = get_children_by_tag(tree, "Contents")
+        all_keys = [get_children_by_tag(node, "Key")[0].text for node in content_nodes]
+
+        nightlies = {
+            k: v.groupdict()
+            for k, v in {
+                key: re.match(cls.DOWNLOAD_URL_PATTERN, key) for key in all_keys
+            }.items()
+            if v and v.groupdict().get("release_os") == release_os
+        }
+
+        release_name_template = "nightly-{year:0>4}{month:0>2}{day:0>2}"
+        for key, value in nightlies.items():
+            nightlies[key]["release"] = release_name_template.format(**value)
+            nightlies[key]["year"] = int(nightlies[key]["year"])
+            nightlies[key]["month"] = int(nightlies[key]["month"])
+            nightlies[key]["day"] = int(nightlies[key]["day"])
+
+        return [cls(**nightly) for nightly in nightlies.values()]
+
+    @classmethod
+    def get_installed_releases(cls):
+        return [
+            release for release in cls.get_available_releases() if release.is_installed
+        ]
 
 
 class Network:

@@ -58,7 +58,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="raiden_test_launcher",
+    name="raiden_wizard",
     debug=True,
     bootloader_ignore_signals=False,
     strip=False,

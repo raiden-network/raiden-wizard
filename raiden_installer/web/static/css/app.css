@@ -1,251 +1,374 @@
-@import url('https://fonts://googleapis.com/css?family=Roboto:100,100i,300&display=swap');
-
-* {
-    font-family: 'Roboto', sans-serif;
-}
-
+@import url("https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap");
 body {
-    background: linear-gradient(to right, #313030, #000000);
-    margin: 0;
-    padding: 0;
+  background: -webkit-gradient(linear, left top, right top, from(#313030), to(#000000));
+  background: linear-gradient(90deg, #313030 0%, #000000 100%);
+  font-family: "Roboto", sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-    color: #28A5C8;
-    font-size: 28px;
-    font-weight: 300;
-    letter-spacing: 1.2px;
-    margin: 0;
-    padding-top: 70px;
-    text-align: center;
+body h1 {
+  font-size: 28px;
+  font-weight: 500;
+  margin: 0;
 }
 
-p {
-    color: #E6E6E6;
-    font-size: 14px;
-    font-weight: 100;
-    letter-spacing: 1px;
-    line-height: 20px;
-    margin: 0;
-    padding-top: 30px;
-    text-align: center;
+body h2 {
+  font-size: 19px;
+  font-weight: 400;
+  margin: 0;
 }
 
-.container {
-    display: grid;
-    grid-template-areas:
-        ". . . . . . . . . . . ."
-        ". . . . . . . . . . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . i i i i i i . . ."
-        ". . . . . . . . . . . ."
-        ". . . . . . . . . . . .";
-    grid-template-columns: repeat(12, 1fr);
-    grid-template-rows: repeat(12, 1fr);
-    height: 100vh;
+body p {
+  font-size: 16px;
+  margin: 0;
 }
 
-.installer-window {
-    background-color: white;
-    # background: #141414;
-    grid-area: i;
+body .container {
+  display: -ms-grid;
+  display: grid;
+      grid-template-areas: ". . ." ". launcher-window ." ". . .";
+  -ms-grid-columns: 1fr auto 1fr;
+      grid-template-columns: 1fr auto 1fr;
+  -ms-grid-rows: 50px auto 50px;
+      grid-template-rows: 50px auto 50px;
+  min-height: 100vh;
+  min-width: 100vw;
 }
 
-form {
-    height: 100%;
-    width: 100%;
+body .container .launcher-window {
+  background-color: #0f0e10;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 2;
+  -ms-grid-column: 2;
+  grid-area: launcher-window;
+  -ms-grid-column-align: center;
+      justify-self: center;
+  width: 620px;
 }
 
-input {
-    background-color: rgba(50, 50, 50, .7);
-    border: 0;
-    border-radius: 20px;
-    color: #28A5C8;
-    height: 28px;
-    padding: 0px 10px 0px 10px;
-    transition: background-color .4s;
-    transition: box-shadow .3s ease-in-out;
-    width: 300px;
+body .container .launcher-window #welcome-screen {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-rows: auto auto auto auto;
+      grid-template-rows: auto auto auto auto;
 }
 
-input:focus {
-    background-color: rgba(50, 50, 50, .4);
-    box-shadow: 0 0 10px 5px rgba(40, 165, 200, .25);
-    outline: none;
-    transition: background-color .4s;
-    transition: box-shadow .3s ease-in-out;
+body .container .launcher-window #welcome-screen .heading-wrapper {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
 }
 
-input.pwd {
-    text-align: center;
+body .container .launcher-window #welcome-screen .heading-wrapper .heading {
+  color: #fff;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 50px;
+          flex: 0 0 50px;
+  padding-top: 20px;
+  text-align: center;
 }
 
-button {
-    background-color: #28A5C8;
-    border: 0;
-    border-radius: 20px;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 300;
-    height: 28px;
-    letter-spacing: 1.5px;
-    margin: 0;
-    padding: 0;
-    transition: .4s;
-    width: 100px;
+body .container .launcher-window #welcome-screen .heading-wrapper .description {
+  color: #fff;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 110px;
+          flex: 0 0 110px;
+  font-weight: 300;
+  line-height: 21px;
+  text-align: center;
+  width: 300px;
 }
 
-button:focus {
-    outline: none;
+body .container .launcher-window #welcome-screen .heading-wrapper .description a {
+  color: #28a5c8;
+  text-decoration: none;
 }
 
-button:disabled {
-    background-color: #173B48;
-    color: #646464;
-    transition: .4s;
+body .container .launcher-window #welcome-screen .configuration-files-list {
+  border-top: solid 1.5px #0a6e87;
+  max-height: 210px;
+  overflow: auto;
 }
 
-button.keystore-btn {
-    margin-right: 10px;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper {
+  background-color: #1e1e1e;
+  display: -ms-grid;
+  display: grid;
+      grid-template-areas: "account-address account-address account-address account-address launch-configuration-button" "network account-balance account-balance account-balance launch-configuration-button";
+  -ms-grid-columns: 130px 1fr 1fr 1fr 1fr;
+      grid-template-columns: 130px 1fr 1fr 1fr 1fr;
+  -ms-grid-rows: (35px)[2];
+      grid-template-rows: repeat(2, 35px);
+  margin-bottom: 2px;
 }
 
-button.installation-btn {
-    margin-left: 10px;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .account-address {
+  color: #fff;
+  -ms-flex-item-align: end;
+      -ms-grid-row-align: end;
+      align-self: end;
+  -ms-grid-row: 1;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: account-address;
+  font-weight: 500;
+  padding-left: 20px;
 }
 
-#keystore {
-    display: grid;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .network {
+  color: #646464;
+  -ms-flex-item-align: start;
+      -ms-grid-row-align: start;
+      align-self: start;
+  -ms-grid-row: 2;
+  -ms-grid-column: 1;
+  grid-area: network;
+  font-weight: 400;
+  padding-left: 20px;
 }
 
-.keystore-input-wrapper {
-    display: flex;
-    flex-direction: column;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .account-balance {
+  color: #646464;
+  -ms-flex-item-align: start;
+      align-self: flex-start;
+  -ms-grid-row: 2;
+  -ms-grid-column: 2;
+  -ms-grid-column-span: 3;
+  grid-area: account-balance;
+  font-weight: 400;
 }
 
-.pwd-input {
-    align-items: center;
-    display: flex;
-    flex: 2;
-    justify-content: center;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 1;
+  -ms-grid-row-span: 2;
+  -ms-grid-column: 5;
+  grid-area: launch-configuration-button;
+  padding-right: 20px;
+  text-align: center;
 }
 
-.pwd-error {
-    display: flex;
-    flex: 1;
-    justify-content: center;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration .launch-configuration-button {
+  background-color: transparent;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 33px;
+  width: 100px;
 }
 
-.pwd-error p {
-    color: #ef5350;
-    font-size: 14px;
-    font-style: italic;
-    font-weight: 100;
-    letter-spacing: 1.2px;
-    visibility: hidden;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration .launch-configuration-button:hover {
+  background-color: #28a5c8;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 33px;
+  width: 100px;
 }
 
-#eth-rpc {
-    display: none;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper {
+  display: -ms-grid;
+  display: grid;
+      grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "new-configuration new-configuration new-configuration new-configuration";
+  -ms-grid-columns: (auto)[4];
+      grid-template-columns: repeat(4, auto);
+  -ms-grid-rows: 80px 40px 40px 30px 80px;
+      grid-template-rows: 80px 40px 40px 30px 80px;
 }
 
-.eth-rpc-input-wrapper {
-    display: flex;
-    flex-direction: column;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .input-label {
+  color: #fff;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 1;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: input-label;
+  text-align: center;
 }
 
-.proj-id-input {
-    align-items: center;
-    display: flex;
-    flex: 2;
-    justify-content: center;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .client {
+  -ms-grid-row: 2;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 3;
+  grid-area: client;
+  padding-left: 60px;
 }
 
-.proj-id-error {
-    display: flex;
-    flex: 1;
-    justify-content: center;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .client input {
+  background-color: #323232;
+  border: 0;
+  border-radius: 20px;
+  color: #28a5c8;
+  height: 28px;
+  padding: 0px 10px 0px 10px;
+  width: 350px;
 }
 
-.proj-id-error p {
-    color: #ef5350;
-    font-size: 14px;
-    font-style: italic;
-    font-weight: 100;
-    letter-spacing: 1.2px;
-    visibility: hidden;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .network-select {
+  background-color: #323232;
+  border-radius: 10px;
+  -ms-grid-row: 2;
+  -ms-grid-column: 4;
+  grid-area: network-select;
+  height: 28px;
+  margin-right: 60px;
+  text-align: center;
+  width: 80px;
 }
 
-#installation {
-    display: none;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .network-select select {
+  background-color: #323232;
+  border: 0;
+  color: #28a5c8;
+  height: 28px;
+  width: 70px;
 }
 
-.spinner-wrapper {
-    display: grid;
-    align-self: center;
-    justify-content: center;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs-monitoring {
+  -ms-grid-row: 3;
+  -ms-grid-column: 1;
+  grid-area: pfs-monitoring;
+  padding-left: 60px;
 }
 
-.spinner {
-    animation: .8s spin infinite;
-    border: 4px solid rgba(50, 50, 50, 1);
-    border-bottom-color: #28A5C8;
-    border-radius: 50%;
-    border-right-color: #28A5C8;
-    border-top-color: #28A5C8;
-    box-shadow: 8px 0px 15px 0px rgba(40, 165, 200, .5);
-    height: 100px;
-    width: 100px;
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs-monitoring-description {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 300;
+  -ms-grid-row: 3;
+  -ms-grid-column: 2;
+  -ms-grid-column-span: 3;
+  grid-area: pfs-monitoring-description;
+  padding-top: 3px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .setup-error {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  color: #ef5350;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 300;
+  -ms-grid-row: 4;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: setup-error;
+  text-align: center;
+  visibility: hidden;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 5;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: new-configuration;
+  text-align: center;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration .new-configuration-button {
+  background-color: transparent;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 40px;
+  width: 225px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration .new-configuration-button:hover {
+  background-color: #28a5c8;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 40px;
+  width: 225px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration .new-configuration-button:disabled {
+  background-color: transparent;
+  border: 2px solid rgba(40, 165, 200, 0.3);
+  border-radius: 29px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+  font-size: 14px;
+  height: 40px;
+  width: 225px;
+}
+
+body .container .launcher-window #launcher-screen {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-rows: auto auto;
+      grid-template-rows: auto auto;
+}
+
+body .container .launcher-window #launcher-screen .spinner-wrapper {
+  display: -ms-grid;
+  display: grid;
+  justify-items: center;
+  padding-top: 100px;
+}
+
+body .container .launcher-window #launcher-screen .spinner-wrapper .spinner {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -webkit-animation: .8s spin infinite;
+          animation: .8s spin infinite;
+  border: 4px solid #323232;
+  border-radius: 50%;
+  border-bottom-color: #0a6e87;
+  border-right-color: #0a6e87;
+  border-top-color: #0a6e87;
+  height: 100px;
+  width: 100px;
+}
+
+@-webkit-keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+  to {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
 }
 
-.installation-progress {
-    display: flex;
-    justify-content: center;
+body .container .launcher-window #launcher-screen .messages {
+  color: #fff;
+  line-height: 28px;
+  list-style-type: none;
+  margin: 0;
+  padding: 30px 0px 100px 0px;
+  text-align: center;
 }
-
-.button-wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-.heading-wrapper {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-}
-
-.heading {
-    flex: none;
-}
-
-.description {
-    flex: 1;
-    width: 300px;
-}
-
-#raiden-init {
-    display: grid;
-    grid-template-rows: repeat(3, 1fr);
-    height: 100%;
-    width: 100%;
-}
+/*# sourceMappingURL=app.css.map */

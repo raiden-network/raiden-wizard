@@ -1,108 +1,49 @@
 {% extends "base.html" %}
 
-
 {% block content %}
-{% if configuration_files %}
-<h2>Launch from given configuration files</h2>
-<table class="existing-configurations">
-  <thead>
-    <tr>
-      <th>Account Address</th>
-      <th>Network</th>
-      <th>Ethereum Balance</th>
-      <th>&nbsp;</th>
-    </tr>
-  </thead>
-
-  {% for conf_file in configuration_files %}
-  <tr>
-    <td>{{ conf_file.account.address }}</td>
-    <td>{{ conf_file.network.capitalized_name }}</td>
-    <td>{{ conf_file.balance / 10 ** 18 }}</td>
-    <td>
-
-      <a href="{{ reverse_url('launch', conf_file.file_name) }}">Launch</a>
-    </td>
-   <tr>
-  {% end %}
-</table>
-{% end %}
-
-<h2>Quick Setup</h2>
-<div class="configuration-wizard">
-  {% if setup_form.errors %}
-  <div class="warning">Please check the information you provided and try again:</div>
-  <ul>
-    {% for field_error, error_messages in setup_form.errors.items() %}
-    <li class="error">{{ field_error }}: {{ '/'.join(error_messages) }}</li>
-    {% end %}
-  </ul>
-  {% end%}
-  <form action="{{ reverse_url('quick_setup') }}" method="POST">
-    <div>
-      <div>{% raw setup_form.endpoint.label %} {% raw setup_form.endpoint %}</div>
-      <div>{% raw setup_form.use_rsb %} {% raw setup_form.use_rsb.label %}</div>
-      {% raw setup_form.network %}
+<div id="welcome-screen">
+    {% if configuration_files %}
+    <div class="heading-wrapper">
+        <h1 class="heading">Launch from Configuration</h1>
+        <p class="description">To run Raiden from an already existing configuration just select a account from the list below and press the launch button.</p>
     </div>
-    <button type="submit">Launch</button>
-  </form>
+    <div class="configuration-files-list">
+        {% for configuration_file in configuration_files %}
+        <form action="{{ reverse_url('launch', configuration_file.file_name) }}">
+            <div class="configuration-files-wrapper">
+                <p class="account-address">0x{{ configuration_file.account.address }}</p>
+                <p class="network">{{ configuration_file.network.capitalized_name }}</p>
+                <p class="account-balance">Balance: {{ round((configuration_file.balance / 10 ** 18), 4) }}</p>
+                <div class="launch-configuration">
+                    <button class="launch-configuration-button" type="submit">Launch</button>
+                </div>
+            </div>
+        </form>
+        {% end %}
+    </div>
+    {% end %}
+    <div class="heading-wrapper">
+        <h1 class="heading">Setup New Configuration</h1>
+        <p class="description">To start using Raiden with a new configuration you need to provide a Infura Project ID. If you don't have a Infura account click <a href="https://medium.com/@raiden_network/6c7c61c5b695" target="_blank">here</a> for instructions on how to get one.</p>
+    </div>
+    <form action="{{ reverse_url('quick_setup') }}" method="POST">
+        <div class="new-configuration-wrapper">
+            <h2 class="input-label">Enter your Infura Project ID</h2>
+            <div class="client">
+                {% raw setup_form.endpoint(onfocus="enableButton(event)", onblur="inputValidation(event)") %}
+            </div>
+            <div class="network-select">
+                {% raw setup_form.network %}
+            </div>
+            <div class="pfs-monitoring">
+                {% raw setup_form.use_rsb %}
+            </div>
+            <p class="pfs-monitoring-description">Configure Raiden to use Pathfinding and Monitoring Services</p>
+            <p class="setup-error">You need to provide a valid Infura Project ID</p>
+            <div class="new-configuration">
+                <button class="new-configuration-button" type="submit" disabled>Create New Configuration</button>
+            </div>
+        </div>
+    </form>
 </div>
-<!--
-     <form method="POST">
-     <div id="keystore">
-     <div class="heading-wrapper">
-     <div class="heading">
-     <h1>Choose a keystore password</h1>
-     </div>
-     <div class="description">
-     <p>Do not forget this password, there are no options for recovering a lost password.</p>
-     </div>
-     </div>
-     <div class="keystore-input-wrapper">
-     <div class="pwd-input">
-     <input class="pwd" type="password" name="keystore-pwd" data-lpignore="true" onfocus="enableButtons(event)" onblur="inputValidation(event)">
-     </div>
-     <div class="pwd-error">
-     <p>Please provide a password</p>
-     </div>
-     </div>
-     <div class="button-wrapper">
-     <button id="to-eth-rpc" type="button" disabled onclick="inputToggle('eth-rpc')">Next</button>
-     </div>
-     </div>
-
-     <div id="eth-rpc">
-     <div class="heading-wrapper">
-     <div class="heading">
-     <h1>Enter your Infura Project ID</h1>
-     </div>
-     <div class="description">
-     <p>Don't have a Infura account? Sign up here to create one and get a projct ID.</p>
-     </div>
-     </div>
-     <div class="eth-rpc-input-wrapper">
-     <div class="proj-id-input">
-     <input type="text" name="proj-id" data-lpignore="true" onfocus="enableButtons(event)" onblur="inputValidation(event)">
-     </div>
-     <div class="proj-id-error">
-     <p>Not a valid Infura Project ID</p>
-     </div>
-     </div>
-     <div class="button-wrapper">
-     <button class="keystore-btn" type="button" onclick="inputToggle('keystore')">Back</button>
-     <button class="installation-btn" id="to-installation" type="submit" disabled onclick="inputToggle('installation')">Install</button>
-     </div>
-     </div>
-
-     <div id="installation">
-     <div>
-     </div>
-     <div class="spinner-wrapper">
-     <div class="spinner"></div>
-     </div>
-     <div class="installation-progress">
-     <p>Downloading and preparing Raiden, this might take a couple of minutes.</p>
-     </div>
-     </div>
-     </form> -->
 {% end %}

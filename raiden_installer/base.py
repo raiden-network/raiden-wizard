@@ -195,6 +195,8 @@ class RaidenClient:
         if self.install_path.exists() and not force:
             raise InstallerError(f"{self.install_path} already exists")
 
+        self.BINARY_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
+
         download_url = self.get_download_url()
         download = requests.get(download_url)
         download.raise_for_status()

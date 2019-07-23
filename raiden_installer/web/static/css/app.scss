@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap');
+
+
+$background-colors: (
+    configuration-list: #1e1e1e,
+    launcher: #0f0e10,
+    main: linear-gradient(90deg, #313030 0%, #000000 100%),
+);
+$text-colors: (
+    standard-bright-text: #fff,
+    standard-dark-text: #646464,
+);
+$element-colors: (
+    blue-border: #0a6e87,
+);
+$button-colors: (
+    button-standard-background: transparent,
+    button-hover-background: #28a5c8,
+    button-standard-text: #fff,
+    button-standard-border: #28a5c8,
+);
+
+
+@mixin launch-configuration-button($background-color, $border-color, $text-color) {
+    background-color: $background-color;
+    border: 2px solid $border-color;
+    border-radius: 29px;
+    color: $text-color;
+    font-weight: 400;
+    font-size: 14px;
+    height: 33px;
+    width: 100px;
+}
+
+
+@function color($color-type) {
+    @return map-get($background-colors, $color-type), map-get($text-colors, $color-type), map-get($element-colors, $color-type), map-get($button-colors, $color-type)
+}
+
+
+body {
+    background: nth(color(main), 1);
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+
+    h1 {
+        font-size: 32px;
+        font-weight: 500;
+        margin: 0;
+
+        // background-color: blue;
+    }
+
+    p {
+        font-size: 16px;
+        margin: 0;
+    }
+
+    .container {
+        display: grid;
+        grid-template-areas:
+            ". . . . . . . . . . . ."
+            ". . . . . . . . . . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . i i i i i i . . ."
+            ". . . . . . . . . . . ."
+            ". . . . . . . . . . . .";
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: repeat(12, 1fr);
+        height: 100vh;
+
+        .launcher-window {
+            background-color: nth(color(launcher), 1);
+            grid-area: i;
+            width: 620px; /* BREAKS LAYOUT !! */
+
+            #welcome-screen {
+                display: grid;
+                grid-template-rows: auto 1fr 1fr;
+                height: 100%;
+                width: 100%;
+
+                .heading-wrapper {
+                    display: flex;
+                    flex-direction: column;
+
+                    // background-color: pink;
+
+                    .heading {
+                        flex: none;
+
+                        // background: orange;
+                    }
+
+                    .description {
+                        border-bottom: solid 1.5px nth(color(blue-border), 3);
+                        flex: none;
+
+                        // background: lime;
+                    }
+                }
+
+                .configuration-files-wrapper {
+                    display: flex;
+                    flex-direction: column;
+                    overflow: auto;
+
+                    .configuration-file-list-item {
+                        background-color: nth(color(configuration-list), 1);
+                        display: grid;
+                        flex: none;
+                        grid-template-areas:
+                            "account-address account-address account-address account-address launch-configuration"
+                            "network account-balance account-balance account-balance launch-configuration";
+                        grid-template-columns: 130px 1fr 1fr 1fr 1fr;
+                        grid-template-rows: 35px 35px;
+                        margin-bottom: 2px;
+                        padding: 0px 20px 0px 20px;
+                        .account-address {
+                            align-self: end;
+                            color: nth(color(standard-bright-text), 2);
+                            font-weight: 500;
+                            grid-area: account-address;
+
+                            // background: pink;
+                        }
+                        .account-balance {
+                            align-self: start;
+                            color: nth(color(standard-dark-text), 2);
+                            font-weight: 400;
+                            grid-area: account-balance;
+                        }
+                        .network {
+                            align-self: start;
+                            color: nth(color(standard-dark-text), 2);
+                            font-weight: 400;
+                            grid-area: network;
+                        }
+                        .launch-configuration {
+                            text-align: center;
+                            align-self: center;
+                            grid-area: launch-configuration;
+                            .launch-configuration-button {
+                                @include launch-configuration-button(nth(color(button-standard-background), 4), nth(color(button-standard-border), 4), nth(color(button-standard-text), 4));
+                            }
+                            .launch-configuration-button:hover {
+                                @include launch-configuration-button(nth(color(button-hover-background), 4), nth(color(button-standard-border), 4), nth(color(button-standard-text), 4));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

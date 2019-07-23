@@ -37,8 +37,8 @@ def get_data_folder_path():
 
 
 class QuickSetupForm(Form):
-    network = wtforms.HiddenField(default=base.Network.get_by_name("goerli").name)
-    use_rsb = wtforms.BooleanField("Use Raiden Service Bundle", default=True)
+    network = wtforms.SelectField(choices=[(base.Network.get_by_name("goerli").name, 'Goerli')], default="Goerli")
+    use_rsb = wtforms.BooleanField("Use Raiden Service Bundle")
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -184,6 +184,8 @@ class QuickSetupHandler(LaunchHandler):
             )
             conf_file.save()
             return self.redirect(self.reverse_url("launch", conf_file.file_name))
+        else:
+            pass
 
 
 if __name__ == "__main__":

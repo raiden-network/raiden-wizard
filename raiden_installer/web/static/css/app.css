@@ -1,15 +1,21 @@
-@import url("https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap");
 body {
   background: -webkit-gradient(linear, left top, right top, from(#313030), to(#000000));
   background: linear-gradient(90deg, #313030 0%, #000000 100%);
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   margin: 0;
   padding: 0;
 }
 
 body h1 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 500;
+  margin: 0;
+}
+
+body h2 {
+  font-size: 19px;
+  font-weight: 400;
   margin: 0;
 }
 
@@ -21,32 +27,33 @@ body p {
 body .container {
   display: -ms-grid;
   display: grid;
-      grid-template-areas: ". . . . . . . . . . . ." ". . . . . . . . . . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . i i i i i i . . ." ". . . . . . . . . . . ." ". . . . . . . . . . . .";
-  -ms-grid-columns: (1fr)[12];
-      grid-template-columns: repeat(12, 1fr);
-  -ms-grid-rows: (1fr)[12];
-      grid-template-rows: repeat(12, 1fr);
-  height: 100vh;
+      grid-template-areas: ". . ." ". launcher-window ." ". . .";
+  -ms-grid-columns: 1fr auto 1fr;
+      grid-template-columns: 1fr auto 1fr;
+  -ms-grid-rows: 50px auto 50px;
+      grid-template-rows: 50px auto 50px;
+  min-height: 100vh;
+  min-width: 100vw;
 }
 
 body .container .launcher-window {
   background-color: #0f0e10;
-  -ms-grid-row: 3;
-  -ms-grid-row-span: 8;
-  -ms-grid-column: 4;
-  -ms-grid-column-span: 6;
-  grid-area: i;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 2;
+  -ms-grid-column: 2;
+  grid-area: launcher-window;
+  -ms-grid-column-align: center;
+      justify-self: center;
   width: 620px;
-  /* BREAKS LAYOUT !! */
 }
 
 body .container .launcher-window #welcome-screen {
   display: -ms-grid;
   display: grid;
-  -ms-grid-rows: auto 1fr 1fr;
-      grid-template-rows: auto 1fr 1fr;
-  height: 100%;
-  width: 100%;
+  -ms-grid-rows: auto auto auto auto;
+      grid-template-rows: auto auto auto auto;
 }
 
 body .container .launcher-window #welcome-screen .heading-wrapper {
@@ -60,92 +67,100 @@ body .container .launcher-window #welcome-screen .heading-wrapper {
 }
 
 body .container .launcher-window #welcome-screen .heading-wrapper .heading {
+  color: #fff;
   -webkit-box-flex: 0;
-      -ms-flex: none;
-          flex: none;
+      -ms-flex: 0 0 50px;
+          flex: 0 0 50px;
+  padding-top: 20px;
+  text-align: center;
 }
 
 body .container .launcher-window #welcome-screen .heading-wrapper .description {
-  border-bottom: solid 1.5px #0a6e87;
+  color: #fff;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
   -webkit-box-flex: 0;
-      -ms-flex: none;
-          flex: none;
+      -ms-flex: 0 0 110px;
+          flex: 0 0 110px;
+  font-weight: 300;
+  line-height: 21px;
+  text-align: center;
+  width: 300px;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
+body .container .launcher-window #welcome-screen .heading-wrapper .description a {
+  color: #28a5c8;
+  text-decoration: none;
+}
+
+body .container .launcher-window #welcome-screen .configuration-files-list {
+  border-top: solid 1.5px #0a6e87;
+  max-height: 210px;
   overflow: auto;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item {
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper {
   background-color: #1e1e1e;
   display: -ms-grid;
   display: grid;
-  -webkit-box-flex: 0;
-      -ms-flex: none;
-          flex: none;
-      grid-template-areas: "account-address account-address account-address account-address launch-configuration" "network account-balance account-balance account-balance launch-configuration";
+      grid-template-areas: "account-address account-address account-address account-address launch-configuration-button" "network account-balance account-balance account-balance launch-configuration-button";
   -ms-grid-columns: 130px 1fr 1fr 1fr 1fr;
       grid-template-columns: 130px 1fr 1fr 1fr 1fr;
-  -ms-grid-rows: 35px 35px;
-      grid-template-rows: 35px 35px;
+  -ms-grid-rows: (35px)[2];
+      grid-template-rows: repeat(2, 35px);
   margin-bottom: 2px;
-  padding: 0px 20px 0px 20px;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .account-address {
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .account-address {
+  color: #fff;
   -ms-flex-item-align: end;
       -ms-grid-row-align: end;
       align-self: end;
-  color: #fff;
-  font-weight: 500;
   -ms-grid-row: 1;
   -ms-grid-column: 1;
   -ms-grid-column-span: 4;
   grid-area: account-address;
+  font-weight: 500;
+  padding-left: 20px;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .account-balance {
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .network {
+  color: #646464;
   -ms-flex-item-align: start;
       -ms-grid-row-align: start;
       align-self: start;
-  color: #646464;
+  -ms-grid-row: 2;
+  -ms-grid-column: 1;
+  grid-area: network;
   font-weight: 400;
+  padding-left: 20px;
+}
+
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .account-balance {
+  color: #646464;
+  -ms-flex-item-align: start;
+      align-self: flex-start;
   -ms-grid-row: 2;
   -ms-grid-column: 2;
   -ms-grid-column-span: 3;
   grid-area: account-balance;
-}
-
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .network {
-  -ms-flex-item-align: start;
-      -ms-grid-row-align: start;
-      align-self: start;
-  color: #646464;
   font-weight: 400;
-  -ms-grid-row: 2;
-  -ms-grid-column: 1;
-  grid-area: network;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration {
-  text-align: center;
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration {
   -ms-flex-item-align: center;
       -ms-grid-row-align: center;
       align-self: center;
   -ms-grid-row: 1;
   -ms-grid-row-span: 2;
   -ms-grid-column: 5;
-  grid-area: launch-configuration;
+  grid-area: launch-configuration-button;
+  padding-right: 20px;
+  text-align: center;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration .launch-configuration-button {
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration .launch-configuration-button {
   background-color: transparent;
   border: 2px solid #28a5c8;
   border-radius: 29px;
@@ -156,7 +171,7 @@ body .container .launcher-window #welcome-screen .configuration-files-wrapper .c
   width: 100px;
 }
 
-body .container .launcher-window #welcome-screen .configuration-files-wrapper .configuration-file-list-item .launch-configuration .launch-configuration-button:hover {
+body .container .launcher-window #welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration .launch-configuration-button:hover {
   background-color: #28a5c8;
   border: 2px solid #28a5c8;
   border-radius: 29px;
@@ -165,5 +180,195 @@ body .container .launcher-window #welcome-screen .configuration-files-wrapper .c
   font-size: 14px;
   height: 33px;
   width: 100px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper {
+  display: -ms-grid;
+  display: grid;
+      grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "new-configuration new-configuration new-configuration new-configuration";
+  -ms-grid-columns: (auto)[4];
+      grid-template-columns: repeat(4, auto);
+  -ms-grid-rows: 80px 40px 40px 30px 80px;
+      grid-template-rows: 80px 40px 40px 30px 80px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .input-label {
+  color: #fff;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 1;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: input-label;
+  text-align: center;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .client {
+  -ms-grid-row: 2;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 3;
+  grid-area: client;
+  padding-left: 60px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .client input {
+  background-color: #323232;
+  border: 0;
+  border-radius: 20px;
+  color: #28a5c8;
+  height: 28px;
+  padding: 0px 10px 0px 10px;
+  width: 350px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .network-select {
+  background-color: #323232;
+  border-radius: 10px;
+  -ms-grid-row: 2;
+  -ms-grid-column: 4;
+  grid-area: network-select;
+  height: 28px;
+  margin-right: 60px;
+  text-align: center;
+  width: 80px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .network-select select {
+  background-color: #323232;
+  border: 0;
+  color: #28a5c8;
+  height: 28px;
+  width: 70px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs-monitoring {
+  -ms-grid-row: 3;
+  -ms-grid-column: 1;
+  grid-area: pfs-monitoring;
+  padding-left: 60px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs-monitoring-description {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 300;
+  -ms-grid-row: 3;
+  -ms-grid-column: 2;
+  -ms-grid-column-span: 3;
+  grid-area: pfs-monitoring-description;
+  padding-top: 3px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .setup-error {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  color: #ef5350;
+  font-size: 14px;
+  font-style: italic;
+  font-weight: 300;
+  -ms-grid-row: 4;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: setup-error;
+  text-align: center;
+  visibility: hidden;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -ms-grid-row: 5;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: new-configuration;
+  text-align: center;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration .new-configuration-button {
+  background-color: transparent;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 40px;
+  width: 225px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration .new-configuration-button:hover {
+  background-color: #28a5c8;
+  border: 2px solid #28a5c8;
+  border-radius: 29px;
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  height: 40px;
+  width: 225px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration .new-configuration-button:disabled {
+  background-color: transparent;
+  border: 2px solid rgba(40, 165, 200, 0.3);
+  border-radius: 29px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+  font-size: 14px;
+  height: 40px;
+  width: 225px;
+}
+
+body .container .launcher-window #launcher-screen {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-rows: auto auto;
+      grid-template-rows: auto auto;
+}
+
+body .container .launcher-window #launcher-screen .spinner-wrapper {
+  display: -ms-grid;
+  display: grid;
+  justify-items: center;
+  padding-top: 100px;
+}
+
+body .container .launcher-window #launcher-screen .spinner-wrapper .spinner {
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  -webkit-animation: .8s spin infinite;
+          animation: .8s spin infinite;
+  border: 4px solid #323232;
+  border-radius: 50%;
+  border-bottom-color: #0a6e87;
+  border-right-color: #0a6e87;
+  border-top-color: #0a6e87;
+  height: 100px;
+  width: 100px;
+}
+
+@-webkit-keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+
+body .container .launcher-window #launcher-screen .messages {
+  color: #fff;
+  line-height: 28px;
+  list-style-type: none;
+  margin: 0;
+  padding: 30px 0px 100px 0px;
+  text-align: center;
 }
 /*# sourceMappingURL=app.css.map */

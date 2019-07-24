@@ -13,7 +13,7 @@
             <div class="configuration-files-wrapper">
                 <p class="account-address">0x{{ configuration_file.account.address }}</p>
                 <p class="network">{{ configuration_file.network.capitalized_name }}</p>
-                <p class="account-balance">Balance: {{ round((configuration_file.balance / 10 ** 18), 4) }}</p>
+                <p class="account-balance">Balance: {{ round((configuration_file.balance / 10 ** 18), 4) }} ETH</p>
                 <div class="launch-configuration">
                     <button class="launch-configuration-button" type="submit">Launch</button>
                 </div>

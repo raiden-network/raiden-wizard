@@ -75,16 +75,15 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
 
         try:
             if configuration_file.balance == 0:
-                self._send_status_update(f"No ETH funds in account.")
                 self._send_status_update(
-                    f"Obtaining ETH from {network.capitalized_name} faucet"
+                    f"Funding account with {network.capitalized_name} ETH"
                 )
                 network.fund(account)
                 self._send_status_update(
-                    f"ETH acquired for {account.address}", message_type="success"
+                    f"ETH successfully acquired", message_type="success"
                 )
             self._send_status_update(
-                f"Current balance: {configuration_file.balance} WEI"
+                f"Current balance: {round((configuration_file.balance / 10 ** 18), 4)} ETH"
             )
         except Exception as exc:
             self._send_status_update(
@@ -98,12 +97,12 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
         try:
             if token.balance == 0:
                 self._send_status_update(
-                    f"Minting and depositing {token.TOKEN_AMOUNT} tokens for {token.owner}"
+                    f"Minting and depositing tokens"
                 )
                 token.mint(token.TOKEN_AMOUNT)
                 token.deposit(token.TOKEN_AMOUNT)
                 self._send_status_update(
-                    "Raiden account funded and able to operate", message_type="success"
+                    "Raiden successfully funded with tokens", message_type="success"
                 )
         except Exception as exc:
             self._send_status_update(
@@ -118,7 +117,7 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
             latest.install()
             self._send_status_update("Installation complete", message_type="success")
 
-        self._send_status_update("Launching raiden")
+        self._send_status_update("Launching Raiden, this might take a couple of minutes, do not close the browser")
 
         if not latest.is_running:
             latest.launch(configuration_file)

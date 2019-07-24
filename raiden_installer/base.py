@@ -35,7 +35,6 @@ from raiden_contracts.contract_manager import (ContractManager,
 from web3 import HTTPProvider, Web3
 from web3.middleware import (construct_sign_and_send_raw_middleware,
                              geth_poa_middleware)
-
 from xdg import XDG_DATA_HOME
 
 logger = logging.getLogger(__name__)
@@ -242,14 +241,16 @@ class RaidenClient:
                 time.sleep(1)
 
     def get_process_id(self):
-        def is_dead(process):
-            return process.status() is [psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE]
+        def is_running_raiden(process):
+            try:
+                is_raiden = self.binary_name.lower() == process.name().lower()
+                is_dead = process.status() is [psutil.STATUS_DEAD, psutil.STATUS_ZOMBIE]
 
-        processes = [
-            p
-            for p in psutil.process_iter()
-            if self.binary_name.lower() == p.name().lower() and not is_dead(p)
-        ]
+                return is_raiden and not is_dead
+            except psutil.ZombieProcess:
+                return False
+
+        processes = [p for p in psutil.process_iter() if is_running_raiden(p)]
 
         try:
             return max(p.pid for p in processes)

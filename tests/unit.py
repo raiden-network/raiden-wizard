@@ -2,7 +2,7 @@ import unittest
 import tempfile
 from pathlib import Path
 
-from installer import base
+from raiden_installer import base
 
 
 class AccountTestCase(unittest.TestCase):

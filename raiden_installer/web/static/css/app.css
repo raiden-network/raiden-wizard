@@ -185,11 +185,11 @@ body .container .launcher-window #welcome-screen .configuration-files-list .conf
 body .container .launcher-window #welcome-screen .new-configuration-wrapper {
   display: -ms-grid;
   display: grid;
-      grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "new-configuration new-configuration new-configuration new-configuration";
+      grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "disclaimer disclaimer disclaimer disclaimer" "new-configuration new-configuration new-configuration new-configuration";
   -ms-grid-columns: (auto)[4];
       grid-template-columns: repeat(4, auto);
-  -ms-grid-rows: 80px 40px 40px 30px 80px;
-      grid-template-rows: 80px 40px 40px 30px 80px;
+  -ms-grid-rows: 80px 40px 40px 30px auto 80px;
+      grid-template-rows: 80px 40px 40px 30px auto 80px;
 }
 
 body .container .launcher-window #welcome-screen .new-configuration-wrapper .input-label {
@@ -276,11 +276,26 @@ body .container .launcher-window #welcome-screen .new-configuration-wrapper .set
   visibility: hidden;
 }
 
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .disclaimer {
+  -ms-flex-item-align: end;
+      -ms-grid-row-align: end;
+      align-self: end;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 300;
+  -ms-grid-row: 5;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 4;
+  grid-area: disclaimer;
+  padding: 0px 20px 0px 20px;
+  text-align: center;
+}
+
 body .container .launcher-window #welcome-screen .new-configuration-wrapper .new-configuration {
   -ms-flex-item-align: center;
       -ms-grid-row-align: center;
       align-self: center;
-  -ms-grid-row: 5;
+  -ms-grid-row: 6;
   -ms-grid-column: 1;
   -ms-grid-column-span: 4;
   grid-area: new-configuration;

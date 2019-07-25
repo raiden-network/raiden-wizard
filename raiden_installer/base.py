@@ -35,6 +35,7 @@ from raiden_contracts.contract_manager import (ContractManager,
 from web3 import HTTPProvider, Web3
 from web3.middleware import (construct_sign_and_send_raw_middleware,
                              geth_poa_middleware)
+
 from xdg import XDG_DATA_HOME
 
 logger = logging.getLogger(__name__)
@@ -395,6 +396,13 @@ class RaidenNightly(RaidenClient):
         )
 
     def get_download_url(self, system=None):
+        # FIXME: hardcoding single nightly for now
+        if sys.platform == "darwin":
+            filename = "raiden-v0.100.5.dev94+gffa0a3fe7.d20190719-macOS-x86_64.zip"
+        else:
+            filename = "raiden-v0.100.5.dev113+g2ba85cbee-linux-x86_64.tar.gz"
+        return f"{self.RELEASE_INDEX_URL}/{filename}"
+
         system_platform = system or sys.platform
 
         extension = "tar.gz" if system_platform == "linux" else "zip"
@@ -428,6 +436,9 @@ class RaidenNightly(RaidenClient):
 
     @classmethod
     def _make_releases(cls, index_response):
+        # FIXME: Hardcoding single nightly for now.
+        return [cls(release="nightly-2019-07-24", year=2019, month=7, date=24)]
+
         xmlns = "http://s3.amazonaws.com/doc/2006-03-01/"
 
         release_os = {"darwin": "macOS", "linux": "linux"}[sys.platform]
@@ -534,8 +545,6 @@ class Goerli(Network):
 
 
 class Ropsten(Network):
-    FAUCET_AVAILABLE = True
-
     def fund(self, account):
         try:
             response = requests.get(
@@ -604,10 +613,11 @@ class Infura(EthereumRPCProvider):
 
 
 class Token:
-    TOKEN_AMOUNT = 10 ** 18
+    TOKEN_AMOUNT = 10 ** 21
     USER_DEPOSIT_CONTRACT_NAME = CONTRACT_USER_DEPOSIT
     CUSTOM_TOKEN_CONTRACT_NAME = CONTRACT_CUSTOM_TOKEN
 
+    GAS_REQUIRED_FOR_MINT = 100_000
     GAS_REQUIRED_FOR_APPROVE = 70_000
     GAS_REQUIRED_FOR_DEPOSIT = 200_000
 
@@ -671,7 +681,9 @@ class Token:
         )
 
     def mint(self, amount: int):
-        return self.token_proxy.functions.mint(amount).transact({"from": self.owner})
+        return self._send_raw_transaction(
+            self.token_proxy.functions.mint, self.GAS_REQUIRED_FOR_MINT, amount
+        )
 
     def deposit(self, amount: int):
         self._send_raw_transaction(
@@ -721,7 +733,7 @@ class RaidenConfigurationFile:
 
     @property
     def path_finding_service_url(self):
-        return f"https://pfs-{self.network.name}.services-dev.raiden.network"
+        return f"https://pfs-{self.network.name}-with-fee.services-dev.raiden.network"
 
     @property
     def configuration_data(self):

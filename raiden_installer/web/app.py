@@ -35,8 +35,10 @@ def get_data_folder_path():
 
 
 class QuickSetupForm(Form):
-    network = wtforms.SelectField(choices=[(base.Network.get_by_name("goerli").name, 'Goerli')], default="Goerli")
-    use_rsb = wtforms.BooleanField("Use Raiden Service Bundle")
+    network = wtforms.SelectField(
+        choices=[(n.name, n.capitalized_name) for n in AVAILABLE_NETWORKS]
+    )
+    use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=True)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -96,9 +98,7 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
         )
         try:
             if token.balance == 0:
-                self._send_status_update(
-                    f"Minting and depositing tokens"
-                )
+                self._send_status_update(f"Minting and depositing tokens")
                 token.mint(token.TOKEN_AMOUNT)
                 token.deposit(token.TOKEN_AMOUNT)
                 self._send_status_update(
@@ -117,7 +117,9 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
             latest.install()
             self._send_status_update("Installation complete", message_type="success")
 
-        self._send_status_update("Launching Raiden, this might take a couple of minutes, do not close the browser")
+        self._send_status_update(
+            "Launching Raiden, this might take a couple of minutes, do not close the browser"
+        )
 
         if not latest.is_running:
             latest.launch(configuration_file)
@@ -182,7 +184,11 @@ class QuickSetupHandler(LaunchHandler):
             conf_file.save()
             return self.redirect(self.reverse_url("launch", conf_file.file_name))
         else:
-            pass
+            return self.render(
+                "index.html",
+                configuration_files=base.RaidenConfigurationFile.get_available_configurations(),
+                setup_form=form,
+            )
 
 
 if __name__ == "__main__":

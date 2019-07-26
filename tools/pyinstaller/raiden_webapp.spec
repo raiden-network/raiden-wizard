@@ -70,6 +70,6 @@ exe = EXE(
 if sys.platform == "darwin":
     app = BUNDLE(
         exe,
-        name="raiden_wizard.app",
+        name="Raiden Wizard.app",
         icon="./raiden_installer/web/static/icons/raiden_wizard_macOS_icon.icns",
         )

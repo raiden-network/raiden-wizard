@@ -14,6 +14,9 @@ fi
 
 pip install -r "$PROJECT_ROOT/requirements.txt" -I
 
-pip install pyinstaller staticx
+pip install pyinstaller staticx patchelf-wrapper
 pyinstaller "$PWD/pyinstaller/raiden_webapp.spec"
-staticx "$DIST_FOLDER/$BINARY_NAME" "${PROJECT_ROOT}/${BINARY_NAME}.${OSTYPE}.bin"
+
+if [ "$OSTYPE" == "linux-gnu" ]; then
+    staticx "$DIST_FOLDER/$BINARY_NAME" "${PROJECT_ROOT}/${BINARY_NAME}.${OSTYPE}.bin"
+fi

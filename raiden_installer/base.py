@@ -27,14 +27,14 @@ import requests
 import toml
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
 from eth_utils import to_checksum_address
-from raiden_contracts.constants import (CONTRACT_CUSTOM_TOKEN,
-                                        CONTRACT_USER_DEPOSIT)
-from raiden_contracts.contract_manager import (ContractManager,
-                                               contracts_precompiled_path,
-                                               get_contracts_deployment_info)
+from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
+from raiden_contracts.contract_manager import (
+    ContractManager,
+    contracts_precompiled_path,
+    get_contracts_deployment_info,
+)
 from web3 import HTTPProvider, Web3
-from web3.middleware import (construct_sign_and_send_raw_middleware,
-                             geth_poa_middleware)
+from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
 
 from xdg import XDG_DATA_HOME
 
@@ -396,13 +396,6 @@ class RaidenNightly(RaidenClient):
         )
 
     def get_download_url(self, system=None):
-        # FIXME: hardcoding single nightly for now
-        if sys.platform == "darwin":
-            filename = "raiden-v0.100.5.dev94+gffa0a3fe7.d20190719-macOS-x86_64.zip"
-        else:
-            filename = "raiden-v0.100.5.dev113+g2ba85cbee-linux-x86_64.tar.gz"
-        return f"{self.RELEASE_INDEX_URL}/{filename}"
-
         system_platform = system or sys.platform
 
         extension = "tar.gz" if system_platform == "linux" else "zip"
@@ -436,9 +429,6 @@ class RaidenNightly(RaidenClient):
 
     @classmethod
     def _make_releases(cls, index_response):
-        # FIXME: Hardcoding single nightly for now.
-        return [cls(release="nightly-2019-07-24", year=2019, month=7, date=24)]
-
         xmlns = "http://s3.amazonaws.com/doc/2006-03-01/"
 
         release_os = {"darwin": "macOS", "linux": "linux"}[sys.platform]

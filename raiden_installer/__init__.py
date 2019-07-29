@@ -1,3 +1,3 @@
-from .base import RaidenNightly
+from . import base
 
-RAIDEN_CLIENT_DEFAULT_CLASS = RaidenNightly
+RAIDEN_CLIENT_DEFAULT_CLASS = base.RaidenRelease

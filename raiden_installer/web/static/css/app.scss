@@ -171,9 +171,10 @@ body {
                         "client client client network-select"
                         "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description"
                         "setup-error setup-error setup-error setup-error"
+                        "disclaimer disclaimer disclaimer disclaimer"
                         "new-configuration new-configuration new-configuration new-configuration";
                     grid-template-columns: repeat(4, auto);
-                    grid-template-rows: 80px 40px 40px 30px 80px;
+                    grid-template-rows: 80px 40px 40px 30px auto 80px;
 
                     .input-label {
                         color: color(text-standard);
@@ -224,6 +225,15 @@ body {
                         grid-area: setup-error;
                         text-align: center;
                         visibility: hidden;
+                    }
+                    .disclaimer {
+                        align-self: end;
+                        color: color(text-standard);
+                        font-size: 14px;
+                        font-weight: 300;
+                        grid-area: disclaimer;
+                        padding: 0px 20px 0px 20px;
+                        text-align: center;
                     }
                     .new-configuration {
                         align-self: center;

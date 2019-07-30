@@ -108,8 +108,7 @@ def prompt_network_selection(network_list=None):
             "type": "list",
             "message": Messages.input_network_select,
             "choices": [
-                {"name": network.capitalized_name, "value": network}
-                for network in networks
+                {"name": network.capitalized_name, "value": network} for network in networks
             ],
         }
     )
@@ -135,23 +134,15 @@ def main_prompt():
         account_choices.append(Messages.action_account_list)
         account_choices.append(Messages.action_account_fund)
 
-    available_choices = (
-        configuration_choices + account_choices + raiden_release_management_choices
-    )
+    available_choices = configuration_choices + account_choices + raiden_release_management_choices
 
     available_choices.append(Messages.action_quit)
 
-    return {
-        "type": "list",
-        "message": "What would you like to do?",
-        "choices": available_choices,
-    }
+    return {"type": "list", "message": "What would you like to do?", "choices": available_choices}
 
 
 def run_action_configuration_list():
-    print(
-        "\nAvailable setups (Not necessarily satisfying conditions for running raiden)\n"
-    )
+    print("\nAvailable setups (Not necessarily satisfying conditions for running raiden)\n")
     for config in base.RaidenConfigurationFile.get_available_configurations():
         print("\t", config.short_description)
 
@@ -162,8 +153,7 @@ def run_action_configuration_list():
 def run_action_release_manager():
 
     all_releases = {
-        raiden.release: raiden
-        for raiden in RAIDEN_CLIENT_DEFAULT_CLASS.get_available_releases()
+        raiden.release: raiden for raiden in RAIDEN_CLIENT_DEFAULT_CLASS.get_available_releases()
     }
 
     release_selection = prompt(
@@ -172,26 +162,22 @@ def run_action_release_manager():
             "type": "checkbox",
             "message": Messages.input_release_manager,
             "choices": [
-                {
-                    "name": raiden.release,
-                    "value": raiden,
-                    "checked": raiden.is_installed,
-                }
+                {"name": raiden.version, "value": raiden, "checked": raiden.is_installed}
                 for raiden in all_releases.values()
             ],
         }
     )
 
-    to_install = [release_name for release_name in release_selection["releases"]]
+    to_install = [release for release in release_selection["releases"]]
 
     for raiden in all_releases.values():
-        if raiden.is_installed and raiden.release not in to_install:
-            print(f"Uninstalling {raiden.release}")
+        if raiden.is_installed and raiden.version not in to_install:
+            print(f"Uninstalling {raiden.version}")
             raiden.uninstall()
             continue
 
-        if not raiden.is_installed and raiden.release in to_install:
-            print(f"Installing {raiden.release}. This might take some time...")
+        if not raiden.is_installed and raiden.version in to_install:
+            print(f"Installing {raiden.version}. This might take some time...")
             raiden.install()
             continue
 
@@ -210,9 +196,7 @@ def run_action_account_list():
 def run_action_account_fund():
     account = prompt_account_selection(validate_passphrase=False)
     network = prompt_network_selection(
-        network_list=[
-            network for network in base.Network.all() if network.FAUCET_AVAILABLE
-        ]
+        network_list=[network for network in base.Network.all() if network.FAUCET_AVAILABLE]
     )
 
     print(f"Attempting to add funds to {account.address} on {network.capitalized_name}")
@@ -316,9 +300,7 @@ def run_action_configuration_setup():
 
 
 def run_action_account_create():
-    passphrase = single_question_prompt(
-        {"type": "password", "message": Messages.input_passphrase}
-    )
+    passphrase = single_question_prompt({"type": "password", "message": Messages.input_passphrase})
 
     base.Account.create(passphrase)
     return main_prompt()

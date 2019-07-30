@@ -42,9 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 def make_random_string(length=32):
-    return "".join(
-        random.choice(string.ascii_letters + string.digits) for _ in range(length)
-    )
+    return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
 class InstallerError(Exception):
@@ -89,6 +87,7 @@ class Account:
         if self.keystore_file_path.exists():
             with self.keystore_file_path.open() as f:
                 return json.load(f)
+        return None
 
     @property
     def private_key(self):
@@ -106,9 +105,7 @@ class Account:
         return web3_provider.eth.getBalance(to_checksum_address(self.address))
 
     def get_web3_provider(self, ethereum_rpc_endpoint):
-        is_known_rpc_endpoint = (
-            self._web3_ethereum_rpc_endpoint == ethereum_rpc_endpoint
-        )
+        is_known_rpc_endpoint = self._web3_ethereum_rpc_endpoint == ethereum_rpc_endpoint
         if self._web3_provider is None or not is_known_rpc_endpoint:
             rpc_provider = EthereumRPCProvider.make_from_url(ethereum_rpc_endpoint)
             self._web3_provider = rpc_provider.make_web3_provider(self)
@@ -134,10 +131,7 @@ class Account:
             passphrase = make_random_string()
 
         time_stamp = (
-            datetime.datetime.utcnow()
-            .replace(microsecond=0)
-            .isoformat()
-            .replace(":", "-")
+            datetime.datetime.utcnow().replace(microsecond=0).isoformat().replace(":", "-")
         )
         uid = uuid.uuid4()
 
@@ -172,9 +166,7 @@ class Account:
 
     @classmethod
     def get_user_accounts(cls):
-        keystore_glob = glob.glob(
-            str(cls.find_keystore_folder_path().joinpath("UTC--*"))
-        )
+        keystore_glob = glob.glob(str(cls.find_keystore_folder_path().joinpath("UTC--*")))
         return [cls(keystore_file_path=Path(f)) for f in keystore_glob]
 
 
@@ -183,12 +175,55 @@ class RaidenClient:
     BINARY_NAME_FORMAT = "raiden-{release}"
     WEB_UI_INDEX_URL = "http://127.0.0.1:5001"
 
+    RELEASE_INDEX_URL = "https://api.github.com/repos/raiden-network/raiden/releases"
+    DOWNLOAD_INDEX_URL = "https://github.com/raiden-network/raiden/releases/download"
+    FILE_NAME_SUFFIX = "macOS-x86_64.zip" if sys.platform == "darwin" else "linux-x86_64.tar.gz"
+
     def __init__(self, release, **kw):
         self.release = release
         self._process_id = self.get_process_id()
 
         for attr, value in kw.items():
             setattr(self, attr, value)
+
+    def __eq__(self, other):
+        return all(
+            [self.major == other.major, self.minor == other.minor, self.revision == other.revision]
+        )
+
+    def __lt__(self, other):
+        if self.major != other.major:
+            return self.major < other.major
+
+        if self.minor != other.minor:
+            return self.minor < other.minor
+
+        return self.revision < other.revision
+
+    def __gt__(self, other):
+        if self.major != other.major:
+            return self.major > other.major
+
+        if self.minor != other.minor:
+            return self.minor > other.minor
+
+        return self.revision > other.revision
+
+    def __cmp__(self, other):
+        if self.__gt__(other):
+            return 1
+        elif self.__lt__(other):
+            return -1
+        else:
+            return 0
+
+    @property
+    def release_date(self):
+        return datetime.date(year=int(self.year), month=int(self.month), day=int(self.day))
+
+    @property
+    def version(self):
+        return f"{self.major}.{self.minor}.{self.revision}"
 
     def install(self, force=False):
 
@@ -197,13 +232,10 @@ class RaidenClient:
 
         self.BINARY_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
-        download_url = self.get_download_url()
-        download = requests.get(download_url)
+        download = requests.get(self.download_url)
         download.raise_for_status()
 
-        action = (
-            self._extract_gzip if download_url.endswith("gz") else self._extract_zip
-        )
+        action = self._extract_gzip if self.download_url.endswith("gz") else self._extract_zip
 
         action(BytesIO(download.content), self.install_path)
         os.chmod(self.install_path, 0o770)
@@ -227,9 +259,7 @@ class RaidenClient:
         while True:
             self._process_id = self.get_process_id()
             if not self.is_running:
-                raise RaidenClientError(
-                    "client process terminated while waiting for web ui"
-                )
+                raise RaidenClientError("client process terminated while waiting for web ui")
 
             with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
                 logger.info("Waiting for raiden to start...")
@@ -274,6 +304,10 @@ class RaidenClient:
     def install_path(self):
         return Path(self.BINARY_FOLDER_PATH).joinpath(self.binary_name)
 
+    @property
+    def download_url(self):
+        return self.browser_download_url
+
     def _extract_zip(self, compressed_data, destination_path):
         with zipfile.ZipFile(compressed_data) as zipped:
             with destination_path.open("wb") as binary_file:
@@ -283,6 +317,10 @@ class RaidenClient:
         with tarfile.open(mode="r:*", fileobj=compressed_data) as tar:
             with destination_path.open("wb") as binary_file:
                 binary_file.write(tar.extractfile(tar.getmembers()[0]).read())
+
+    @classmethod
+    def get_file_pattern(cls):
+        return fr"{cls.FILE_NAME_PATTERN}-{cls.FILE_NAME_SUFFIX}"
 
     @classmethod
     def get_latest_release(cls):
@@ -297,118 +335,75 @@ class RaidenClient:
 
     @classmethod
     def get_installed_releases(cls):
-        all_raiden_glob = cls.BINARY_NAME_FORMAT.format(release="*")
-        installed_raidens = [
-            os.path.basename(raiden_path)
-            for raiden_path in glob.glob(
-                str(cls.BINARY_FOLDER_PATH.joinpath(all_raiden_glob))
-            )
-        ]
-
-        installed_releases = [raiden.split("-", 1)[-1] for raiden in installed_raidens]
-
-        return [cls(release) for release in installed_releases]
-
-
-class RaidenRelease(RaidenClient):
-    RELEASE_INDEX_URL = "https://api.github.com/repos/raiden-network/raiden/releases"
-    DOWNLOAD_INDEX_URL = "https://github.com/raiden-network/raiden/releases/download"
-
-    @property
-    def version(self):
-        return f"{self.major}.{self.minor}.{self.revision}"
-
-    @property
-    def major(self):
-        return int(self.release.split(".")[0].strip("v"))
-
-    @property
-    def minor(self):
-        return int(self.release.split(".")[1])
-
-    @property
-    def revision(self):
-        return int(self.release.split(".")[2])
-
-    def __eq__(self, other):
-        return all(
-            [
-                self.major == other.major,
-                self.minor == other.minor,
-                self.revision == other.revision,
-            ]
-        )
-
-    def __lt__(self, other):
-        if self.major != other.major:
-            return self.major < other.major
-
-        if self.minor != other.minor:
-            return self.minor < other.minor
-
-        return self.revision < other.revision
-
-    def __gt__(self, other):
-        if self.major != other.major:
-            return self.major > other.major
-
-        if self.minor != other.minor:
-            return self.minor > other.minor
-
-        return self.revision > other.revision
-
-    def __cmp__(self, other):
-        if self.__gt__(other):
-            return 1
-        elif self.__lt__(other):
-            return -1
-        else:
-            return 0
-
-    def get_download_url(self, system=None):
-        system_platform = system or sys.platform
-
-        extension = "tar.gz" if system_platform == "linux" else "zip"
-        release_os = {"darwin": "macOS", "linux": "linux"}[system_platform]
-
-        filename = f"raiden-{self.release}-{release_os}-x86_64.{extension}"
-        return f"{self.DOWNLOAD_INDEX_URL}/{self.release}/{filename}"
+        return [release for release in cls.get_available_releases() if release.is_installed]
 
     @classmethod
     def _make_releases(cls, index_response):
-        releases = [r for r in index_response.json() if not r.get("prerelease")]
-        return [cls(release.get("tag_name")) for release in releases]
+        def get_date(timestamp):
+            return datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").date()
+
+        releases = []
+        for release_data in index_response.json():
+            for asset_data in release_data.get("assets", []):
+                regex = re.match(cls.get_file_pattern(), asset_data["name"])
+                if regex:
+                    release_date = get_date(release_data["published_at"])
+                    major, minor, revision = regex["major"], regex["minor"], regex["revision"]
+                    releases.append(
+                        cls(
+                            release=f"{major}.{minor}.{revision}",
+                            year=release_date.year,
+                            month=release_date.month,
+                            day=release_date.day,
+                            major=major,
+                            minor=minor,
+                            revision=revision,
+                            browser_download_url=asset_data.get("browser_download_url"),
+                        )
+                    )
+        return releases
+
+
+class RaidenRelease(RaidenClient):
+    FILE_NAME_PATTERN = r"raiden-v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)"
+
+    @property
+    def version(self):
+        return f"Raiden {self.major}.{self.minor}.{self.revision}"
+
+
+class RaidenTestnetRelease(RaidenClient):
+    BINARY_NAME_FORMAT = "raiden-unstable-{release}"
+    FILE_NAME_PATTERN = r"raiden-v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+).(?P<extra>.+)"
+
+    @property
+    def version(self):
+        return f"Raiden Preview {self.major}.{self.minor}.{self.revision} (Testnet only)"
 
 
 class RaidenNightly(RaidenClient):
+    BINARY_NAME_FORMAT = "raiden-nightly-{release}"
     RELEASE_INDEX_URL = "https://raiden-nightlies.ams3.digitaloceanspaces.com"
-    DOWNLOAD_URL_PATTERN = (
+    FILE_NAME_PATTERN = (
         r"raiden-nightly-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)"
         r"T(?P<hour>\d+)-(?P<minute>\d+)-(?P<second>\d+)-"
-        r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)\.(?P<extra>.+)-"
-        r"(?P<release_os>macOS|linux)-x86_64.(?P<extension>tar\.gz|zip)"
+        r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)\.(?P<extra>.+)"
     )
 
     @property
-    def release_date(self):
-        return datetime.date(
-            year=int(self.year), month=int(self.month), day=int(self.day)
-        )
+    def version(self):
+        return f"Raiden Nightly Build {self.major}.{self.minor}.{self.revision}-{self.release}"
 
-    def get_download_url(self, system=None):
-        system_platform = system or sys.platform
-
-        extension = "tar.gz" if system_platform == "linux" else "zip"
-        release_os = {"darwin": "macOS", "linux": "linux"}[system_platform]
-
-        filename = (
+    @property
+    def download_url(self):
+        return (
+            f"{self.RELEASE_INDEX_URL}/"
             f"raiden-nightly-"
             f"{self.year:04}-{self.month:02}-{self.day:02}"
             f"T{self.hour}-{self.minute}-{self.second}-"
             f"v{self.major}.{self.minor}.{self.revision}.{self.extra}-"
-            f"{release_os}-x86_64.{extension}"
+            f"{self.FILE_NAME_SUFFIX}"
         )
-        return f"{self.RELEASE_INDEX_URL}/{filename}"
 
     def __eq__(self, other):
         return self.release == other.release and self.release_date == other.release_date
@@ -431,8 +426,6 @@ class RaidenNightly(RaidenClient):
     def _make_releases(cls, index_response):
         xmlns = "http://s3.amazonaws.com/doc/2006-03-01/"
 
-        release_os = {"darwin": "macOS", "linux": "linux"}[sys.platform]
-
         def get_children_by_tag(node, tag):
             return node.findall(f"{{{xmlns}}}{tag}", namespaces={"xmlns": xmlns})
 
@@ -443,13 +436,11 @@ class RaidenNightly(RaidenClient):
 
         nightlies = {
             k: v.groupdict()
-            for k, v in {
-                key: re.match(cls.DOWNLOAD_URL_PATTERN, key) for key in all_keys
-            }.items()
-            if v and v.groupdict().get("release_os") == release_os
+            for k, v in {key: re.match(cls.get_file_pattern(), key) for key in all_keys}.items()
+            if v
         }
 
-        release_name_template = "nightly-{year:0>4}{month:0>2}{day:0>2}"
+        release_name_template = "{year:0>4}{month:0>2}{day:0>2}"
         for key, value in nightlies.items():
             nightlies[key]["release"] = release_name_template.format(**value)
             nightlies[key]["year"] = int(nightlies[key]["year"])
@@ -458,23 +449,11 @@ class RaidenNightly(RaidenClient):
 
         return [cls(**nightly) for nightly in nightlies.values()]
 
-    @classmethod
-    def get_installed_releases(cls):
-        return [
-            release for release in cls.get_available_releases() if release.is_installed
-        ]
-
 
 class Network:
     MINIMUM_ETHEREUM_BALANCE_REQUIRED = 0.01
     FAUCET_AVAILABLE = False
-    CHAIN_ID_MAPPING = {
-        "mainnet": 1,
-        "ropsten": 3,
-        "rinkeby": 4,
-        "goerli": 5,
-        "kovan": 42,
-    }
+    CHAIN_ID_MAPPING = {"mainnet": 1, "ropsten": 3, "rinkeby": 4, "goerli": 5, "kovan": 42}
 
     def __init__(self, name):
         self.name = name
@@ -485,9 +464,7 @@ class Network:
         return self.name.capitalize()
 
     def get_contract_address(self, contract_name):
-        return get_contracts_deployment_info(self.chain_id)["contracts"][contract_name][
-            "address"
-        ]
+        return get_contracts_deployment_info(self.chain_id)["contracts"][contract_name]["address"]
 
     def fund(self, account):
         raise NotImplementedError(
@@ -505,11 +482,7 @@ class Network:
     @staticmethod
     def get_by_chain_id(chain_id):
         return Network.get_by_name(
-            [
-                name
-                for name, cid in Network.CHAIN_ID_MAPPING.items()
-                if cid == chain_id
-            ].pop()
+            [name for name, cid in Network.CHAIN_ID_MAPPING.items() if cid == chain_id].pop()
         )
 
     @staticmethod
@@ -537,9 +510,7 @@ class Goerli(Network):
 class Ropsten(Network):
     def fund(self, account):
         try:
-            response = requests.get(
-                f"https://faucet.ropsten.be/donate/{account.address}"
-            )
+            response = requests.get(f"https://faucet.ropsten.be/donate/{account.address}")
             response.raise_for_status()
         except Exception as exc:
             raise FundingError(f"Failed to get funds from faucet: {exc}")
@@ -551,9 +522,7 @@ class EthereumRPCProvider:
 
     def make_web3_provider(self, account):
         w3 = Web3(HTTPProvider(self.url))
-        w3.middleware_stack.add(
-            construct_sign_and_send_raw_middleware(account.private_key)
-        )
+        w3.middleware_stack.add(construct_sign_and_send_raw_middleware(account.private_key))
         w3.middleware_stack.inject(geth_poa_middleware, layer=0)
 
         return w3
@@ -588,9 +557,7 @@ class Infura(EthereumRPCProvider):
 
     @classmethod
     def make(cls, network: Network, project_id: str):
-        return cls(
-            cls.URL_PATTERN.format(network_name=network.name, project_id=project_id)
-        )
+        return cls(cls.URL_PATTERN.format(network_name=network.name, project_id=project_id))
 
     @staticmethod
     def is_valid_project_id(id_string: str) -> bool:
@@ -618,9 +585,7 @@ class Token:
             self.USER_DEPOSIT_CONTRACT_NAME
         )
         deposit_proxy = self._get_proxy(
-            web3_provider,
-            self.USER_DEPOSIT_CONTRACT_NAME,
-            user_deposit_contract_address,
+            web3_provider, self.USER_DEPOSIT_CONTRACT_NAME, user_deposit_contract_address
         )
 
         token_network_address = deposit_proxy.functions.token().call()
@@ -666,8 +631,7 @@ class Token:
         contract_manager = ContractManager(contracts_precompiled_path())
 
         return web3_provider.eth.contract(
-            address=contract_address,
-            abi=contract_manager.get_contract_abi(contract_name),
+            address=contract_address, abi=contract_manager.get_contract_abi(contract_name)
         )
 
     def mint(self, amount: int):
@@ -684,10 +648,7 @@ class Token:
         )
 
         return self._send_raw_transaction(
-            self.deposit_proxy.functions.deposit,
-            self.GAS_REQUIRED_FOR_DEPOSIT,
-            self.owner,
-            amount,
+            self.deposit_proxy.functions.deposit, self.GAS_REQUIRED_FOR_DEPOSIT, self.owner, amount
         )
 
 
@@ -695,11 +656,7 @@ class RaidenConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
     def __init__(
-        self,
-        account: Account,
-        network: Network,
-        ethereum_client_rpc_endpoint: str,
-        **kw,
+        self, account: Account, network: Network, ethereum_client_rpc_endpoint: str, **kw
     ):
         self.account = account
         self.network = network
@@ -744,9 +701,7 @@ class RaidenConfigurationFile:
         }
 
         if self.routing_mode == "pfs":
-            base_config.update(
-                {"pathfinding-service-address": self.path_finding_service_url}
-            )
+            base_config.update({"pathfinding-service-address": self.path_finding_service_url})
 
         return base_config
 
@@ -772,12 +727,8 @@ class RaidenConfigurationFile:
 
     @property
     def short_description(self):
-        account_description = (
-            f"Account {self.account.address} (Balance: {self.balance})"
-        )
-        network_description = (
-            f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
-        )
+        account_description = f"Account {self.account.address} (Balance: {self.balance})"
+        network_description = f"{self.network.name} via {self.ethereum_client_rpc_endpoint}"
         return " - ".join((str(self.path), account_description, network_description))
 
     @classmethod
@@ -789,9 +740,7 @@ class RaidenConfigurationFile:
             try:
                 configurations.append(cls.load(Path(config_file_path)))
             except (ValueError, KeyError) as exc:
-                logger.warn(
-                    f"Failed to load {config_file_path} as configuration file: {exc}"
-                )
+                logger.warn(f"Failed to load {config_file_path} as configuration file: {exc}")
 
         return configurations
 
@@ -799,7 +748,7 @@ class RaidenConfigurationFile:
     def load(cls, file_path: Path):
         file_name, _ = os.path.splitext(os.path.basename(file_path))
 
-        _, address, network_name = file_name.split("-")
+        _, _, network_name = file_name.split("-")
 
         with file_path.open() as config_file:
             data = toml.load(config_file)
@@ -829,7 +778,5 @@ class RaidenConfigurationFile:
         for config_file_path in config_glob:
             with open(config_file_path) as config_file:
                 data = toml.load(config_file)
-                endpoints.append(
-                    EthereumRPCProvider.make_from_url(data["eth-rpc-endpoint"])
-                )
+                endpoints.append(EthereumRPCProvider.make_from_url(data["eth-rpc-endpoint"]))
         return endpoints

@@ -63,7 +63,7 @@ The Raiden Wizard is in an early stage of implementation. In this section you wi
 >
 > The Raiden Wizard will display an __*Internal Server Error*__ if an invalid Project ID is provided. To solve this you have to [manually delete the configuration](#delete-configuration-files) file that got created.
 ### Stop Raiden from Running
-The Wizard does not provide a way of shutting down the Raiden node. You have to candel the process to stop Raiden.
+The Wizard does not provide a way of shutting down the Raiden node. You have to cancel the process to stop Raiden.
 * __Mac__
     * Use the Activity Monitor app for stopping the Raiden process.
 * __Linux__

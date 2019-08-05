@@ -8,7 +8,7 @@ This guide will teach you how to:
 * [Setup and run Raiden](#setup-and-run-raiden)
 * [Relaunch Raiden](#relaunch-raiden)
 * [Get a Infura Project ID](#get-a-infura-project-id)
-* [Handle issues](#handle-issues)
+* [Handle limitations and shortcomings](#handle-limitations-and-shortcomings)
 
 ## Download the Raiden Wizard
 Download the Raiden Wizard for either macOS or Linux.
@@ -41,7 +41,7 @@ Open the __Raiden Wizard__ file, you will find two ways of relaunching Raiden.
 1. Click the __"Launch"__ button next to a configuration you already created.
 2. Repeat the steps from [Setup and Run Raiden](#setup-and-run-raiden) to create a new configuratio.
 
-> Each new configuration created will be added to the list and currently you can't delete configurations from the Wizard. Read more under [Handle Issues](#handle-issues).
+> Each new configuration created will be added to the list and currently you can't delete configurations from the Wizard. Read more under [Handle Limitations and Shortcomings](#handle-limitations-and-shortcomings).
 
 ## Get a Infura Project ID
 1. Visit [infura.io](https://infura.io/) and sign up for a new account.
@@ -56,17 +56,18 @@ Open the __Raiden Wizard__ file, you will find two ways of relaunching Raiden.
 >
 >The Raiden Wizard sets up a Raiden node on top of Infura and your Project ID works as a way to authenticate your access to Infura.
 
-## Handle Issues
-The Raiden Wizard is in an early stage of implementation. In this section you will learn how to handle known issues.
+## Handle Limitations and Shortcomings
+The Raiden Wizard is in an early stage of implementation. In this section you will learn how to handle known limitations and shortcomings.
 
 > __Important__
 >
 > The Raiden Wizard will display an __*Internal Server Error*__ if an invalid Project ID is provided. To solve this you have to [manually delete the configuration](#delete-configuration-files) file that got created.
 ### Stop Raiden from Running
+The Wizard does not provide a way of shutting down the Raiden node. You have to candel the process to stop Raiden.
 * __Mac__
-    * Use the Activity Monitor app for stopping Raiden.
+    * Use the Activity Monitor app for stopping the Raiden process.
 * __Linux__
-    * Use any Linux process manager for stopping Raiden.
+    * Use any Linux process manager for stopping the Raiden process.
 
 ### Delete Configuration Files
 * __Mac__

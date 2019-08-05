@@ -1,4 +1,5 @@
 # Quick Start
+## The Raiden Wizard On-Boarding Tool
 The Raiden Wizard makes setting up a Raiden node as easy as 1-2-3.
 
 ## Get Started
@@ -37,9 +38,8 @@ To get an overview of the web interface:
 
 ## Relaunch Raiden
 Open the __Raiden Wizard__ file, you will find two ways of relaunching Raiden.
-
-    1. Click the __"Launch"__ button next to a configuration you already created.
-    2. Repeat the steps from [Setup and Run Raiden](#setup-and-run-raiden) to create a new configuratio.
+1. Click the __"Launch"__ button next to a configuration you already created.
+2. Repeat the steps from [Setup and Run Raiden](#setup-and-run-raiden) to create a new configuratio.
 
 > Each new configuration created will be added to the list and currently you can't delete configurations from the Wizard. Read more under [Handle Issues](#handle-issues).
 

@@ -1,5 +1,5 @@
 # Quick Start
-Raiden is a scalable off-chain token payment solution for Ethereum. Running your very own Raiden node takes only five minutes with the Raiden Wizard.
+The Raiden Wizard makes setting up a Raiden node as easy as 1-2-3.
 
 ## Get Started
 This guide will teach you how to:
@@ -36,7 +36,7 @@ To get an overview of the web interface:
 [Read the developer API guide](https://raiden-network.readthedocs.io/en/stable/rest_api.html)
 
 ## Relaunch Raiden
-* Open the __Raiden Wizard__ file, you will find two ways of relaunching Raiden.
+Open the __Raiden Wizard__ file, you will find two ways of relaunching Raiden.
 
     1. Click the __"Launch"__ button next to a configuration you already created.
     2. Repeat the steps from [Setup and Run Raiden](#setup-and-run-raiden) to create a new configuratio.
@@ -76,3 +76,5 @@ The Raiden Wizard is in an early stage of implementation. In this section you wi
 * __Linux__
     1. Navigate to `/home/<username>/.local/raiden/`
     2. Delete desired __.toml__ file/files.
+---
+The Raiden Wizard is experimental alpha software meant to be tested exclusively on the Görli testnet. Please be aware that we cannot be held liable for any damages whatsoever or any loss of funds you may incur when using the code/or software. Use it at your own risk.

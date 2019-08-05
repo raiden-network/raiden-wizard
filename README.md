@@ -25,7 +25,7 @@ Download the Raiden Wizard for either macOS or Linux.
 
 __Congratulations! You're now ready to start interacting with Raiden!__ 🎉
 
-![The Raiden Wizard setup process](https://drive.google.com/file/d/1G3Ick5z7hEJWYfGh2hSSvKN5TwgPmEC7/view?usp=sharing)
+![The Raiden Wizard setup process](https://blobscdn.gitbook.com/v0/b/gitbook-28427.appspot.com/o/assets%2F-LfdOdNB3P6EjscN0LQW%2F-Ll7J08JgZrwNVvglDDM%2F-Ll7J9yXCpItgPFJoB2c%2Fraiden_wizard_installation_process.gif?alt=media&token=cff791d1-3c29-4941-b131-8680cda828e8)
 
 To get an overview of the web interface:
 
@@ -48,7 +48,7 @@ To get an overview of the web interface:
 2. Create a new project.
 3. View your project and you'll find the Project ID under the __KEYS__ tab.
 
-![Steps to get a Infura Project ID](https://drive.google.com/file/d/1UnTF6SLKy7DL14IMqM6O3AsCB2dwuPes/view?usp=sharing)
+![Steps to get a Infura Project ID](https://blobscdn.gitbook.com/v0/b/gitbook-28427.appspot.com/o/assets%2F-LfdOdNB3P6EjscN0LQW%2F-Ll6M5MaSMOGAZfle9e2%2F-Ll6MDOThuk5yCdibKva%2Finfura_project_id_setup.gif?alt=media&token=7b4beb27-9abc-4844-86f0-946747832ed5)
 
 > __What is Infura and why do I need a Project ID?__
 >

@@ -30,7 +30,7 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     Sometimes `Black` will reformat lines so they go above the hard limit of 99 characters. In such cases try to break up expressions, e.g.
 
     Bellow example will fail the `Flake8` test on `make lint`.
-    ```
+    ```python
     def testalongline(a):
         mysum = int(
             sum(
@@ -41,7 +41,7 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
         return mysum
     ```
     Change it to:
-    ```
+    ```python
     def testalongline(a):
         mysum = sum(
             content.value.amount
@@ -60,13 +60,13 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     For docstrings we follow [PEP 0257](https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings).
 
     A single line docstring should look like this:
-    ```
+    ```python
     def a(b: B, c: C) -> D:
         """Here be docs"""
         pass
     ```
     A multi-line docstring should look like this:
-    ```
+    ```python
     def a(b: B, c: C) -> D:
         """ Function Title
 
@@ -82,13 +82,13 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     Use descriptive variable names and avoid short abbrevations.
 
     Good practice:
-    ```
+    ```python
     manager = Manager()
     balance_holder = AccountBalanceHolder()
     service = RaidenService()
     ```
     Bad practice:
-    ```
+    ```python
     mgr = Manager()
     a = AccountBalanceHolder()
     s = RaidenService()
@@ -119,7 +119,7 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     * Our tests should be testing the public interface of the class.
     
         A minimal example:
-        ```
+        ```python
         class Diary:
             def __init__(self, entries: List[str]) -> None:
                 self._entries = entries
@@ -131,11 +131,11 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
 
     __NewTypes and Type Comparisons__
     * For often used types define new types using the `typing.NewType` function. New type names should be capitalized.
-        ```
+        ```python
         Address = NewType('Address', bytes)
         ```
         You need to define an associate alias which starts with `T_` in order to use these type definitions for type comparisons.
-        ```
+        ```python
         T_Address = bytes
         ```
 
@@ -143,25 +143,25 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     * If the argument has a default value of `None` we follow the convention to omit the use of `typing.Optional[]`.
 
         Good Practice:
-        ```
+        ```python
         def foo(a: int = None) -> ReturnType:
         ```
         Bad Practice:
-        ```
+        ```python
         def foo(a: typing.Optional[int] = None)
         ```
 
     __Imports__
 
     Classes must be imported in the global namespace unless there are name collisions and module imports can be used.
-    ```
+    ```python
     import a
     from b import Normal
 
 
     class Conflict:
         pass
-        
+
 
     def f() -> Tuple[a.Conflict, Normal]:
         return a.Conflict(), Normal()

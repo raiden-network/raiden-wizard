@@ -1,5 +1,7 @@
 ## Implement
-* [Coding Style](#coding-style)
+- [Implement](#implement)
+  - [Coding Style](#coding-style)
+  - [Writing a Test](#writing-a-test)
 
 ### Coding Style
 This section will outline the coding rules for contributing to the Raiden Wizard repository. All code you write should strive to comply with these rules.
@@ -110,7 +112,7 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     * Use `<name>_to_<name>s` (an added `s`) if the mapped object is a list, e.g. `<tokenaddress_to_taskmanagers>`.
     * Use `dict()` instead of `{}` to initialize an empty dict.
 
-        *This is only for style consistency and may change in the future because it might ptovide a tiny [change in performance](https://stackoverflow.com/questions/5790860/and-vs-list-and-dict-which-is-better).*
+        *This is only for style consistency and may change in the future because it might provide a tiny [change in performance](https://stackoverflow.com/questions/5790860/and-vs-list-and-dict-which-is-better).*
 
     __Class Attributes and Functions__
     * Class members should be private by default and start with a leading underscore `_`.
@@ -166,3 +168,10 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
     def f() -> Tuple[a.Conflict, Normal]:
         return a.Conflict(), Normal()
     ```
+### Writing a Test
+You should always start by writing a __test__ or modifying __existing tests__ when developing a feature or working on a bug fix.
+1. Write a test and see it fail.
+2. Implement the feature/bug fix.
+3. Confirm that all your new tests pass.
+
+Your addition to the test suit should test your feature/bugfix at the innermost level possible. Avoid integration tests in favor of unit tests whenever possible.

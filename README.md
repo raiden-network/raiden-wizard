@@ -77,5 +77,8 @@ The Wizard does not provide a way of shutting down the Raiden node. You have to 
 * __Linux__
     1. Navigate to `/home/<username>/.local/raiden/`
     2. Delete desired __.toml__ file/files.
+## For Developers
+If you are interested in contributing to the Raiden Wizard a good start is to read our [contributing](https://github.com/raiden-network/raiden-installer/blob/master/CONTRIBUTING.md) guide.
+
 ---
 The Raiden Wizard is experimental alpha software meant to be tested exclusively on the Görli testnet. Please be aware that we cannot be held liable for any damages whatsoever or any loss of funds you may incur when using the code/or software. Use it at your own risk.

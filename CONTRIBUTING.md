@@ -1,5 +1,23 @@
-## Implement
-- [Implement](#implement)
+# Raiden Wizard Development Guide
+Welcome! These are the guidelines for anyone interested in contributing to the Raiden Wizard codebase.
+
+## Creating an Issue
+[For Feature Requests](#for-feature-requests)
+[For Bugs](#for-bugs)
+
+### For Feature Requests
+If you want to request a feature for the Raiden Wizard you can do so by opening an issue that contains:
+* A description of the feature you would like to see implemented.
+* A explanation of why you believe the feature would make a good addition to the Raiden Wizard.
+
+### For Bugs
+If you experience a problem while using the Raiden Wizard you can address the problem by opening an issue that contains:
+* A short description of the problem.
+* A detailed description of your system.
+* A description of what exact unexpected thing that occurred.
+* What you were expecting to happen instead.
+
+## Implementation
   - [Coding Style](#coding-style)
   - [Writing a Test](#writing-a-test)
   - [Documentation](#documentation)
@@ -195,7 +213,7 @@ If you would like to contribute to the actual codebase you can open a pull reque
 
 All pull requests should be:
 * Self-contained.
-* As short as possible, adressing a single issue or even a part of an issue.
+* As short as possible, addressing a single issue or even a part of an issue.
 
 
     *Consider breaking long pull requests into smaller ones.*

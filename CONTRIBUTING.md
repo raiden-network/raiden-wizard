@@ -208,7 +208,9 @@ You also need to sign the Raiden project CLA (Contributor License Agreement), ou
 
 __For Frequent Contributors with Write Access__
 
-We have a set of labels to put on pull requests for signaling to colleagues what the current state of the pull request is. These are:
+We have a set of labels to put on pull requests for signaling to colleagues what the current state of the pull request is.
+
+These are:
 * [Dev: Please Review](https://github.com/raiden-network/raiden/labels/dev%3A%20Please%20Review)
 
     Pull requests that are ready for a reviewer to have a look at.
@@ -216,4 +218,37 @@ We have a set of labels to put on pull requests for signaling to colleagues what
 * [Dev: Work in Progress](https://github.com/raiden-network/raiden/labels/dev%3A%20Work%20In%20Progress)
 
     Pull requests that are either not ready for review or are getting review suggestions applied by the author.
+
+__Pull Request Reviews__
+
+It is the authors responsibility to ask for at least one person to review their pull request. This person should know the area of the code being changed. If the chosen reviewer does not feel fully confident in doing the review they can ask someone else to take an additional look at the code.
+
+All developers in the team should perform pull request reviews. Make it a habit to check [this](https://github.com/raiden-network/raiden/pulls?q=is%3Apr+is%3Aopen+label%3A%22dev%3A+Please+Review%22) link often to help colleagues who have pull requests pending for review.
+
+We have tools that are automatically run by the CI and which check the quality of the code (flake8, mypy, pylint). Fixes related to linting are therefore not part of pull request reviews.
+
+Reviewers are encouraged not to be nitpicky about the suggested changes they are asking the author for. If something is indeed nitpicky the reviewer is encouraged to state it beforehand so that the author can choose whether to implement the nitpicks or ignore them.
+
+Good practice:
+> nitpick: I don't really think XYZ makes sense here. If possible it would be nice to have it changed to KLM.
+
+Authors should strive to make pull request reviews easier.
+* Make the pull requests as small as possible.
+* Even if some code is touched it doesn't mean it needs to be refactored, e.g. don't mix style/typing change with a big pull request.
+
+Whenever a reviewer starts to review a pull request he or she should write a comment in the pull request stating they are doing so, e.g. "Reviewing this now". This is for keeping track of who is reviewing a pull request and when a review is going on.
+
+When performing a pull request review of non trivial pull requests it is recommended to clone the branch locally, explore the changes with your editor, run tests and experiment with the changes to get a better understanding of the code changes and good constructive feedback can be given to the author.
 ### Integrating Pull Requests
+There are two options for integrating a successful pull request into the codebase.
+* __Create a Merge Commit__
+
+* __Rebase and Merge__
+
+"Create a Merge Commit" is the GitHub default option which unfortunately is __not__ our preferred option since we can not be sure that the result of the merge will have all test passing. This is because there may be other patches merged since the pull request opened.
+
+There are many pull requests which we definitely know won't have any conflicts and for which enforcing rebase would make no sense therefore we provide the option to use both at our own discretion.
+
+The general guidelines are:
+* Use __Rebase and Merge__ if patches have been merged to master since the pull request was opened on top of which our pull request may have different behaviour.
+* Use __Create a Merge Commit__ if patches have been merged to master since the pull request was opened which are related to documentation, infrastructure or completely unrelated parts of the code.

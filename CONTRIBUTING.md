@@ -2,6 +2,10 @@
 - [Implement](#implement)
   - [Coding Style](#coding-style)
   - [Writing a Test](#writing-a-test)
+  - [Documentation](#documentation)
+  - [Committing Rules](#committing-rules)
+  - [Opening a Pull Request](#opening-a-pull-request)
+  - [Integrating Pull Requests](#integrating-pull-requests)
 
 ### Coding Style
 This section will outline the coding rules for contributing to the Raiden Wizard repository. All code you write should strive to comply with these rules.
@@ -169,9 +173,47 @@ All Python code follows the official Python style guide [PEP8](https://www.pytho
         return a.Conflict(), Normal()
     ```
 ### Writing a Test
-You should always start by writing a __test__ or modifying __existing tests__ when developing a feature or working on a bug fix.
+When developing a feature or working on a bug fix you should always start by writing a __test__ or modifying __existing tests__.
 1. Write a test and see it fail.
 2. Implement the feature/bug fix.
 3. Confirm that all your new tests pass.
 
-Your addition to the test suit should test your feature/bugfix at the innermost level possible. Avoid integration tests in favor of unit tests whenever possible.
+Your addition to the test suit should test your feature/bug fix at the innermost level possible. Avoid integration tests in favor of unit tests whenever possible.
+### Documentation
+Code should be documented.
+### Committing Rules
+You can read this [guide](https://chris.beams.io/posts/git-commit/) which has really good advice but some rules you should always follow are:
+* Commit titles should not exceed __50 characters__.
+* Leave a blank line after the title (this is optional if there is no description)
+* Leave a description of the commit (this is optional if the commit is really small)
+
+Why are these rules important?
+
+All tools that show you information about git repos treat the first 80 characters as a title. Even GitHub itself does so and the git history will look nice and neat if these simple rules are followed.
+### Opening a Pull Request
+If you would like to contribute to the actual codebase you can open a pull request against the repository.
+
+All pull requests should be:
+* Self-contained.
+* As short as possible, adressing a single issue or even a part of an issue.
+
+
+    *Consider breaking long pull requests into smaller ones.*
+
+To get your pull request merged into the main repository it needs to:
+* Have one approved review from one of the core developers.
+* All Continuous Integration tests needs to pass and the CI build should be green.
+
+You also need to sign the Raiden project CLA (Contributor License Agreement), our CLA bot will help you with that after you created your pull request. If you or your employer do not hold the whole copyright of the authorship submitted we can not accept your contribution.
+
+__For Frequent Contributors with Write Access__
+
+We have a set of labels to put on pull requests for signaling to colleagues what the current state of the pull request is. These are:
+* [Dev: Please Review](https://github.com/raiden-network/raiden/labels/dev%3A%20Please%20Review)
+
+    Pull requests that are ready for a reviewer to have a look at.
+
+* [Dev: Work in Progress](https://github.com/raiden-network/raiden/labels/dev%3A%20Work%20In%20Progress)
+
+    Pull requests that are either not ready for review or are getting review suggestions applied by the author.
+### Integrating Pull Requests

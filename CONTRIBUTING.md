@@ -2,8 +2,8 @@
 Welcome! These are the guidelines for anyone interested in contributing to the Raiden Wizard codebase.
 
 ## Creating an Issue
-[For Feature Requests](#for-feature-requests)
-[For Bugs](#for-bugs)
+- [For Feature Requests](#for-feature-requests)
+- [For Bugs](#for-bugs)
 
 ### For Feature Requests
 If you want to request a feature for the Raiden Wizard you can do so by opening an issue that contains:

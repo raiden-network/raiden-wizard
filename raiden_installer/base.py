@@ -45,6 +45,33 @@ def make_random_string(length=32):
     return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
+def extract_version_modifier(release_name):
+    pattern = r".*(?P<release>(a|alpha|b|beta))-?(?P<number>\d+)"
+    match = re.match(pattern, release_name)
+
+    if not match:
+        return None
+
+    release = {
+        "a": "alpha",
+        "alpha": "alpha",
+        "b": "beta",
+        "beta": "beta",
+        "rc": "rc",
+        "dev": "dev",
+    }.get(match.groupdict()["release"], "dev")
+
+    return (release, match.groupdict()["number"])
+
+
+def order_version_modifier(version_modifier):
+    types = ["dev", "alpha", "beta", "rc"]
+    try:
+        return types.index(version_modifier)
+    except (ValueError, IndexError):
+        return -1
+
+
 class InstallerError(Exception):
     pass
 
@@ -179,16 +206,21 @@ class RaidenClient:
     DOWNLOAD_INDEX_URL = "https://github.com/raiden-network/raiden/releases/download"
     FILE_NAME_SUFFIX = "macOS-x86_64.zip" if sys.platform == "darwin" else "linux-x86_64.tar.gz"
 
-    def __init__(self, release, **kw):
-        self.release = release
-        self._process_id = self.get_process_id()
-
+    def __init__(self, **kw):
         for attr, value in kw.items():
             setattr(self, attr, value)
 
+        self._process_id = self.get_process_id()
+
     def __eq__(self, other):
         return all(
-            [self.major == other.major, self.minor == other.minor, self.revision == other.revision]
+            [
+                self.major == other.major,
+                self.minor == other.minor,
+                self.revision == other.revision,
+                self.version_modifier == other.version_modifier,
+                self.version_modifier_number == other.version_modifier_number,
+            ]
         )
 
     def __lt__(self, other):
@@ -198,7 +230,18 @@ class RaidenClient:
         if self.minor != other.minor:
             return self.minor < other.minor
 
-        return self.revision < other.revision
+        if self.revision != other.revision:
+            return self.revision < other.revision
+
+        if self.version_modifier != other.version_modifier:
+            return order_version_modifier(self.version_modifier) < order_version_modifier(
+                other.version_modifier_number
+            )
+
+        if self.version_modifier_number and other.version_modifier_number:
+            return self.version_modifier_number < other.version_modifier_number
+
+        return False
 
     def __gt__(self, other):
         if self.major != other.major:
@@ -207,7 +250,18 @@ class RaidenClient:
         if self.minor != other.minor:
             return self.minor > other.minor
 
-        return self.revision > other.revision
+        if self.revision != other.revision:
+            return self.revision > other.revision
+
+        if self.version_modifier != other.version_modifier:
+            return order_version_modifier(self.version_modifier) > order_version_modifier(
+                other.version_modifier
+            )
+
+        if self.version_modifier_number and other.version_modifier_number:
+            return self.version_modifier_number > other_version_modifier_number
+
+        return False
 
     def __cmp__(self, other):
         if self.__gt__(other):
@@ -218,8 +272,32 @@ class RaidenClient:
             return 0
 
     @property
+    def release(self):
+        return ".".join(
+            str(it) for it in (self.major, self.minor, self.revision, self.release_modifier) if it
+        )
+
+    @property
     def release_date(self):
         return datetime.date(year=int(self.year), month=int(self.month), day=int(self.day))
+
+    @property
+    def release_modifier(self):
+        return (
+            self.version_modifier
+            and self.version_modifier_number
+            and f"{self.version_modifier}{self.version_modifier_number}"
+        )
+
+    @property
+    def version_modifier(self):
+        version_modifier = extract_version_modifier(self.extra)
+        return version_modifier and version_modifier[0]
+
+    @property
+    def version_modifier_number(self):
+        version_modifier = extract_version_modifier(self.extra)
+        return version_modifier and version_modifier[1]
 
     @property
     def version(self):
@@ -345,23 +423,30 @@ class RaidenClient:
         releases = []
         for release_data in index_response.json():
             for asset_data in release_data.get("assets", []):
-                regex = re.match(cls.get_file_pattern(), asset_data["name"])
-                if regex:
-                    release_date = get_date(release_data["published_at"])
-                    major, minor, revision = regex["major"], regex["minor"], regex["revision"]
+                version_data = cls.get_version_data(asset_data["name"])
+                release_date = get_date(release_data["published_at"])
+                if version_data:
                     releases.append(
                         cls(
-                            release=f"{major}.{minor}.{revision}",
                             year=release_date.year,
                             month=release_date.month,
                             day=release_date.day,
-                            major=major,
-                            minor=minor,
-                            revision=revision,
                             browser_download_url=asset_data.get("browser_download_url"),
+                            **version_data,
                         )
                     )
         return releases
+
+    @classmethod
+    def get_version_data(cls, release_name):
+        regex = re.match(cls.get_file_pattern(), release_name)
+        groups = regex and regex.groupdict()
+        return groups and dict(
+            major=groups["major"],
+            minor=groups["minor"],
+            revision=groups["revision"],
+            extra=groups.get("extra"),
+        )
 
 
 class RaidenRelease(RaidenClient):
@@ -373,12 +458,14 @@ class RaidenRelease(RaidenClient):
 
 
 class RaidenTestnetRelease(RaidenClient):
-    BINARY_NAME_FORMAT = "raiden-unstable-{release}"
-    FILE_NAME_PATTERN = r"raiden-v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+).(?P<extra>.+)"
+    BINARY_NAME_FORMAT = "raiden-testnet-{release}"
+    FILE_NAME_PATTERN = r"raiden-v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)(?P<extra>.+)"
 
     @property
     def version(self):
-        return f"Raiden Preview {self.major}.{self.minor}.{self.revision} (Testnet only)"
+        return (
+            f"Raiden Preview {self.major}.{self.minor}.{self.revision}{self.extra} (Testnet only)"
+        )
 
 
 class RaidenNightly(RaidenClient):
@@ -392,7 +479,12 @@ class RaidenNightly(RaidenClient):
 
     @property
     def version(self):
-        return f"Raiden Nightly Build {self.major}.{self.minor}.{self.revision}-{self.release}"
+        return f"Raiden Nightly Build {self.release}"
+
+    @property
+    def release(self):
+        formatted_date = self.release_date.strftime("%Y%M%d")
+        return f"{self.major}.{self.minor}.{self.revision}-{formatted_date}"
 
     @property
     def download_url(self):
@@ -406,7 +498,7 @@ class RaidenNightly(RaidenClient):
         )
 
     def __eq__(self, other):
-        return self.release == other.release and self.release_date == other.release_date
+        return self.release_date == other.release_date
 
     def __lt__(self, other):
         return self.release_date < other.release_date
@@ -440,9 +532,7 @@ class RaidenNightly(RaidenClient):
             if v
         }
 
-        release_name_template = "{year:0>4}{month:0>2}{day:0>2}"
         for key, value in nightlies.items():
-            nightlies[key]["release"] = release_name_template.format(**value)
             nightlies[key]["year"] = int(nightlies[key]["year"])
             nightlies[key]["month"] = int(nightlies[key]["month"])
             nightlies[key]["day"] = int(nightlies[key]["day"])

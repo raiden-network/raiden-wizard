@@ -79,7 +79,7 @@ The Wizard does not provide a way of shutting down the Raiden node. You have to 
     2. Delete desired __.toml__ file/files.
 
 * __Linux__
-    1. Navigate to `/home/<username>/.local/raiden/`
+    1. Navigate to `/home/<username>/.local/share/raiden/`
     2. Delete desired __.toml__ file/files.
 
 ---

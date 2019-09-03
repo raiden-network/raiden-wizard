@@ -1,3 +1,3 @@
-from . import base
+import structlog
 
-RAIDEN_CLIENT_DEFAULT_CLASS = base.RaidenTestnetRelease
+log = structlog.get_logger()

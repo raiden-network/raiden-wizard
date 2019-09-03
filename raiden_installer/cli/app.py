@@ -1,23 +1,45 @@
+import os
+import time
+
 from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
 
 from whaaaaat import ValidationError, Validator, prompt
 
-from .. import RAIDEN_CLIENT_DEFAULT_CLASS, base
+from ..account import Account
+from ..base import RaidenConfigurationFile
+from ..network import Network, FundingError
+from ..raiden import RAIDEN_CLIENT_DEFAULT_CLASS
+from ..ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
+from ..token_exchange import RaidenToken, get_contract_address
+
+
+ETHEREUM_RPC_ENDPOINTS = []
+DEFAULT_NETWORK_NAME = os.getenv("RAIDEN_INSTALLER_NETWORK", "ropsten")
+DEFAULT_INFURA_PROJECT_ID = os.getenv("RAIDEN_INSTALLER_INFURA_PROJECT_ID")
+
+DEFAULT_NETWORK = Network.get_by_name(DEFAULT_NETWORK_NAME)
+
+
+if DEFAULT_INFURA_PROJECT_ID:
+    ETHEREUM_RPC_ENDPOINTS.append(Infura.make(DEFAULT_NETWORK, DEFAULT_INFURA_PROJECT_ID))
 
 
 class Messages:
     action_launch_raiden = "Launch raiden"
     action_account_create = "Create new ethereum account"
     action_account_list = "List existing ethereum accounts"
-    action_account_fund = "Add funds to account (some test networks only)"
+    action_account_fund = "Add funds to account"
     action_configuration_setup = "Create new raiden setup"
     action_configuration_list = "List existing raiden setups"
     action_release_manager = "Install/Uninstall raiden releases"
     action_release_list_installed = "List installed raiden releases"
     action_release_update_info = "Check for updates in raiden"
+    action_swap_kyber = "Do ETH/RDN swap on Kyber DEX (mainnet/some testnets)"
     action_quit = "Quit this raiden launcher"
+    action_test = "Run semi-automated test"
     input_account_select = "Please select account"
     input_network_select = "Which ethereum network to use?"
+    input_ethereum_rpc_endpoint_selection = "Which RPC node to use?"
 
     input_account_verify_passphrase = "Please provide the passphrase"
 
@@ -43,7 +65,7 @@ class Messages:
 class InfuraProjectIdValidator(Validator):
     def validate(self):
         error_message = "A Infura Project ID is a sequence of 32 hex characters long"
-        if not base.Infura.is_valid_project_id(self.text):
+        if not Infura.is_valid_project_id(self.text):
             raise ValidationError(error_message)
 
 
@@ -74,7 +96,7 @@ def prompt_account_selection(validate_passphrase=True):
             "message": Messages.input_account_select,
             "choices": [
                 {"name": account.address, "value": account}
-                for account in base.Account.get_user_accounts()
+                for account in Account.get_user_accounts()
             ],
         }
     )
@@ -101,7 +123,7 @@ def prompt_account_selection(validate_passphrase=True):
 
 
 def prompt_network_selection(network_list=None):
-    networks = network_list or base.Network.all()
+    networks = network_list or Network.all()
     return single_question_prompt(
         {
             "name": "network",
@@ -110,12 +132,83 @@ def prompt_network_selection(network_list=None):
             "choices": [
                 {"name": network.capitalized_name, "value": network} for network in networks
             ],
+            "default": DEFAULT_NETWORK if DEFAULT_NETWORK in networks else None,
         }
     )
 
 
+def prompt_new_ethereum_rpc_endpoint(network=None):
+    global ETHEREUM_RPC_ENDPOINTS
+
+    if network is None:
+        network = prompt_network_selection()
+
+    ethereum_rpc_questions = [
+        {
+            "name": "will_use_infura",
+            "type": "confirm",
+            "default": True,
+            "message": Messages.input_use_infura,
+        },
+        {
+            "name": "infura_project_id",
+            "type": "input",
+            "message": Messages.input_ethereum_infura_project_id,
+            "when": lambda answers: answers["will_use_infura"],
+            "filter": lambda answer: answer.strip(),
+            "validator": InfuraProjectIdValidator,
+        },
+        {
+            "name": "ethereum_rpc_endpoint",
+            "type": "input",
+            "message": Messages.input_ethereum_rpc_endpoint,
+            "when": lambda answers: not answers["will_use_infura"],
+        },
+    ]
+
+    ethereum_rpc_answers = validate_prompt(ethereum_rpc_questions)
+
+    if ethereum_rpc_answers["will_use_infura"]:
+        project_id = ethereum_rpc_answers["infura_project_id"]
+        client_rpc_endpoint = Infura.make(network, project_id)
+    else:
+        client_rpc_endpoint = EthereumRPCProvider(ethereum_rpc_answers["ethereum_rpc_endpoint"])
+
+    ETHEREUM_RPC_ENDPOINTS.append(client_rpc_endpoint)
+
+    return client_rpc_endpoint
+
+
+def prompt_ethereum_rpc_endpoint_selection(network=None):
+    choices = [{"name": endpoint.url, "value": endpoint} for endpoint in ETHEREUM_RPC_ENDPOINTS]
+
+    choices.append({"name": "None of the above. Let me add another", "value": None})
+
+    if not ETHEREUM_RPC_ENDPOINTS:
+        return prompt_new_ethereum_rpc_endpoint(network=network)
+
+    eth_rpc_endpoint = single_question_prompt(
+        {
+            "name": "ethereum_rpc_endpoint",
+            "type": "list",
+            "message": Messages.input_ethereum_rpc_endpoint_selection,
+            "choices": choices,
+        }
+    )
+
+    return eth_rpc_endpoint or prompt_new_ethereum_rpc_endpoint(network=network)
+
+
 def print_invalid_option():
     print("Invalid option. Try again")
+
+
+def pretty_print_configuration(config_file: RaidenConfigurationFile):
+    account_description = f"Account {config_file.account.address} (Balance: {config_file.balance})"
+    network_description = (
+        f"{config_file.network.name} via {config_file.ethereum_client_rpc_endpoint}"
+    )
+    return " - ".join((str(config_file.path), account_description, network_description))
 
 
 def main_prompt():
@@ -124,15 +217,16 @@ def main_prompt():
     account_choices = [Messages.action_account_create]
     raiden_release_management_choices = [Messages.action_release_manager]
 
-    if base.RaidenConfigurationFile.get_launchable_configurations():
+    if RaidenConfigurationFile.get_launchable_configurations():
         configuration_choices.insert(0, Messages.action_launch_raiden)
 
-    if base.RaidenConfigurationFile.get_available_configurations():
+    if RaidenConfigurationFile.get_available_configurations():
         configuration_choices.append(Messages.action_configuration_list)
 
-    if base.Account.get_user_accounts():
+    if Account.get_user_accounts():
         account_choices.append(Messages.action_account_list)
         account_choices.append(Messages.action_account_fund)
+        account_choices.append(Messages.action_swap_kyber)
 
     available_choices = configuration_choices + account_choices + raiden_release_management_choices
 
@@ -143,8 +237,8 @@ def main_prompt():
 
 def run_action_configuration_list():
     print("\nAvailable setups (Not necessarily satisfying conditions for running raiden)\n")
-    for config in base.RaidenConfigurationFile.get_available_configurations():
-        print("\t", config.short_description)
+    for config in RaidenConfigurationFile.get_available_configurations():
+        print("\t", pretty_print_configuration(config))
 
     print("\n")
     return main_prompt()
@@ -186,7 +280,7 @@ def run_action_release_manager():
 
 def run_action_account_list():
     print("\nAvailable accounts:\n")
-    for account in base.Account.get_user_accounts():
+    for account in Account.get_user_accounts():
         print("\t", account.keystore_file_path, account.address)
 
     print("\n")
@@ -194,17 +288,58 @@ def run_action_account_list():
 
 
 def run_action_account_fund():
-    account = prompt_account_selection(validate_passphrase=False)
+    account = prompt_account_selection()
+    network = prompt_network_selection()
+    ethereum_rpc_endpoint = prompt_ethereum_rpc_endpoint_selection(network=network)
+
+    w3 = make_web3_provider(ethereum_rpc_endpoint.url, account)
+
+    current_balance = account.get_ethereum_balance(w3)
+    needed_funds = max(0, network.MINIMUM_ETHEREUM_BALANCE_REQUIRED - current_balance)
+
+    if needed_funds > 0:
+        if network.FAUCET_AVAILABLE:
+            try:
+                print(
+                    f"Attempting to add funds to {account.address} on {network.capitalized_name}"
+                )
+                network.fund(account)
+            except FundingError as exc:
+                print(f"Failed: {exc}")
+        else:
+            print(f"Insufficience funds. Current balance is {current_balance}")
+            print(
+                f"Please send at least {needed_funds} to 0x{account.address} on "
+                f"{network.capitalized_name}"
+            )
+
+            time_remaining = 60
+            polling_interval = 1
+            while (
+                current_balance < network.MINIMUM_ETHEREUM_BALANCE_REQUIRED and time_remaining > 0
+            ):
+                time.sleep(polling_interval)
+                print(f"Waiting for {time_remaining}s...")
+                time_remaining -= polling_interval
+                current_balance = account.get_ethereum_balance(w3)
+
+            print("Balance is now", account.get_ethereum_balance(w3))
+
+    return main_prompt()
+
+
+def run_action_swap_kyber():
+    account = prompt_account_selection()
     network = prompt_network_selection(
-        network_list=[network for network in base.Network.all() if network.FAUCET_AVAILABLE]
+        network_list=[network for network in Network.all() if network.KYBER_RDN_EXCHANGE]
     )
+    ethereum_rpc_endpoint = prompt_ethereum_rpc_endpoint_selection()
+    w3 = make_web3_provider(ethereum_rpc_endpoint.url, account)
 
-    print(f"Attempting to add funds to {account.address} on {network.capitalized_name}")
+    print(f"Attempting SWAP on kyber")
 
-    try:
-        network.fund(account)
-    except base.FundingError as exc:
-        print(f"Failed: {exc}")
+    raiden_token = RaidenToken(w3, account)
+    raiden_token.kyber_ethereum_swap(network.MINIMUM_ETHEREUM_BALANCE_REQUIRED)
 
     return main_prompt()
 
@@ -217,8 +352,8 @@ def run_action_launch_raiden():
                 "type": "list",
                 "message": Messages.input_launch_configuration,
                 "choices": [
-                    {"name": f"{cfg.short_description}", "value": cfg}
-                    for cfg in base.RaidenConfigurationFile.get_launchable_configurations()
+                    {"name": f"{pretty_print_configuration(cfg)}", "value": cfg}
+                    for cfg in RaidenConfigurationFile.get_launchable_configurations()
                 ],
             },
             {
@@ -272,13 +407,13 @@ def run_action_configuration_setup():
 
     if ethereum_rpc_answers["will_use_infura"]:
         project_id = ethereum_rpc_answers["infura_project_id"]
-        client_rpc_endpoint = base.build_infura_url(network, project_id)
+        client_rpc_endpoint = Infura.make(network, project_id).url
     else:
         client_rpc_endpoint = ethereum_rpc_answers["ethereum_rpc_endpoint"]
 
-    user_deposit_contract_address = network.get_contract_address(CONTRACT_USER_DEPOSIT)
+    user_deposit_contract_address = get_contract_address(network.chain_id, CONTRACT_USER_DEPOSIT)
 
-    config = base.RaidenConfigurationFile(
+    config = RaidenConfigurationFile(
         account=account,
         network=network,
         ethereum_client_rpc_endpoint=client_rpc_endpoint,
@@ -286,23 +421,13 @@ def run_action_configuration_setup():
     )
     config.save()
 
-    ethereum_rpc_provider = base.EthereumRPCProvider.make_from_url(client_rpc_endpoint)
-
-    token_contract = base.TokenContract(
-        web3_provider=ethereum_rpc_provider.make_web3_provider(account),
-        account=account,
-        user_deposit_contract_address=user_deposit_contract_address,
-    )
-
-    token_contract.mint(token_contract.TOKEN_AMOUNT)
-
     return main_prompt()
 
 
 def run_action_account_create():
     passphrase = single_question_prompt({"type": "password", "message": Messages.input_passphrase})
 
-    base.Account.create(passphrase)
+    Account.create(passphrase)
     return main_prompt()
 
 
@@ -318,6 +443,7 @@ def main():
             Messages.action_account_list: run_action_account_list,
             Messages.action_account_fund: run_action_account_fund,
             Messages.action_release_manager: run_action_release_manager,
+            Messages.action_swap_kyber: run_action_swap_kyber,
             Messages.action_quit: lambda: None,
         }.get(answer, print_invalid_option)
         current_prompt = action()

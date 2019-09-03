@@ -1,27 +1,32 @@
+#!/usr/bin/env python
+
 import unittest
 import tempfile
 from pathlib import Path
 
-from raiden_installer import base
+from raiden_installer.account import Account
+from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
+from raiden_installer.ethereum_rpc import make_web3_provider
+from raiden_installer.network import Network
 
 
 class AccountTestCase(unittest.TestCase):
     def setUp(self):
-        base.Account.KEYSTORE_FOLDER = tempfile.gettempdir()
+        Account.DEFAULT_KEYSTORE_FOLDER = tempfile.gettempdir()
 
-        self.account = base.Account.create(passphrase="test_password")
+        self.account = Account.create(passphrase="test_password")
 
     def test_account_can_get_address(self):
         self.assertIsNotNone(self.account.address)
 
     def test_can_not_get_private_key_without_passphrase(self):
-        empty_account = base.Account("/invalid_folder")
+        empty_account = Account("/invalid_folder")
 
         with self.assertRaises(ValueError):
             empty_account.private_key
 
     def test_can_get_web3_provider(self):
-        web3_provider = self.account.get_web3_provider("http://localhost:8545")
+        web3_provider = make_web3_provider("http://localhost:8545", self.account)
         self.assertIsNotNone(web3_provider)
 
     def tearDown(self):
@@ -32,23 +37,20 @@ class AccountTestCase(unittest.TestCase):
 class RaidenConfigurationTestCase(unittest.TestCase):
     def setUp(self):
         temp_folder_path = Path(tempfile.gettempdir())
-        base.RaidenConfigurationFile.FOLDER_PATH = temp_folder_path
+        RaidenConfigurationFile.FOLDER_PATH = temp_folder_path
 
-        self.account = base.Account.create(passphrase="test_raiden_config")
-        self.network = base.Network.get_by_name("goerli")
+        self.account = Account.create(passphrase="test_raiden_config")
+        self.network = Network.get_by_name("goerli")
         self.ethereum_client_rpc_endpoint = "http://localhost:8545"
-        self.token = base.Token(self.ethereum_client_rpc_endpoint, self.account)
 
-        self.configuration_file = base.RaidenConfigurationFile(
+        self.configuration_file = RaidenConfigurationFile(
             account=self.account,
             network=self.network,
             ethereum_client_rpc_endpoint=self.ethereum_client_rpc_endpoint,
             token=self.token,
         )
 
-        passphrase_file = base.PassphraseFile(
-            self.configuration_file.passphrase_file_path
-        )
+        passphrase_file = PassphraseFile(self.configuration_file.passphrase_file_path)
         passphrase_file.store(self.account.passphrase)
 
     def test_can_save_configuration(self):
@@ -57,10 +59,14 @@ class RaidenConfigurationTestCase(unittest.TestCase):
 
     def test_can_create_configuration(self):
         self.configuration_file.save()
-        all_configs = base.RaidenConfigurationFile.get_available_configurations()
+        all_configs = RaidenConfigurationFile.get_available_configurations()
         self.assertEqual(len(all_configs), 1)
 
     def tearDown(self):
-        for config in base.RaidenConfigurationFile.get_available_configurations():
+        for config in RaidenConfigurationFile.get_available_configurations():
             config.passphrase_file_path.unlink()
             config.path.unlink()
+
+
+if __name__ == "__main__":
+    unittest.main()

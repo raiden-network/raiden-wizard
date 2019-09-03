@@ -259,7 +259,7 @@ class RaidenClient:
             )
 
         if self.version_modifier_number and other.version_modifier_number:
-            return self.version_modifier_number > other_version_modifier_number
+            return self.version_modifier_number > other.version_modifier_number
 
         return False
 

@@ -29,7 +29,7 @@ log.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 enable_pretty_logging()
 
 
-AVAILABLE_NETWORKS = Network.all()
+AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 
 
 def get_data_folder_path():

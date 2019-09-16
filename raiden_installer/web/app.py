@@ -130,6 +130,10 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
                         f"You should still be able to do it on Raiden Web UI: {exc}",
                         message_type="error",
                     )
+            else:
+                self._send_status_update(
+                    f"Account already funded with {custom_token.balance:0.4f} WIZ"
+                )
 
         if raiden_token.is_available(network):
             if not raiden_token.is_funded:

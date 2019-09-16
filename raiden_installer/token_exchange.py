@@ -231,9 +231,6 @@ class Uniswap(Exchange):
         return exchange_proxy.functions.getEthToTokenInputPrice(wei_amount).call()
 
     def _get_exchange_rate(self, token_sticker: str, ethereum_amount: ETH_UNIT):
-        exchange_address = self._get_exchange_address(token_sticker)
-        token = self.get_token(token_sticker)
-
         wei_amount = eth_to_wei(ethereum_amount)
         exchange_proxy = self.get_exchange_proxy(token_sticker)
 
@@ -269,8 +266,10 @@ class Token:
         self.account = account
         self.w3 = w3
         self.w3.eth.defaultAccount = self.owner
-        self.token_network_address = self._get_token_network_address()
-        self.token_proxy = self._get_token_proxy()
+        network = Network.get_by_chain_id(int(w3.net.version))
+        if self.is_available(network):
+            self.token_network_address = self._get_token_network_address()
+            self.token_proxy = self._get_token_proxy()
 
     @property
     def owner(self):
@@ -345,7 +344,7 @@ class CustomToken(Token):
         return send_raw_transaction(
             self.w3,
             self.account,
-            self.deposit_proxy.functions.deposit,
+            deposit_proxy.functions.deposit,
             self.owner,
             amount,
             gas=self.GAS_REQUIRED_FOR_DEPOSIT,

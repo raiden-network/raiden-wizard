@@ -58,7 +58,7 @@ class RaidenConfigurationFile:
 
     @property
     def path_finding_service_url(self):
-        return f"https://pfs-{self.network.name}-with-fee.services-dev.raiden.network"
+        return f"https://pfs-{self.network.name}.services-dev.raiden.network"
 
     @property
     def configuration_data(self):

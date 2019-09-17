@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import unittest
 import tempfile
 from pathlib import Path
@@ -8,6 +7,34 @@ from raiden_installer.account import Account
 from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
 from raiden_installer.ethereum_rpc import make_web3_provider
 from raiden_installer.network import Network
+from raiden_installer.tokens import EthereumAmount, RDNAmount, Wei
+
+
+class TokenAmountTestCase(unittest.TestCase):
+    def setUp(self):
+        self.one_eth = EthereumAmount(1)
+        self.one_rdn = RDNAmount(1)
+        self.one_gwei = EthereumAmount(Wei(10 ** 9))
+        self.almost_one_eth = EthereumAmount("0.875")
+        self.some_wei = EthereumAmount(Wei(50_000))
+
+    def test_can_convert_to_wei(self):
+        self.assertEqual(self.one_eth.as_wei, Wei(10 ** 18))
+
+    def test_can_multiply_amounts(self):
+        two_eth_in_wei = 2 * self.one_eth.as_wei
+
+        self.assertEqual(two_eth_in_wei, Wei(2 * 10 ** 18))
+
+    def test_can_get_token_sticker(self):
+        self.assertEqual(self.one_rdn.sticker, "RDN")
+
+    def test_can_get_formatted_amount(self):
+        self.assertEqual(self.one_eth.formatted, "1 ETH")
+        self.assertEqual(self.one_rdn.formatted, "1 RDN")
+        self.assertEqual(self.one_gwei.formatted, "1.0 GWEI")
+        self.assertEqual(self.almost_one_eth.formatted, "0.875 ETH")
+        self.assertEqual(self.some_wei.formatted, "50000 WEI")
 
 
 class AccountTestCase(unittest.TestCase):
@@ -33,7 +60,6 @@ class AccountTestCase(unittest.TestCase):
         self.account.keystore_file_path.unlink()
 
 
-@unittest.skip("Still need to make mock functions for w3")
 class RaidenConfigurationTestCase(unittest.TestCase):
     def setUp(self):
         temp_folder_path = Path(tempfile.gettempdir())
@@ -47,7 +73,6 @@ class RaidenConfigurationTestCase(unittest.TestCase):
             account=self.account,
             network=self.network,
             ethereum_client_rpc_endpoint=self.ethereum_client_rpc_endpoint,
-            token=self.token,
         )
 
         passphrase_file = PassphraseFile(self.configuration_file.passphrase_file_path)

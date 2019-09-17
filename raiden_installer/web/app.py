@@ -17,7 +17,7 @@ from ..base import Account, RaidenConfigurationFile
 from ..network import Network
 from ..raiden import RaidenClient, RaidenClientError
 from ..ethereum_rpc import Infura, EthereumRPCProvider, make_web3_provider
-from ..token_exchange import CustomToken, RaidenToken, Exchange, ExchangeError
+from ..token_exchange import CustomToken, RaidenToken, Exchange, ExchangeError, Kyber, Uniswap
 
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
@@ -28,8 +28,9 @@ log = logging.getLogger("tornado.application")
 log.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 enable_pretty_logging()
 
-
+FUNDING_AMOUNTS = [75, 100, 150, 200, 500, 1000]
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
+NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
 
 
 def get_data_folder_path():
@@ -62,13 +63,64 @@ class QuickSetupForm(Form):
             raise wtforms.ValidationError("Not a valid URL nor Infura Project ID")
 
 
-class LauncherStatusNotificationHandler(WebSocketHandler):
+class TokenExchangeForm(Form):
+    network = wtforms.SelectField(
+        choices=[(n.name, n.capitalized_name) for n in NETWORKS_WITH_TOKEN_SWAP]
+    )
+    token_amount = wtforms.IntegerField()
+    exchange = wtforms.SelectField(choices=["kyber", "uniswap"])
+
+
+class AsyncTaskHandler(WebSocketHandler):
     def _send_status_update(self, message_text, message_type="info", complete=False):
         self.write_message(
             json.dumps({"type": message_type, "text": message_text, "complete": complete})
         )
         log.info(message_text)
 
+
+class SwapStatusNotificationHandler(AsyncTaskHandler):
+    def open(self, exchange, token_amount, config_file_name):
+        DEPOSIT_TIMEOUT = 5  # Waiting time in minutes
+        configuration_file = RaidenConfigurationFile.get_by_filename(config_file_name)
+
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        raiden_token = RaidenToken(w3=w3, account=account)
+
+        form = TokenExchangeForm(
+            {
+                "network": configuration_file.network,
+                "exchange": exchange,
+                "token_amount": token_amount,
+            }
+        )
+
+        if form.validate():
+            exchange_class = {"kyber": Kyber, "uniswap": Uniswap}[exchange]
+            self._send_status_update("")
+            exchange = exchange_class(w3=w3, account=account)
+            needed_funds = exchange.estimate_needed_ethereum("RDN", token_amount)
+            current_balance = account.get_ethereum_balance(w3)
+            required_deposit_amount = current_balance - needed_funds
+
+            if required_deposit_amount > 0:
+                self._send_status_update(
+                    f"Please deposit at least {required_deposit_amount:0.4f} ETH to "
+                    f"0x{account.address} in the next"
+                )
+                balance = account.wait_for_ethereum_funds(
+                    w3, required_deposit_amount, timeout=DEPOSIT_TIMEOUT * 60
+                )
+            self._send_status_update(f"Account balance now is {balance:0.4f}")
+            self._send_status_update(f"Executing ETH <-> RDN swap on {exchange.name}")
+            exchange.buy_tokens("RDN", token_amount)
+            self._send_status_update(
+                f"Swap complete. {raiden_token.balance} REI available", complete=True
+            )
+
+
+class LauncherStatusNotificationHandler(AsyncTaskHandler):
     def open(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
 
@@ -200,6 +252,36 @@ class LaunchHandler(RequestHandler):
         )
 
 
+class AccountFundingHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+
+        self.render(
+            "account_funding.html",
+            account=account,
+            network=configuration_file.network,
+            token=RaidenToken(w3=w3, account=account),
+            kyber=Kyber(w3=w3, account=account),
+            uniswap=Uniswap(w3=w3, account=account),
+            funding_amounts=FUNDING_AMOUNTS,
+            form_class=TokenExchangeForm,
+        )
+
+    def post(self, configuration_file_name):
+        form = TokenExchangeForm(self.request.arguments)
+        return self.redirect(
+            self.reverse_url(
+                "swap_tracker",
+                exchange=form.data["exchange"],
+                token_amount=form.data["token_data"],
+                config_file_name=configuration_file_name,
+            )
+        )
+
+
 class QuickSetupHandler(LaunchHandler):
     def post(self):
         form = QuickSetupForm(self.request.arguments)
@@ -222,7 +304,7 @@ class QuickSetupHandler(LaunchHandler):
                 enable_monitoring=form.data["use_rsb"],
             )
             conf_file.save()
-            return self.redirect(self.reverse_url("launch", conf_file.file_name))
+            return self.redirect(self.reverse_url("funding", conf_file.file_name))
         else:
             return self.render(
                 "index.html",
@@ -235,9 +317,15 @@ if __name__ == "__main__":
     app = Application(
         [
             url(r"/", IndexHandler),
-            url(r"/launch/(.*)", LaunchHandler, name="launch"),
             url(r"/setup", QuickSetupHandler, name="quick_setup"),
-            url(r"/ws/(.*)", LauncherStatusNotificationHandler, name="status"),
+            url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
+            url(r"/launch/(.*)", LaunchHandler, name="launch"),
+            url(r"/ws/launch/(.*)", LauncherStatusNotificationHandler, name="launch_tracker"),
+            url(
+                r"/ws/swap/(?P<exchange>\w+)/(?P<token_amount>\d+)/(?P<config_file_name>.*)",
+                SwapStatusNotificationHandler,
+                name="swap_tracker",
+            ),
         ],
         debug=DEBUG,
         static_path=os.path.join(get_data_folder_path(), "static"),

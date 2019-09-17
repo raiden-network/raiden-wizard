@@ -15,9 +15,6 @@ from .token_exchange import get_contract_address
 
 
 class PassphraseFile:
-    # FIXME: Right now we are writing/reading to a plain text file, which
-    # may be a security risk and put the user's funds at risk.
-
     def __init__(self, file_path: Path):
         self.file_path = file_path
 

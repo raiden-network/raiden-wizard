@@ -15,7 +15,15 @@ from .network import Network
 from .kyber.web3 import tokens as kyber_tokens
 from .kyber.web3 import contracts as kyber_contracts
 from .uniswap.web3 import contracts as uniswap_contracts
-from .typing import ETH_UNIT
+from .tokens import (
+    Wei,
+    TokenAmount,
+    EthereumAmount,
+    TokenSticker,
+    RDNAmount,
+    DAIAmount,
+    GoerliRaidenAmount,
+)
 
 
 def get_contract_address(chain_id, contract_name):
@@ -26,7 +34,6 @@ def estimate_gas(w3, account, contract_function, *args, **kw):
     transaction_params = {
         "chainId": int(w3.net.version),
         "nonce": w3.eth.getTransactionCount(to_checksum_address(account.address)),
-        "gasPrice": kw.pop("gas_price", w3.eth.gasPrice),
     }
     transaction_params.update(**kw)
     result = contract_function(*args)
@@ -55,14 +62,6 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
 
     return w3.eth.waitForTransactionReceipt(tx_hash)
-
-
-def eth_to_wei(eth_amount: ETH_UNIT) -> int:
-    return int(eth_amount * (10 ** 18))
-
-
-def wei_to_eth(wei_amount: int) -> ETH_UNIT:
-    return ETH_UNIT(wei_amount / (10 ** 18))
 
 
 class ExchangeError(Exception):
@@ -95,22 +94,20 @@ class Exchange:
     def name(self):
         return self.__class__.__name__
 
-    def get_current_rate(self, ethereum_amount: ETH_UNIT) -> ETH_UNIT:
+    def _get_token_class(self, token_sticker: TokenSticker):
+        return {"RDN": RaidenTokenNetwork, "DAI": DAITokenNetwork}[token_sticker]
+
+    def get_token(self, token_sticker: TokenSticker):
+        return self._get_token_class(token_sticker)(w3=self.w3, account=self.account)
+
+    def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
         raise NotImplementedError
 
-    def swap_ethereum_for_rdn(self, ethereum_amount: ETH_UNIT, exchange_rate: int):
+    def calculate_transaction_costs(self, token_amount: TokenAmount) -> dict:
         raise NotImplementedError
 
-    @classmethod
-    def select_by_rate(cls, w3: Web3, account: Account, ethereum_amount: ETH_UNIT):
-        exchanges = [exchange_class(w3, account) for exchange_class in [Kyber, Uniswap]]
-        rates = []
-        for exchange in exchanges:
-            try:
-                rates.append(exchange.get_current_rate(ethereum_amount))
-            except ExchangeError:
-                pass
-        return exchanges[rates.index(min(rates))]
+    def buy_tokens(self, token_sticker: TokenSticker, eth_amount: EthereumAmount):
+        raise NotImplementedError
 
 
 class Kyber(Exchange):
@@ -122,57 +119,84 @@ class Kyber(Exchange):
         super().__init__(w3=w3, account=account)
         self.network_contract_proxy = kyber_contracts.get_network_contract_proxy(self.w3)
 
-    @property
-    def rdn_token_network_address(self):
-        return to_checksum_address(kyber_tokens.get_token_network_address(self.chain_id, "RDN"))
+    def get_token_network_address(self, sticker: TokenSticker):
+        return to_checksum_address(kyber_tokens.get_token_network_address(self.chain_id, sticker))
 
-    def get_current_rate(self, ethereum_amount: ETH_UNIT) -> ETH_UNIT:
-        wei_amount = eth_to_wei(ethereum_amount)
+    def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
         eth_address = to_checksum_address(
-            kyber_tokens.get_token_network_address(self.chain_id, "ETH")
+            kyber_tokens.get_token_network_address(self.chain_id, TokenSticker("ETH"))
+        )
+
+        token_network_address = to_checksum_address(
+            kyber_tokens.get_token_network_address(self.chain_id, token_amount.sticker)
         )
 
         expected_rate, slippage_rate = self.network_contract_proxy.functions.getExpectedRate(
-            eth_address, self.rdn_token_network_address, wei_amount
+            token_network_address, eth_address, token_amount.as_wei
         ).call()
 
         if expected_rate == 0 or slippage_rate == 0:
             raise ExchangeError("Trade not possible at the moment due to lack of liquidity")
 
-        return wei_to_eth(slippage_rate)
+        return EthereumAmount(Wei(slippage_rate))
 
-    def swap_ethereum_for_rdn(self, ethereum_amount: ETH_UNIT, exchange_rate: ETH_UNIT):
-        if self.network.name not in self.SUPPORTED_NETWORKS:
-            raise ExchangeError(f"Kyber does not list RDN on {self.network.name}")
-
-        wei_to_sell = eth_to_wei(ethereum_amount)
-
-        transaction_params = {
-            "from": to_checksum_address(self.account.address),
-            "value": wei_to_sell,
-        }
-
-        gas_price = min(
+    def calculate_transaction_costs(self, token_amount: TokenAmount) -> dict:
+        exchange_rate = self.get_current_rate(token_amount)
+        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
+        max_gas_price = min(
             self.w3.eth.gasPrice, self.network_contract_proxy.functions.maxGasPrice().call()
         )
+        gas_price = EthereumAmount(Wei(max_gas_price))
+        token_network_address = self.get_token_network_address(token_amount.sticker)
+        transaction_params = {
+            "from": to_checksum_address(self.account.address),
+            "value": eth_sold.as_wei,
+        }
+
         gas = estimate_gas(
             self.w3,
             self.account,
             self.network_contract_proxy.functions.swapEtherToToken,
-            self.rdn_token_network_address,
-            eth_to_wei(exchange_rate),
+            token_network_address,
+            exchange_rate.as_wei,
             **transaction_params,
         )
 
-        wei_to_sell -= gas * gas_price
+        gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
+        total = EthereumAmount(gas_cost.value + eth_sold.value)
+        return {
+            "gas_price": gas_price,
+            "gas": gas,
+            "eth_sold": eth_sold,
+            "total": total,
+            "exchange_rate": exchange_rate,
+        }
 
-        transaction_params.update({"gas_price": gas_price, "gas": gas, "value": wei_to_sell})
+    def buy_tokens(self, token_amount: TokenAmount):
+        if self.network.name not in self.SUPPORTED_NETWORKS:
+            raise ExchangeError(
+                f"{self.name} does not list {token_amount.sticker} on {self.network.name}"
+            )
+
+        transaction_costs = self.calculate_transaction_costs(token_amount)
+        eth_to_sell = transaction_costs["eth_sold"]
+        exchange_rate = transaction_costs["exchange_rate"]
+        gas_price = transaction_costs["gas_price"]
+        gas = transaction_costs["gas"]
+
+        transaction_params = {
+            "from": to_checksum_address(self.account.address),
+            "gas_price": gas_price.as_wei,
+            "gas": gas,
+            "value": eth_to_sell.as_wei,
+        }
+
         return send_raw_transaction(
             self.w3,
             self.account,
             self.network_contract_proxy.functions.swapEtherToToken,
-            self.rdn_token_network_address,
-            eth_to_wei(exchange_rate),
+            self.get_token_network_address(token_amount.sticker),
+            exchange_rate.as_wei,
             **transaction_params,
         )
 
@@ -187,80 +211,83 @@ class Uniswap(Exchange):
     EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds
 
-    def _run_token_swap(
-        self, token_sticker: str, ethereum_amount: ETH_UNIT, exchange_rate: ETH_UNIT
-    ):
-        try:
-            exchange_proxy = self.get_exchange_proxy(token_sticker)
-        except KeyError:
-            raise ExchangeError(f"Uniswap does not list {token_sticker} on {self.network.name}")
-
-        log.debug("Getting latest block info data")
-        latest_block = self.w3.eth.getBlock("latest")
-        deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
-        wei_amount = eth_to_wei(ethereum_amount)
-
-        token_amount = self._get_tokens_available(token_sticker, ethereum_amount)
-        transaction_params = {
-            "from": self.w3.eth.defaultAccount,
-            "value": wei_amount,
-            "gas": self.GAS_REQUIRED,
-        }
-        return send_raw_transaction(
-            self.w3,
-            self.account,
-            exchange_proxy.functions.ethToTokenSwapInput,
-            token_amount,
-            deadline,
-            **transaction_params,
-        )
-
     def get_exchange_proxy(self, token_sticker):
         return self.w3.eth.contract(
             abi=uniswap_contracts.UNISWAP_EXCHANGE_ABI,
             address=self._get_exchange_address(token_sticker),
         )
 
-    def _get_tokens_available(self, token_sticker: str, ethereum_amount: ETH_UNIT) -> int:
-        try:
-            exchange_proxy = self.get_exchange_proxy(token_sticker)
-        except KeyError:
-            raise ExchangeError(f"Uniswap does not list {token_sticker} on {self.network.name}")
-
-        wei_amount = eth_to_wei(ethereum_amount)
-        return exchange_proxy.functions.getEthToTokenInputPrice(wei_amount).call()
-
-    def _get_exchange_rate(self, token_sticker: str, ethereum_amount: ETH_UNIT):
-        wei_amount = eth_to_wei(ethereum_amount)
-        exchange_proxy = self.get_exchange_proxy(token_sticker)
-
-        tokens_to_receive = wei_to_eth(
-            exchange_proxy.functions.getEthToTokenInputPrice(wei_amount).call()
-        )
-        return ETH_UNIT(tokens_to_receive / ethereum_amount)
-
-    def _get_exchange_address(self, token_sticker: str) -> str:
+    def _get_exchange_address(self, token_sticker: TokenSticker) -> str:
         try:
             exchanges = {"RDN": self.RAIDEN_EXCHANGE_ADDRESSES, "DAI": self.DAI_EXCHANGE_ADDRESSES}
             return exchanges[token_sticker][self.network.name]
         except KeyError:
             raise ExchangeError(f"{self.name} does not have a listed exchange for {token_sticker}")
 
-    def _get_token_class(self, token_sticker: str):
-        return {"RDN": RaidenToken, "DAI": DAIToken}[token_sticker]
+    def calculate_transaction_costs(self, token_amount: TokenAmount) -> dict:
+        exchange_rate = self.get_current_rate(token_amount)
+        eth_to_sell = EthereumAmount(token_amount.value * exchange_rate.value)
+        gas_price = EthereumAmount(Wei(self.w3.eth.gasPrice))
+        exchange_proxy = self.get_exchange_proxy(token_amount.sticker)
+        latest_block = self.w3.eth.getBlock("latest")
+        deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
+        transaction_params = {"from": self.w3.eth.defaultAccount, "value": eth_to_sell.as_wei}
 
-    def get_token(self, token_sticker: str):
-        return self._get_token_class(token_sticker)(w3=self.w3, account=self.account)
+        gas = estimate_gas(
+            self.w3,
+            self.account,
+            exchange_proxy.functions.ethToTokenSwapOutput,
+            token_amount.as_wei,
+            deadline,
+            **transaction_params,
+        )
 
-    def get_current_rate(self, ethereum_amount: ETH_UNIT) -> ETH_UNIT:
-        return self._get_exchange_rate("RDN", ethereum_amount)
+        gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
+        total = EthereumAmount(gas_cost.value + eth_to_sell.value)
+        return {
+            "gas_price": gas_price,
+            "gas": gas,
+            "eth_to_sell": eth_to_sell,
+            "total": total,
+            "exchange_rate": exchange_rate,
+        }
 
-    def swap_ethereum_for_rdn(self, ethereum_amount: ETH_UNIT, exchange_rate: ETH_UNIT):
-        return self._run_token_swap("RDN", ethereum_amount, exchange_rate)
+    def buy_tokens(self, token_amount: TokenAmount):
+        costs = self.calculate_transaction_costs(token_amount)
+        exchange_proxy = self.get_exchange_proxy(token_amount.sticker)
+        latest_block = self.w3.eth.getBlock("latest")
+        deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
+        eth_to_sell = costs["eth_to_sell"]
+        gas = costs["gas"]
+        gas_price = costs["gas_price"]
+        transaction_params = {
+            "from": self.w3.eth.defaultAccount,
+            "value": eth_to_sell.as_wei,
+            "gas": gas,
+            "gas_price": gas_price,
+        }
+
+        return send_raw_transaction(
+            self.w3,
+            self.account,
+            exchange_proxy.functions.ethToTokenSwapOutput,
+            token_amount.as_wei,
+            deadline,
+            **transaction_params,
+        )
+
+    def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
+        exchange_proxy = self.get_exchange_proxy(token_amount.sticker)
+
+        eth_to_sell = EthereumAmount(
+            Wei(exchange_proxy.functions.getEthToTokenOutputPrice(token_amount.as_wei).call())
+        )
+        return EthereumAmount(eth_to_sell.value / token_amount.value)
 
 
-class Token:
+class TokenNetwork:
     NETWORKS_DEPLOYED = []
+    TOKEN_AMOUNT_CLASS = None
 
     def __init__(self, w3: Web3, account: Account):
         self.account = account
@@ -277,7 +304,9 @@ class Token:
 
     @property
     def balance(self):
-        return wei_to_eth(self.token_proxy.functions.balanceOf(self.owner).call())
+        assert self.TOKEN_AMOUNT_CLASS is not None
+
+        return self.TOKEN_AMOUNT_CLASS(self.token_proxy.functions.balanceOf(self.owner).call())
 
     @property
     def is_funded(self):
@@ -293,7 +322,8 @@ class Token:
         raise NotImplementedError
 
 
-class CustomToken(Token):
+class CustomTokenNetwork(TokenNetwork):
+    TOKEN_AMOUNT_CLASS = GoerliRaidenAmount
     TOKEN_AMOUNT = 10 ** 21
     GAS_REQUIRED_FOR_MINT = 100_000
     GAS_REQUIRED_FOR_DEPOSIT = 200_000
@@ -351,8 +381,9 @@ class CustomToken(Token):
         )
 
 
-class DAIToken(Token):
+class DAITokenNetwork(TokenNetwork):
     NETWORKS_DEPLOYED = ["mainnet", "ropsten", "rinkeby", "kovan"]
+    TOKEN_AMOUNT_CLASS = DAIAmount
 
     def _get_token_network_address(self):
         network = Network.get_by_chain_id(int(self.w3.net.version))
@@ -366,7 +397,8 @@ class DAIToken(Token):
         return to_checksum_address(address)
 
 
-class RaidenToken(Token):
+class RaidenTokenNetwork(TokenNetwork):
+    TOKEN_AMOUNT_CLASS = RDNAmount
     NETWORKS_DEPLOYED = ["mainnet", "ropsten", "rinkeby", "kovan"]
 
     def _get_token_network_address(self):

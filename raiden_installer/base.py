@@ -15,6 +15,7 @@ import tarfile
 import time
 import uuid
 import zipfile
+import json
 from contextlib import closing
 from io import BytesIO
 from pathlib import Path
@@ -555,6 +556,10 @@ class Infura(EthereumRPCProvider):
     def project_id(self):
         return self.url.split("/")[-1]
 
+    @property
+    def endpoint(self):
+        return self.url[8:]
+
     @classmethod
     def make(cls, network: Network, project_id: str):
         return cls(cls.URL_PATTERN.format(network_name=network.name, project_id=project_id))
@@ -650,7 +655,6 @@ class Token:
         return self._send_raw_transaction(
             self.deposit_proxy.functions.deposit, self.GAS_REQUIRED_FOR_DEPOSIT, self.owner, amount
         )
-
 
 class RaidenConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
@@ -783,4 +787,29 @@ class RaidenConfigurationFile:
 
 
 class RaidenDappConfigurationFile:
-    pass
+    FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
+
+    def __init__(self, private_key: str, infura_endpoint: Infura):        
+        self.private_key = private_key
+        self.infura_endpoint = infura_endpoint
+        
+    def save(self):
+        self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
+        with open(self.path, "w") as config_file:
+            json.dumps(self.configuration_data, config_file)
+
+    @property
+    def configuration_data(self):
+        return {
+            "INFURA_ENDPOINT": self.infura_endpoint.endpoint,
+            "PRIVATE_KEY": self.private_key
+        }
+
+    @property
+    def file_name(self):
+        keyfile = create_keyfile_json(self.private_key)
+        return f"config-{keyfile["address"]}-{self.infura_endpoint.network}_dapp.json"
+
+    @property
+    def path(self):
+        return self.FOLDER_PATH.joinpath(self.file_name)

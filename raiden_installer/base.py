@@ -813,3 +813,20 @@ class RaidenDappConfigurationFile:
     @property
     def path(self):
         return self.FOLDER_PATH.joinpath(self.file_name)
+
+    @classmethod
+    def load(cls, file_path: Path):
+        file_name, _ = os.path.splitext(os.path.basename(file_path))
+
+        _, _, network_name = file_name.split("-")
+
+        with file_path.open() as config_file:
+            data = json.loads(config_file)
+            return cls(
+                private_key=data["PRIVATE_KEY"],
+                infura_endpoint=data["INFURA_ENDPOINT"]
+            )
+
+    @classmethod
+    def get_by_filename(cls, file_name):
+        return cls.load(cls.FOLDER_PATH.joinpath(file_name))

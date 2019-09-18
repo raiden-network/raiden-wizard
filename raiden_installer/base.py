@@ -656,9 +656,19 @@ class Token:
             self.deposit_proxy.functions.deposit, self.GAS_REQUIRED_FOR_DEPOSIT, self.owner, amount
         )
 
-class RaidenConfigurationFile:
+class BaseConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
+    @property
+    def path(self):
+        return self.FOLDER_PATH.joinpath(self.file_name)
+
+    @classmethod
+    def get_by_filename(cls, file_name):
+        return cls.load(cls.FOLDER_PATH.joinpath(file_name))
+
+
+class RaidenConfigurationFile:
     def __init__(
         self, account: Account, network: Network, ethereum_client_rpc_endpoint: str, **kw
     ):
@@ -714,10 +724,6 @@ class RaidenConfigurationFile:
         return f"config-{self.account.address}-{self.network.name}.toml"
 
     @property
-    def path(self):
-        return self.FOLDER_PATH.joinpath(self.file_name)
-
-    @property
     def passphrase_file_path(self):
         return self.FOLDER_PATH.joinpath(f"{self.account.address}.passphrase.txt")
 
@@ -767,10 +773,6 @@ class RaidenConfigurationFile:
             )
 
     @classmethod
-    def get_by_filename(cls, file_name):
-        return cls.load(cls.FOLDER_PATH.joinpath(file_name))
-
-    @classmethod
     def get_launchable_configurations(cls):
         return [cfg for cfg in cls.get_available_configurations() if cfg.is_launchable]
 
@@ -787,8 +789,6 @@ class RaidenConfigurationFile:
 
 
 class RaidenDappConfigurationFile:
-    FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
-
     def __init__(self, private_key: str, infura_endpoint: Infura):        
         self.private_key = private_key
         self.infura_endpoint = infura_endpoint
@@ -810,10 +810,6 @@ class RaidenDappConfigurationFile:
         keyfile = create_keyfile_json(self.private_key)
         return f"config-{keyfile["address"]}-{self.infura_endpoint.network}_dapp.json"
 
-    @property
-    def path(self):
-        return self.FOLDER_PATH.joinpath(self.file_name)
-
     @classmethod
     def load(cls, file_path: Path):
         file_name, _ = os.path.splitext(os.path.basename(file_path))
@@ -827,6 +823,3 @@ class RaidenDappConfigurationFile:
                 infura_endpoint=data["INFURA_ENDPOINT"]
             )
 
-    @classmethod
-    def get_by_filename(cls, file_name):
-        return cls.load(cls.FOLDER_PATH.joinpath(file_name))

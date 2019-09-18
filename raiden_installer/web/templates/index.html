@@ -27,6 +27,13 @@
         <p class="description">To start using Raiden with a new configuration you need to provide a Infura Project ID. If you don't have a Infura account click <a href="https://medium.com/@raiden_network/6c7c61c5b695" target="_blank">here</a> for instructions on how to get one.</p>
     </div>
     <form action="{{ reverse_url('quick_setup') }}" method="POST">
+
+        <div>
+            <h2 class="input-label">dApp</h2>
+            {% raw setup_form.dapp %}
+        </div>
+
+
         <div class="new-configuration-wrapper">
             <h2 class="input-label">Enter your Infura Project ID</h2>
             <div class="client">

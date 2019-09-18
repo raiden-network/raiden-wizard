@@ -780,3 +780,7 @@ class RaidenConfigurationFile:
                 data = toml.load(config_file)
                 endpoints.append(EthereumRPCProvider.make_from_url(data["eth-rpc-endpoint"]))
         return endpoints
+
+
+class RaidenDappConfigurationFile:
+    pass

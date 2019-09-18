@@ -41,6 +41,8 @@ class QuickSetupForm(Form):
     use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=True)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
+    dapp = wtforms.BooleanField()
+
     def validate_network(self, field):
         network_name = field.data
         if network_name not in [n.name for n in AVAILABLE_NETWORKS]:
@@ -67,16 +69,9 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
         )
         log.info(message_text)
 
-    def open(self, configuration_file_name):
-        configuration_file = base.RaidenConfigurationFile.get_by_filename(
-            configuration_file_name
-        )
-
-        account = configuration_file.account
-        network = configuration_file.network
-
+    def _fund_account(self, balance, network, account)
         try:
-            if configuration_file.balance == 0:
+            if balance == 0:
                 self._send_status_update(
                     f"Funding account with {network.capitalized_name} ETH"
                 )
@@ -85,17 +80,19 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
                     f"ETH successfully acquired", message_type="success"
                 )
             self._send_status_update(
-                f"Current balance: {round((configuration_file.balance / 10 ** 18), 4)} ETH"
+                f"Current balance: {round((balance / 10 ** 18), 4)} ETH"
             )
         except Exception as exc:
             self._send_status_update(
                 f"Failed to add funds to account: {exc}", message_type="warning"
             )
 
+    def _mint_tokens(self, ethereum_client_rpc_endpoint, account )
         token = base.Token(
-            ethereum_rpc_endpoint=configuration_file.ethereum_client_rpc_endpoint,
-            account=configuration_file.account,
+            ethereum_rpc_endpoint=ethereum_client_rpc_endpoint,
+            account=account,
         )
+
         try:
             if token.balance == 0:
                 self._send_status_update(f"Minting and depositing tokens")
@@ -108,6 +105,18 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
             self._send_status_update(
                 f"Failed to execute token contracts: {exc}", message_type="error"
             )
+
+
+    def open(self, configuration_file_name):
+        configuration_file = base.RaidenConfigurationFile.get_by_filename(
+            configuration_file_name
+        )
+        account = configuration_file.account
+        network = configuration_file.network
+        ethereum_client_rpc_endpoint = configuration_file.ethereum_client_rpc_endpoint
+
+        self._fund_account(configuration_file.balance, network, account)
+        self._mint_tokens(ethereum_client_rpc_endpoint, account)
 
         latest = RAIDEN_CLIENT_DEFAULT_CLASS.get_latest_release()
         if not latest.is_installed:
@@ -131,6 +140,16 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
             self._send_status_update(f"Raiden process failed to start: {exc}")
         else:
             sys.exit()
+
+
+class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
+    def open(self, configuration_file_name):
+        configuration_file = base.RaidenConfigurationFile.get_by_filename(
+        configuration_file_name
+        )
+        account = configuration_file.account
+        network = configuration_file.network
+        ethereum_client_rpc_endpoint = configuration_file.ethereum_client_rpc_endpoint
 
 
 class IndexHandler(RequestHandler):
@@ -160,12 +179,29 @@ class LaunchHandler(RequestHandler):
         )
 
 
+class LaunchDappHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        websocket_url = "ws_dapp://{host}{path}".format(
+            host=self.request.host,
+            path=self.reverse_url("status_dapp", configuration_file_name),
+        )
+
+        self.render(
+            "launch.html",
+            websocket_url=websocket_url,
+            raiden_url=RAIDEN_CLIENT_DEFAULT_CLASS.WEB_UI_INDEX_URL,
+        )
+
+
 class QuickSetupHandler(LaunchHandler):
     def post(self):
         form = QuickSetupForm(self.request.arguments)
+
         if form.validate():
             network = base.Network.get_by_name(form.data["network"])
             url_or_infura_id = form.data["endpoint"].strip()
+            
+            dapp_flag = form.data["dapp"]
 
             if base.Infura.is_valid_project_id(url_or_infura_id):
                 ethereum_rpc_provider = base.Infura.make(network, url_or_infura_id)
@@ -174,15 +210,27 @@ class QuickSetupHandler(LaunchHandler):
 
             account = base.Account.create()
 
-            conf_file = base.RaidenConfigurationFile(
-                account,
-                network,
-                ethereum_rpc_provider.url,
-                routing_mode="pfs" if form.data["use_rsb"] else "local",
-                enable_monitoring=form.data["use_rsb"],
-            )
+            if not dapp_flag:
+                launcher="launch"
+                conf_file = base.RaidenConfigurationFile(
+                    account,
+                    network,
+                    ethereum_rpc_provider.url,
+                    routing_mode="pfs" if form.data["use_rsb"] else "local",
+                    enable_monitoring=form.data["use_rsb"],
+                )
+            else:
+                launcher="launch_dapp"
+                conf_file = base.RaidenConfigurationFile(
+                    account,
+                    network,
+                    ethereum_rpc_provider.url,
+                    routing_mode="local",
+                    enable_monitoring=form.data["use_rsb"],
+                )
             conf_file.save()
-            return self.redirect(self.reverse_url("launch", conf_file.file_name))
+            return self.redirect(self.reverse_url(launcher, conf_file.file_name))
+
         else:
             return self.render(
                 "index.html",
@@ -192,12 +240,16 @@ class QuickSetupHandler(LaunchHandler):
 
 
 if __name__ == "__main__":
+        
     app = Application(
         [
             url(r"/", IndexHandler),
-            url(r"/launch/(.*)", LaunchHandler, name="launch"),
+            url(r"/launch(.*)", LaunchHandler, name="launch"),
+            url(r"/launch(.*)", LaunchDappHandler, name="launch_dapp"),
             url(r"/setup", QuickSetupHandler, name="quick_setup"),
             url(r"/ws/(.*)", LauncherStatusNotificationHandler, name="status"),
+            url(r"/ws/(.*)", DappLauncherStatusNotificationHandler, name="status_dapp"),
+
         ],
         debug=DEBUG,
         static_path=os.path.join(get_data_folder_path(), "static"),

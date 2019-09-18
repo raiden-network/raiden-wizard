@@ -17,11 +17,9 @@ from wtforms_tornado import Form
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8888
 
-
 log = logging.getLogger("tornado.application")
 log.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 enable_pretty_logging()
-
 
 AVAILABLE_NETWORKS = [n for n in base.Network.all() if n.FAUCET_AVAILABLE]
 
@@ -106,7 +104,6 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
                 f"Failed to execute token contracts: {exc}", message_type="error"
             )
 
-
     def open(self, configuration_file_name):
         configuration_file = base.RaidenConfigurationFile.get_by_filename(
             configuration_file_name
@@ -150,8 +147,9 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
         dapp_configuration_file = base.RaidenDappConfigurationFile.get_by_filename(
             configuration_file_name.split(".toml")[0] + '_dapp.json'
         )
-        dapp_account = base.Account.create(private_key=dapp_configuration_file.private_key)
-        dapp_account_balance = dapp_account.balance
+        dapp_account = base.Account.create(private_key=bytes.fromhex(dapp_configuration_file.private_key))
+        #FIXME there is no dapp account balance atm
+        dapp_account_balance = dapp_configuration_file.balance
         account = configuration_file.account
         account_balance = configuration_file.balance
         network = configuration_file.network
@@ -217,7 +215,7 @@ class LaunchHandler(RequestHandler):
 
 class LaunchDappHandler(RequestHandler):
     def get(self, configuration_file_name):
-        websocket_url = "ws_dapp://{host}{path}".format(
+        websocket_url = "ws://{host}{path}".format(
             host=self.request.host,
             path=self.reverse_url("status_dapp", configuration_file_name),
         )
@@ -236,7 +234,7 @@ class QuickSetupHandler(LaunchHandler):
         if form.validate():
             network = base.Network.get_by_name(form.data["network"])
             url_or_infura_id = form.data["endpoint"].strip()
-            
+
             dapp_flag = form.data["dapp"]
 
             if base.Infura.is_valid_project_id(url_or_infura_id):
@@ -247,18 +245,21 @@ class QuickSetupHandler(LaunchHandler):
             account = base.Account.create()
 
             if not dapp_flag:
-                launcher="launch"
+                launcher = "launch"
                 conf_file = base.RaidenConfigurationFile(
                     account,
                     network,
                     ethereum_rpc_provider.url,
                     routing_mode="pfs" if form.data["use_rsb"] else "local",
                     enable_monitoring=form.data["use_rsb"],
+                    name=account.address
                 )
             else:
-                launcher="launch_dapp"
+                launcher = "launch_dapp"
                 dapp_configuration_file = base.RaidenDappConfigurationFile(
-                    os.urandom(32), ethereum_rpc_provider
+                    os.urandom(32),
+                    ethereum_rpc_provider,
+                    name=account.address
                 )
                 dapp_configuration_file.save()
                 conf_file = base.RaidenConfigurationFile(
@@ -267,6 +268,7 @@ class QuickSetupHandler(LaunchHandler):
                     ethereum_rpc_provider.url,
                     routing_mode="local",
                     enable_monitoring=form.data["use_rsb"],
+                    name=account.address
                 )
             conf_file.save()
             return self.redirect(self.reverse_url(launcher, conf_file.file_name))
@@ -280,15 +282,15 @@ class QuickSetupHandler(LaunchHandler):
 
 
 if __name__ == "__main__":
-        
+
     app = Application(
         [
             url(r"/", IndexHandler),
             url(r"/launch(.*)", LaunchHandler, name="launch"),
-            url(r"/launch(.*)", LaunchDappHandler, name="launch_dapp"),
+            url(r"/dapp_launch(.*)", LaunchDappHandler, name="launch_dapp"),
             url(r"/setup", QuickSetupHandler, name="quick_setup"),
             url(r"/ws/(.*)", LauncherStatusNotificationHandler, name="status"),
-            url(r"/ws/(.*)", DappLauncherStatusNotificationHandler, name="status_dapp"),
+            url(r"/dapp_ws/(.*)", DappLauncherStatusNotificationHandler, name="status_dapp"),
 
         ],
         debug=DEBUG,

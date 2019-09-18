@@ -670,11 +670,12 @@ class BaseConfigurationFile:
 
 
 class RaidenConfigurationFile(BaseConfigurationFile):
-    def __init__(
-        self, account: Account, network: Network, ethereum_client_rpc_endpoint: str, **kw
-    ):
+    def __init__(self, account: Account, network: Network, ethereum_client_rpc_endpoint: str,
+                 name: str, **kw):
+        super().__init__()
         self.account = account
         self.network = network
+        self.name = name
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", True)
@@ -722,7 +723,7 @@ class RaidenConfigurationFile(BaseConfigurationFile):
 
     @property
     def file_name(self):
-        return f"config-{self.account.address}-{self.network.name}.toml"
+        return f"config-{self.name}.toml"
 
     @property
     def passphrase_file_path(self):
@@ -759,8 +760,6 @@ class RaidenConfigurationFile(BaseConfigurationFile):
     def load(cls, file_path: Path):
         file_name, _ = os.path.splitext(os.path.basename(file_path))
 
-        _, _, network_name = file_name.split("-")
-
         with file_path.open() as config_file:
             data = toml.load(config_file)
             passphrase = PassphraseFile(Path(data["password-file"])).retrieve()
@@ -768,9 +767,10 @@ class RaidenConfigurationFile(BaseConfigurationFile):
             return cls(
                 account=account,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
-                network=Network.get_by_name(network_name),
+                network=Network.get_by_name(data["network-id"]),
                 routing_mode=data["routing-mode"],
                 enable_monitoring=data["enable-monitoring"],
+                name=data["address"]
             )
 
     @classmethod
@@ -790,8 +790,11 @@ class RaidenConfigurationFile(BaseConfigurationFile):
 
 
 class RaidenDappConfigurationFile(BaseConfigurationFile):
-    def __init__(self, private_key: str, infura_endpoint: Infura):        
+    def __init__(self, private_key: str, infura_endpoint: Infura, name: str):
+        # FIXME Not sure if the decoding breaks the private key???
+        #  We'll see once we integreate the Dapp
         self.private_key = private_key
+        self.name = name
         self.infura_endpoint = infura_endpoint
         
     def save(self):
@@ -803,24 +806,21 @@ class RaidenDappConfigurationFile(BaseConfigurationFile):
     def configuration_data(self):
         return {
             "INFURA_ENDPOINT": self.infura_endpoint.endpoint,
-            "PRIVATE_KEY": self.private_key
+            "PRIVATE_KEY": self.private_key.hex()
         }
 
     @property
     def file_name(self):
-        keyfile = create_keyfile_json(self.private_key, b'')
-        return f"config-{keyfile['address']}-{self.infura_endpoint.network}_dapp.json"
+        return f"config-{self.name}_dapp.json"
 
     @classmethod
     def load(cls, file_path: Path):
         file_name, _ = os.path.splitext(os.path.basename(file_path))
-
-        _, _, network_name = file_name.split("-")
-
         with file_path.open() as config_file:
-            data = json.loads(config_file)
+            data = json.load(config_file)
             return cls(
                 private_key=data["PRIVATE_KEY"],
-                infura_endpoint=data["INFURA_ENDPOINT"]
+                infura_endpoint=data["INFURA_ENDPOINT"],
+                name=file_name.split("_dapp")[0]
             )
 

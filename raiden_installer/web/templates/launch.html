@@ -18,7 +18,10 @@
 
         console.log("will redirect now");
         setTimeout(function(){
-          document.location = "{{ raiden_url }}";
+          // document.location = "{{ raiden_url }}";
+          window.open("{{ raiden_url }}", "_blank")
+          document.location = "/";
+
         }, 2000);
       }
       

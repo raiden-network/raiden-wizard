@@ -31,6 +31,16 @@ def get_data_folder_path():
     # indicated by sys._MEIPASS
     return getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
 
+app = Application(
+    debug=DEBUG,
+    static_path=os.path.join(get_data_folder_path(), "static"),
+    template_path=os.path.join(get_data_folder_path(), "templates"),
+)
+
+class MyStaticFileHandler(tornado.web.StaticFileHandler):
+    def set_extra_headers(self, path):
+        # Disable cache
+        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
 
 class QuickSetupForm(Form):
     network = wtforms.SelectField(
@@ -149,11 +159,12 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
         )
         dapp_account = base.Account.create(private_key=bytes.fromhex(dapp_configuration_file.private_key))
         #FIXME there is no dapp account balance atm
-        dapp_account_balance = dapp_configuration_file.balance
         account = configuration_file.account
         account_balance = configuration_file.balance
         network = configuration_file.network
         ethereum_client_rpc_endpoint = configuration_file.ethereum_client_rpc_endpoint
+
+        dapp_account_balance = account.get_balance(ethereum_client_rpc_endpoint)
 
         self._fund_account(account_balance, network, account)
         self._mint_tokens(ethereum_client_rpc_endpoint, account)
@@ -182,8 +193,17 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
         except base.RaidenClientError as exc:
             self._send_status_update(f"Raiden process failed to start: {exc}")
         else:
-            # !! Launch web server for Light Client here
-            sys.exit()
+            webbrowser.open_new('http://localhost:5001')
+            app.default_router.rules.clear()
+            app.add_handlers(
+                r".*",
+                [
+                    (r"/(.*)", MyStaticFileHandler, {
+                        "path": os.path.join(os.path.dirname(__file__), "light-client"),
+                        "default_filename": "index.html"
+                        }),
+                ]
+            )
 
 
 class IndexHandler(RequestHandler):
@@ -252,14 +272,14 @@ class QuickSetupHandler(LaunchHandler):
                     ethereum_rpc_provider.url,
                     routing_mode="pfs" if form.data["use_rsb"] else "local",
                     enable_monitoring=form.data["use_rsb"],
-                    name=account.address
+                    name="0x" + account.address
                 )
             else:
                 launcher = "launch_dapp"
                 dapp_configuration_file = base.RaidenDappConfigurationFile(
                     os.urandom(32),
                     ethereum_rpc_provider,
-                    name=account.address
+                    name="0x" + account.address
                 )
                 dapp_configuration_file.save()
                 conf_file = base.RaidenConfigurationFile(
@@ -268,7 +288,7 @@ class QuickSetupHandler(LaunchHandler):
                     ethereum_rpc_provider.url,
                     routing_mode="local",
                     enable_monitoring=form.data["use_rsb"],
-                    name=account.address
+                    name="0x" + account.address
                 )
             conf_file.save()
             return self.redirect(self.reverse_url(launcher, conf_file.file_name))
@@ -282,8 +302,8 @@ class QuickSetupHandler(LaunchHandler):
 
 
 if __name__ == "__main__":
-
-    app = Application(
+    app.add_handlers(
+        r".*",
         [
             url(r"/", IndexHandler),
             url(r"/launch(.*)", LaunchHandler, name="launch"),
@@ -291,12 +311,7 @@ if __name__ == "__main__":
             url(r"/setup", QuickSetupHandler, name="quick_setup"),
             url(r"/ws/(.*)", LauncherStatusNotificationHandler, name="status"),
             url(r"/dapp_ws/(.*)", DappLauncherStatusNotificationHandler, name="status_dapp"),
-
-        ],
-        debug=DEBUG,
-        static_path=os.path.join(get_data_folder_path(), "static"),
-        template_path=os.path.join(get_data_folder_path(), "templates"),
-    )
+        ])
     app.listen(PORT)
 
     if not DEBUG:

@@ -668,7 +668,7 @@ class BaseConfigurationFile:
         return cls.load(cls.FOLDER_PATH.joinpath(file_name))
 
 
-class RaidenConfigurationFile:
+class RaidenConfigurationFile(BaseConfigurationFile):
     def __init__(
         self, account: Account, network: Network, ethereum_client_rpc_endpoint: str, **kw
     ):
@@ -788,7 +788,7 @@ class RaidenConfigurationFile:
         return endpoints
 
 
-class RaidenDappConfigurationFile:
+class RaidenDappConfigurationFile(BaseConfigurationFile):
     def __init__(self, private_key: str, infura_endpoint: Infura):        
         self.private_key = private_key
         self.infura_endpoint = infura_endpoint

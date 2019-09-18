@@ -69,7 +69,7 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
         )
         log.info(message_text)
 
-    def _fund_account(self, balance, network, account)
+    def _fund_account(self, balance, network, account):
         try:
             if balance == 0:
                 self._send_status_update(
@@ -87,7 +87,7 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
                 f"Failed to add funds to account: {exc}", message_type="warning"
             )
 
-    def _mint_tokens(self, ethereum_client_rpc_endpoint, account )
+    def _mint_tokens(self, ethereum_client_rpc_endpoint, account):
         token = base.Token(
             ethereum_rpc_endpoint=ethereum_client_rpc_endpoint,
             account=account,
@@ -145,11 +145,47 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
 class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
     def open(self, configuration_file_name):
         configuration_file = base.RaidenConfigurationFile.get_by_filename(
-        configuration_file_name
+            configuration_file_name
         )
+        dapp_configuration_file = base.RaidenDappConfigurationFile.get_by_filename(
+            configuration_file_name.split(".toml")[0] + '_dapp.json'
+        )
+        dapp_account = base.Account.create(private_key=dapp_configuration_file.private_key)
+        dapp_account_balance = dapp_account.balance
         account = configuration_file.account
+        account_balance = configuration_file.balance
         network = configuration_file.network
         ethereum_client_rpc_endpoint = configuration_file.ethereum_client_rpc_endpoint
+
+        self._fund_account(account_balance, network, account)
+        self._mint_tokens(ethereum_client_rpc_endpoint, account)
+
+        self._fund_account(dapp_account_balance, network, dapp_account)
+        self._mint_tokens(ethereum_client_rpc_endpoint, dapp_account)
+
+        latest = RAIDEN_CLIENT_DEFAULT_CLASS.get_latest_release()
+        if not latest.is_installed:
+            self._send_status_update(
+                f"Downloading and installing raiden {latest.release}"
+            )
+            latest.install()
+            self._send_status_update("Installation complete", message_type="success")
+
+        self._send_status_update(
+            "Launching Raiden, this might take a couple of minutes, do not close the browser"
+        )
+
+        if not latest.is_running:
+            latest.launch(configuration_file)
+
+        try:
+            latest.wait_for_web_ui_ready()
+            self._send_status_update("Raiden is ready!", complete=True)
+        except base.RaidenClientError as exc:
+            self._send_status_update(f"Raiden process failed to start: {exc}")
+        else:
+            # !! Launch web server for Light Client here
+            sys.exit()
 
 
 class IndexHandler(RequestHandler):
@@ -221,6 +257,10 @@ class QuickSetupHandler(LaunchHandler):
                 )
             else:
                 launcher="launch_dapp"
+                dapp_configuration_file = base.RaidenDappConfigurationFile(
+                    os.urandom(32), ethereum_rpc_provider
+                )
+                dapp_configuration_file.save()
                 conf_file = base.RaidenConfigurationFile(
                     account,
                     network,

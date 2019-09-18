@@ -127,7 +127,7 @@ class Account:
             raise ValueError("Invalid Passphrase")
 
     @classmethod
-    def create(cls, passphrase=None):
+    def create(cls, passphrase=None, private_key=None):
         if passphrase is None:
             passphrase = make_random_string()
 
@@ -144,7 +144,8 @@ class Account:
         keystore_folder_path.mkdir(parents=True, exist_ok=True)
 
         with keystore_file_path.open("w") as keyfile:
-            private_key = os.urandom(32)
+            if private_key is None:
+                private_key = os.urandom(32)
             json.dump(create_keyfile_json(private_key, passphrase.encode()), keyfile)
 
         return cls(keystore_file_path, passphrase=passphrase)
@@ -796,7 +797,7 @@ class RaidenDappConfigurationFile(BaseConfigurationFile):
     def save(self):
         self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
         with open(self.path, "w") as config_file:
-            json.dumps(self.configuration_data, config_file)
+            json.dump(self.configuration_data, config_file)
 
     @property
     def configuration_data(self):
@@ -807,8 +808,8 @@ class RaidenDappConfigurationFile(BaseConfigurationFile):
 
     @property
     def file_name(self):
-        keyfile = create_keyfile_json(self.private_key)
-        return f"config-{keyfile["address"]}-{self.infura_endpoint.network}_dapp.json"
+        keyfile = create_keyfile_json(self.private_key, b'')
+        return f"config-{keyfile['address']}-{self.infura_endpoint.network}_dapp.json"
 
     @classmethod
     def load(cls, file_path: Path):

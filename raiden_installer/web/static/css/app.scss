@@ -169,6 +169,7 @@ body {
                     grid-template-areas:
                         "input-label input-label input-label input-label"
                         "client client client network-select"
+                        "dapp-checkbox-label dapp-checkbox-label dapp-checkbox-label dapp-checkbox"
                         "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description"
                         "setup-error setup-error setup-error setup-error"
                         "disclaimer disclaimer disclaimer disclaimer"
@@ -204,6 +205,19 @@ body {
                         color: color(text-blue);
                         height: 28px;
                         width: 70px;
+                    }
+                    .dapp-checkbox-label {
+                        color: color(text-standard);
+                        align-self: center;
+                        grid-area: dapp-checkbox-label;
+                        text-align: left;
+                        padding-left: 60px;
+                    }
+                    .dapp-checkbox {
+                        grid-area: dapp-checkbox;
+                        align-self: center;
+                        padding-right: 12px;
+                        justify-self: center;
                     }
                     .pfs-monitoring {
                         grid-area: pfs-monitoring;

@@ -185,7 +185,7 @@ body .container .launcher-window #welcome-screen .configuration-files-list .conf
 body .container .launcher-window #welcome-screen .new-configuration-wrapper {
   display: -ms-grid;
   display: grid;
-      grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "disclaimer disclaimer disclaimer disclaimer" "new-configuration new-configuration new-configuration new-configuration";
+      grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "dapp-checkbox-label dapp-checkbox-label dapp-checkbox-label dapp-checkbox" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "disclaimer disclaimer disclaimer disclaimer" "new-configuration new-configuration new-configuration new-configuration";
   -ms-grid-columns: (auto)[4];
       grid-template-columns: repeat(4, auto);
   -ms-grid-rows: 80px 40px 40px 30px auto 80px;
@@ -242,8 +242,33 @@ body .container .launcher-window #welcome-screen .new-configuration-wrapper .net
   width: 70px;
 }
 
-body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs-monitoring {
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .dapp-checkbox-label {
+  color: #fff;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
   -ms-grid-row: 3;
+  -ms-grid-column: 1;
+  -ms-grid-column-span: 3;
+  grid-area: dapp-checkbox-label;
+  text-align: left;
+  padding-left: 60px;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .dapp-checkbox {
+  -ms-grid-row: 3;
+  -ms-grid-column: 4;
+  grid-area: dapp-checkbox;
+  -ms-flex-item-align: center;
+      -ms-grid-row-align: center;
+      align-self: center;
+  padding-right: 12px;
+  -ms-grid-column-align: center;
+      justify-self: center;
+}
+
+body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs-monitoring {
+  -ms-grid-row: 4;
   -ms-grid-column: 1;
   grid-area: pfs-monitoring;
   padding-left: 60px;
@@ -253,7 +278,7 @@ body .container .launcher-window #welcome-screen .new-configuration-wrapper .pfs
   color: #fff;
   font-size: 14px;
   font-weight: 300;
-  -ms-grid-row: 3;
+  -ms-grid-row: 4;
   -ms-grid-column: 2;
   -ms-grid-column-span: 3;
   grid-area: pfs-monitoring-description;
@@ -268,7 +293,7 @@ body .container .launcher-window #welcome-screen .new-configuration-wrapper .set
   font-size: 14px;
   font-style: italic;
   font-weight: 300;
-  -ms-grid-row: 4;
+  -ms-grid-row: 5;
   -ms-grid-column: 1;
   -ms-grid-column-span: 4;
   grid-area: setup-error;
@@ -283,7 +308,7 @@ body .container .launcher-window #welcome-screen .new-configuration-wrapper .dis
   color: #fff;
   font-size: 14px;
   font-weight: 300;
-  -ms-grid-row: 5;
+  -ms-grid-row: 6;
   -ms-grid-column: 1;
   -ms-grid-column-span: 4;
   grid-area: disclaimer;
@@ -295,7 +320,7 @@ body .container .launcher-window #welcome-screen .new-configuration-wrapper .new
   -ms-flex-item-align: center;
       -ms-grid-row-align: center;
       align-self: center;
-  -ms-grid-row: 6;
+  -ms-grid-row: 7;
   -ms-grid-column: 1;
   -ms-grid-column-span: 4;
   grid-area: new-configuration;

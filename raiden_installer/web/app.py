@@ -1,5 +1,6 @@
 import json
 import logging
+import shutil
 import os
 import sys
 import webbrowser
@@ -157,7 +158,7 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
         dapp_configuration_file = base.RaidenDappConfigurationFile.get_by_filename(
             configuration_file_name.split(".toml")[0] + '_dapp.json'
         )
-        dapp_account = base.Account.create(private_key=bytes.fromhex(dapp_configuration_file.private_key))
+        dapp_account = base.Account.create(private_key=bytes.fromhex(dapp_configuration_file.private_key.split("0x")[1]))
         #FIXME there is no dapp account balance atm
         account = configuration_file.account
         account_balance = configuration_file.balance
@@ -166,11 +167,19 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
 
         dapp_account_balance = account.get_balance(ethereum_client_rpc_endpoint)
 
-        self._fund_account(account_balance, network, account)
-        self._mint_tokens(ethereum_client_rpc_endpoint, account)
+        # self._fund_account(account_balance, network, account)
+        # self._mint_tokens(ethereum_client_rpc_endpoint, account)
 
-        self._fund_account(dapp_account_balance, network, dapp_account)
-        self._mint_tokens(ethereum_client_rpc_endpoint, dapp_account)
+        # self._fund_account(dapp_account_balance, network, dapp_account)
+        # self._mint_tokens(ethereum_client_rpc_endpoint, dapp_account)
+
+        shutil.copyfile(
+            dapp_configuration_file.path,
+            os.path.join(
+                os.path.join(os.path.dirname(__file__), "light-client"),
+                'wizard.json'
+            )
+        )
 
         latest = RAIDEN_CLIENT_DEFAULT_CLASS.get_latest_release()
         if not latest.is_installed:
@@ -188,7 +197,7 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
             latest.launch(configuration_file)
 
         try:
-            latest.wait_for_web_ui_ready()
+            # latest.wait_for_web_ui_ready()
             self._send_status_update("Raiden is ready!", complete=True)
         except base.RaidenClientError as exc:
             self._send_status_update(f"Raiden process failed to start: {exc}")
@@ -277,7 +286,7 @@ class QuickSetupHandler(LaunchHandler):
             else:
                 launcher = "launch_dapp"
                 dapp_configuration_file = base.RaidenDappConfigurationFile(
-                    os.urandom(32),
+                    "0x" + os.urandom(32).hex(),
                     ethereum_rpc_provider,
                     name="0x" + account.address
                 )

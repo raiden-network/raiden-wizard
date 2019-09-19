@@ -806,7 +806,7 @@ class RaidenDappConfigurationFile(BaseConfigurationFile):
     def configuration_data(self):
         return {
             "INFURA_ENDPOINT": self.infura_endpoint.endpoint,
-            "PRIVATE_KEY": self.private_key.hex()
+            "PRIVATE_KEY": self.private_key
         }
 
     @property
@@ -821,6 +821,5 @@ class RaidenDappConfigurationFile(BaseConfigurationFile):
             return cls(
                 private_key=data["PRIVATE_KEY"],
                 infura_endpoint=data["INFURA_ENDPOINT"],
-                name=file_name.split("_dapp")[0]
+                name=file_name.split("_dapp")[0].split("config-")[1]
             )
-

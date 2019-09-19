@@ -40,12 +40,12 @@ class GoerliTestCase(IntegrationTestCase):
         self.network.fund(self.account)
 
         balance = EthereumAmount(Wei(0))
-        while time_remaining > 0 or balance.amount == 0:
+        while time_remaining > 0 or balance.as_wei == 0:
             balance = self.account.get_ethereum_balance(self.w3)
             time.sleep(INTERVAL)
             time_remaining -= INTERVAL
 
-        self.assertTrue(balance.amount > 0, f"After {TIMEOUT} seconds, balance was not updated")
+        self.assertTrue(balance.as_wei > 0, f"After {TIMEOUT} seconds, balance was not updated")
 
 
 class TokenTestCase(IntegrationTestCase):
@@ -53,15 +53,15 @@ class TokenTestCase(IntegrationTestCase):
 
     def setUp(self):
         super().setUp()
-        self.token_network = CustomTokenNetwork(w3=self.w3, account=self.account)
+        self.token_network = CustomTokenNetwork(w3=self.w3)
 
     def test_can_not_mint_tokens_without_gas(self):
         with self.assertRaises(ValueError):
-            self.token_network.mint(self.token_network.TOKEN_AMOUNT)
+            self.token_network.mint(self.account, self.token_network.TOKEN_AMOUNT)
 
     def test_can_mint_tokens(self):
         self.network.fund(self.account)
-        self.token_network.mint(self.token_network.TOKEN_AMOUNT)
+        self.token_network.mint(self.account, self.token_network.TOKEN_AMOUNT)
 
 
 if __name__ == "__main__":

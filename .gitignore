@@ -93,3 +93,6 @@ raiden-debug_*.log
 # venvs
 venv/
 .venv
+
+# dapp configuration
+raiden_installer/web/light-client/wizard.json

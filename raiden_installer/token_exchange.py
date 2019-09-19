@@ -109,6 +109,9 @@ class Exchange:
     def buy_tokens(self, token_sticker: TokenSticker, eth_amount: EthereumAmount):
         raise NotImplementedError
 
+    def is_listing_token(self, sticker: TokenSticker):
+        return False
+
 
 class Kyber(Exchange):
     GAS_REQUIRED = 500_000
@@ -118,6 +121,13 @@ class Kyber(Exchange):
     def __init__(self, w3: Web3, account: Account):
         super().__init__(w3=w3, account=account)
         self.network_contract_proxy = kyber_contracts.get_network_contract_proxy(self.w3)
+
+    def is_listing_token(self, sticker: TokenSticker):
+        try:
+            self.get_token_network_address(sticker)
+            return True
+        except (KeyError, ExchangeError):
+            return False
 
     def get_token_network_address(self, sticker: TokenSticker):
         return to_checksum_address(kyber_tokens.get_token_network_address(self.chain_id, sticker))
@@ -216,6 +226,13 @@ class Uniswap(Exchange):
             abi=uniswap_contracts.UNISWAP_EXCHANGE_ABI,
             address=self._get_exchange_address(token_sticker),
         )
+
+    def is_listing_token(self, sticker: TokenSticker):
+        try:
+            self._get_exchange_address(sticker)
+            return True
+        except ExchangeError:
+            return False
 
     def _get_exchange_address(self, token_sticker: TokenSticker) -> str:
         try:

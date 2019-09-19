@@ -32,7 +32,7 @@ class TokenAmountTestCase(unittest.TestCase):
     def test_can_get_formatted_amount(self):
         self.assertEqual(self.one_eth.formatted, "1 ETH")
         self.assertEqual(self.one_rdn.formatted, "1 RDN")
-        self.assertEqual(self.one_gwei.formatted, "1.0 GWEI")
+        self.assertEqual(self.one_gwei.formatted, "1 GWEI")
         self.assertEqual(self.almost_one_eth.formatted, "0.875 ETH")
         self.assertEqual(self.some_wei.formatted, "50000 WEI")
 

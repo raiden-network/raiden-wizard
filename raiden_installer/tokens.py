@@ -20,7 +20,7 @@ class TokenAmount(Generic[Eth_T]):
         context.prec = self.DECIMALS
         self.value = Decimal(str(value), context=context)
         if type(value) is Wei:
-            self.value /= 10 ** 18
+            self.value /= 10 ** self.DECIMALS
 
     @property
     def sticker(self) -> TokenSticker:
@@ -29,11 +29,17 @@ class TokenAmount(Generic[Eth_T]):
 
     @property
     def formatted(self):
-        wei_amount = self.as_wei
+        wei_amount = Decimal(self.as_wei)
 
-        if wei_amount >= 10 ** 12:
+        if wei_amount == 0:
             sticker = self.sticker
-            value = self.value
+            value = wei_amount
+        elif wei_amount >= 10 ** 15:
+            sticker = self.sticker
+            value = wei_amount / 10 ** self.DECIMALS
+        elif 10 ** 12 <= wei_amount < 10 ** 15:
+            sticker = "T" + self.WEI_STICKER
+            value = wei_amount / 10 ** 12
         elif 10 ** 9 <= wei_amount < 10 ** 12:
             sticker = "G" + self.WEI_STICKER
             value = wei_amount / 10 ** 9
@@ -44,7 +50,11 @@ class TokenAmount(Generic[Eth_T]):
             sticker = self.WEI_STICKER
             value = wei_amount
 
-        return f"{value} {sticker}"
+        integral = int(value)
+        frac = value % 1
+        frac_string = f"{frac:.3g}"[1:] if frac else ""
+
+        return f"{integral}{frac_string} {sticker}"
 
     @property
     def as_wei(self) -> Wei:

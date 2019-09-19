@@ -167,11 +167,11 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
 
         dapp_account_balance = account.get_balance(ethereum_client_rpc_endpoint)
 
-        # self._fund_account(account_balance, network, account)
-        # self._mint_tokens(ethereum_client_rpc_endpoint, account)
+        self._fund_account(account_balance, network, account)
+        self._mint_tokens(ethereum_client_rpc_endpoint, account)
 
-        # self._fund_account(dapp_account_balance, network, dapp_account)
-        # self._mint_tokens(ethereum_client_rpc_endpoint, dapp_account)
+        self._fund_account(dapp_account_balance, network, dapp_account)
+        self._mint_tokens(ethereum_client_rpc_endpoint, dapp_account)
 
         shutil.copyfile(
             dapp_configuration_file.path,
@@ -197,7 +197,7 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
             latest.launch(configuration_file)
 
         try:
-            # latest.wait_for_web_ui_ready()
+            latest.wait_for_web_ui_ready()
             self._send_status_update("Raiden is ready!", complete=True)
         except base.RaidenClientError as exc:
             self._send_status_update(f"Raiden process failed to start: {exc}")

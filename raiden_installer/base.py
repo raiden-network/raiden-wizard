@@ -334,6 +334,12 @@ class RaidenClient:
         response = requests.get(cls.RELEASE_INDEX_URL)
         response.raise_for_status()
         return sorted(cls._make_releases(response), reverse=True)
+    
+    @classmethod
+    def get_antifragile_crocodile_release(cls):
+        for release in cls.get_available_releases():
+            if release.release == "0.100.5":
+                return release
 
     @classmethod
     def get_installed_releases(cls):

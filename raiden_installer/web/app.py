@@ -14,6 +14,7 @@ from tornado.log import enable_pretty_logging
 from tornado.web import Application, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
+from eth_utils import to_checksum_address
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8888
@@ -126,23 +127,23 @@ class LauncherStatusNotificationHandler(WebSocketHandler):
         self._fund_account(configuration_file.balance, network, account)
         self._mint_tokens(ethereum_client_rpc_endpoint, account)
 
-        latest = RAIDEN_CLIENT_DEFAULT_CLASS.get_latest_release()
-        if not latest.is_installed:
+        raiden = RAIDEN_CLIENT_DEFAULT_CLASS.get_antifragile_crocodile_release()
+        if not raiden.is_installed:
             self._send_status_update(
-                f"Downloading and installing raiden {latest.release}"
+                f"Downloading and installing raiden {raiden.release}"
             )
-            latest.install()
+            raiden.install()
             self._send_status_update("Installation complete", message_type="success")
 
         self._send_status_update(
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
         )
 
-        if not latest.is_running:
-            latest.launch(configuration_file)
+        if not raiden.is_running:
+            raiden.launch(configuration_file)
 
         try:
-            latest.wait_for_web_ui_ready()
+            raiden.wait_for_web_ui_ready()
             self._send_status_update("Raiden is ready!", complete=True)
         except base.RaidenClientError as exc:
             self._send_status_update(f"Raiden process failed to start: {exc}")
@@ -181,23 +182,23 @@ class DappLauncherStatusNotificationHandler(LauncherStatusNotificationHandler):
             )
         )
 
-        latest = RAIDEN_CLIENT_DEFAULT_CLASS.get_latest_release()
-        if not latest.is_installed:
+        raiden = RAIDEN_CLIENT_DEFAULT_CLASS.get_antifragile_crocodile_release()
+        if not raiden.is_installed:
             self._send_status_update(
-                f"Downloading and installing raiden {latest.release}"
+                f"Downloading and installing raiden {raiden.release}"
             )
-            latest.install()
+            raiden.install()
             self._send_status_update("Installation complete", message_type="success")
 
         self._send_status_update(
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
         )
 
-        if not latest.is_running:
-            latest.launch(configuration_file)
+        if not raiden.is_running:
+            raiden.launch(configuration_file)
 
         try:
-            latest.wait_for_web_ui_ready()
+            raiden.wait_for_web_ui_ready()
             self._send_status_update("Raiden is ready!", complete=True)
         except base.RaidenClientError as exc:
             self._send_status_update(f"Raiden process failed to start: {exc}")
@@ -281,14 +282,14 @@ class QuickSetupHandler(LaunchHandler):
                     ethereum_rpc_provider.url,
                     routing_mode="pfs" if form.data["use_rsb"] else "local",
                     enable_monitoring=form.data["use_rsb"],
-                    name="0x" + account.address
+                    name=to_checksum_address(account.address)
                 )
             else:
                 launcher = "launch_dapp"
                 dapp_configuration_file = base.RaidenDappConfigurationFile(
                     "0x" + os.urandom(32).hex(),
                     ethereum_rpc_provider,
-                    name="0x" + account.address
+                    name=to_checksum_address(account.address)
                 )
                 dapp_configuration_file.save()
                 conf_file = base.RaidenConfigurationFile(
@@ -297,7 +298,7 @@ class QuickSetupHandler(LaunchHandler):
                     ethereum_rpc_provider.url,
                     routing_mode="local",
                     enable_monitoring=form.data["use_rsb"],
-                    name="0x" + account.address
+                    name=to_checksum_address(account.address)
                 )
             conf_file.save()
             return self.redirect(self.reverse_url(launcher, conf_file.file_name))

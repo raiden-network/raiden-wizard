@@ -45,10 +45,10 @@ class Account:
 
     @property
     def address(self):
-        return self.content.get("address")
+        return to_checksum_address(self.content.get("address"))
 
     def get_ethereum_balance(self, w3) -> EthereumAmount:
-        return EthereumAmount(Wei(w3.eth.getBalance(to_checksum_address(self.address))))
+        return EthereumAmount(Wei(w3.eth.getBalance(self.address)))
 
     def wait_for_ethereum_funds(
         self, w3: Web3, expected_amount: EthereumAmount, timeout: int = 300

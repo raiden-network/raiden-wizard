@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div>
+  <div class="heading-wrapper">
+    <h1 class="heading">Add funds to your Raiden Account</h1>
+    <p class="description">
+      While operating a node in the Raiden Network, your node may need
+      to collect and pay fees for some operations - mediated
+      transfers, transfer monitoring, path-finding, etc. These fees
+      are paid by using the RDN token. We partnered
+      with <a href="https://kyber.network">Kyber</a>
+      and <a href="https://uniswap.io">Uniswap</a> to make it easier
+      for you to obtain RDN tokens.
+    </p>
+    
+    <table>
+      <thead>
+        <tr>
+          <td>To get:</td>
+          <td>Kyber Price</td>
+          <td>Uniswap Price</td>
+        <tr>
+          <tbody>
+            {% for amount in funding_amounts %}
+              <tr>
+                <td>{{ amount.formatted }}</td>
+                <td>
+                  {% if kyber_is_listing_rdn %}
+                    {{ kyber.calculate_transaction_costs(amount)['total'].formatted }}
+                  {% end %}
+                </td>
+                <td>
+                  {% if uniswap_is_listing_rdn %}
+                    {{ uniswap.calculate_transaction_costs(amount)['total'].formatted }}
+                  {% end %}
+                </td>
+              </tr>
+            {% end %}
+          </tbody>
+      </thead>
+    </table>
+    <p class="disclaimer">
+      Keep in mind that you are <em>NOT</em> obligated to obtain RDN
+      through these exchanges and that the prices listed below (while
+      reasonably up-to-date) are subject to fluctuation and do not
+      necessarily reflect the amounts you will obtain at the time of the
+      transaction.
+    </p>
+  </div>
+  </div>
+{% end %}

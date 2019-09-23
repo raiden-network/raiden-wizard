@@ -112,6 +112,10 @@ class Exchange:
     def is_listing_token(self, sticker: TokenSticker):
         return False
 
+    @classmethod
+    def get_by_name(cls, name):
+        return {"kyber": Kyber, "uniswap": Uniswap}[name.lower()]
+
 
 class Kyber(Exchange):
     GAS_REQUIRED = 500_000

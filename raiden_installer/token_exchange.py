@@ -27,13 +27,17 @@ from .tokens import (
 
 
 def get_contract_address(chain_id, contract_name):
-    return get_contracts_deployment_info(chain_id)["contracts"][contract_name]["address"]
+    try:
+        return get_contracts_deployment_info(chain_id)["contracts"][contract_name]["address"]
+    except TypeError as exc:
+        log.warn(str(exc))
+        return "0x0"
 
 
 def estimate_gas(w3, account, contract_function, *args, **kw):
     transaction_params = {
         "chainId": int(w3.net.version),
-        "nonce": w3.eth.getTransactionCount(to_checksum_address(account.address)),
+        "nonce": w3.eth.getTransactionCount(account.address),
     }
     transaction_params.update(**kw)
     result = contract_function(*args)
@@ -44,7 +48,7 @@ def estimate_gas(w3, account, contract_function, *args, **kw):
 def send_raw_transaction(w3, account, contract_function, *args, **kw):
     transaction_params = {
         "chainId": int(w3.net.version),
-        "nonce": w3.eth.getTransactionCount(to_checksum_address(account.address)),
+        "nonce": w3.eth.getTransactionCount(account.address),
         "gasPrice": kw.pop("gas_price", w3.eth.gasPrice),
         "gas": kw.pop("gas", estimate_gas(w3, account, contract_function, *args, **kw)),
     }
@@ -162,10 +166,7 @@ class Kyber(Exchange):
         )
         gas_price = EthereumAmount(Wei(max_gas_price))
         token_network_address = self.get_token_network_address(token_amount.sticker)
-        transaction_params = {
-            "from": to_checksum_address(account.address),
-            "value": eth_sold.as_wei,
-        }
+        transaction_params = {"from": account.address, "value": eth_sold.as_wei}
 
         gas = estimate_gas(
             self.w3,
@@ -192,14 +193,14 @@ class Kyber(Exchange):
                 f"{self.name} does not list {token_amount.sticker} on {self.network.name}"
             )
 
-        transaction_costs = self.calculate_transaction_costs(token_amount)
+        transaction_costs = self.calculate_transaction_costs(token_amount, account)
         eth_to_sell = transaction_costs["eth_sold"]
         exchange_rate = transaction_costs["exchange_rate"]
         gas_price = transaction_costs["gas_price"]
         gas = transaction_costs["gas"]
 
         transaction_params = {
-            "from": to_checksum_address(account.address),
+            "from": account.address,
             "gas_price": gas_price.as_wei,
             "gas": gas,
             "value": eth_to_sell.as_wei,
@@ -245,14 +246,14 @@ class Uniswap(Exchange):
         except KeyError:
             raise ExchangeError(f"{self.name} does not have a listed exchange for {token_sticker}")
 
-    def calculate_transaction_costs(self, account: Account, token_amount: TokenAmount) -> dict:
+    def calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_to_sell = EthereumAmount(token_amount.value * exchange_rate.value)
         gas_price = EthereumAmount(Wei(self.w3.eth.gasPrice))
         exchange_proxy = self.get_exchange_proxy(token_amount.sticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
-        transaction_params = {"from": account.checksum_address, "value": eth_to_sell.as_wei}
+        transaction_params = {"from": account.address, "value": eth_to_sell.as_wei}
 
         gas = estimate_gas(
             self.w3,

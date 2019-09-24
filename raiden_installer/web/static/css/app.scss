@@ -48,8 +48,13 @@ $colors: (
 body {
     background: color(main-bg);
     font-family: "Roboto", sans-serif;
+    color: color(text-standard);
     margin: 0;
     padding: 0;
+
+    a {
+        color: color(text-dark);
+    }
 
     h1 {
         font-size: 28px;

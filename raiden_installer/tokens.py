@@ -24,7 +24,6 @@ class TokenAmount(Generic[Eth_T]):
 
     @property
     def sticker(self) -> TokenSticker:
-
         return TokenSticker(self.STICKER)
 
     @property
@@ -64,17 +63,17 @@ class TokenAmount(Generic[Eth_T]):
         return f"{self.value} {self.sticker}"
 
     def __eq__(self, other):
-        return self.sticker == other.sticker and self.amount == other.amount
+        return self.sticker == other.sticker and self.as_wei == other.as_wei
 
     def __lt__(self, other):
         if not self.sticker == other.sticker:
             raise ValueError(f"Can not compare {self.sticker} with {other.sticker}")
-        return self.amount < other.sticker
+        return self.as_wei < other.as_wei
 
     def __gt__(self, other):
         if not self.sticker == other.sticker:
             raise ValueError(f"Can not compare {self.sticker} with {other.sticker}")
-        return self.amount > other.sticker
+        return self.as_wei > other.as_wei
 
 
 class EthereumAmount(TokenAmount):

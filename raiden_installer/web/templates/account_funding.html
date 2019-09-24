@@ -1,52 +1,134 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div>
-  <div class="heading-wrapper">
-    <h1 class="heading">Add funds to your Raiden Account</h1>
-    <p class="description">
-      While operating a node in the Raiden Network, your node may need
-      to collect and pay fees for some operations - mediated
-      transfers, transfer monitoring, path-finding, etc. These fees
-      are paid by using the RDN token. We partnered
-      with <a href="https://kyber.network">Kyber</a>
-      and <a href="https://uniswap.io">Uniswap</a> to make it easier
-      for you to obtain RDN tokens.
-    </p>
-    
-    <table>
-      <thead>
-        <tr>
-          <td>To get:</td>
-          <td>Kyber Price</td>
-          <td>Uniswap Price</td>
+<section class="exchange-rate-table">
+  <h1>Add funds to your Raiden Account</h1>
+  <p>
+    While operating a node in the Raiden Network, your node may need to
+    collect and pay fees for some operations - mediated transfers,
+    transfer monitoring, path-finding, etc. These fees are paid by using
+    the RDN token. We partnered
+    with <a href="https://kyber.network">Kyber</a>
+    and <a href="https://uniswap.io">Uniswap</a> to make it easier for
+    you to obtain RDN tokens.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <td>To get:</td>
+        <td>Kyber Price</td>
+        <td>Uniswap Price</td>
         <tr>
           <tbody>
             {% for amount in funding_amounts %}
-              <tr>
-                <td>{{ amount.formatted }}</td>
-                <td>
-                  {% if kyber_is_listing_rdn %}
-                    {{ kyber.calculate_transaction_costs(amount)['total'].formatted }}
-                  {% end %}
-                </td>
-                <td>
-                  {% if uniswap_is_listing_rdn %}
-                    {{ uniswap.calculate_transaction_costs(amount)['total'].formatted }}
-                  {% end %}
-                </td>
-              </tr>
+            <tr>
+              <td>{{ amount.formatted }}</td>
+              <td>
+                <button data-exchange="kyber" data-rdn-amount="{{ amount.as_wei }}" id="kyber-{{ amount.as_wei }}" disabled>
+                  N/A
+                </button>
+              </td>
+              <td>
+                <button data-exchange="uniswap" data-rdn-amount="{{ amount.as_wei }}" id="uniswap-{{ amount.as_wei }}" disabled>
+                  N/A
+                </button>
+              </td>
+            </tr>
             {% end %}
           </tbody>
-      </thead>
-    </table>
-    <p class="disclaimer">
-      Keep in mind that you are <em>NOT</em> obligated to obtain RDN
-      through these exchanges and that the prices listed below (while
-      reasonably up-to-date) are subject to fluctuation and do not
-      necessarily reflect the amounts you will obtain at the time of the
-      transaction.
-    </p>
-  </div>
-  </div>
+    </thead>
+  </table>
+  <p class="disclaimer">
+    Keep in mind that you are <em>NOT</em> obligated to obtain RDN
+    through these exchanges and that the prices listed below (while
+    reasonably up-to-date) are subject to fluctuation and do not
+    necessarily reflect the amounts you will obtain at the time of the
+    transaction.
+  </p>
+  <a class="button-link" href="{{ reverse_url('launch', configuration_file.file_name) }}">
+    Skip Funding & Launch Raiden
+  </a>
+</div>
+</section>
+<section class="notification-tracker" hidden>
+  <div class="spinner tracker"></div>
+  <ul class="messages"></ul>
+</section>
+{% end %}
+
+
+{% block page_header_scripts %}
+
+<script type="text/javascript">
+ window.onload = function() {
+   var message_logger_ws = new WebSocket("{{ tracker_websocket_url }}");
+   var exchange_rate_ws = new WebSocket("{{ exchange_rate_websocket_url }}");
+
+   var rate_selection_section = document.querySelector("section.exchange-rate-table");
+   var notification_tracker_section = document.querySelector("section.notification-tracker")
+
+   message_logger_ws.onmessage = function(evt) {
+
+     var message = JSON.parse(evt.data);
+
+     if (message.type == "status-update") {
+
+       var li = document.createElement("li");
+       li.textContent = message.text;
+       document.querySelector("ul.messages").appendChild(li);
+
+       if (message.complete){
+         var status_icon = document.querySelector("div.tracker");
+         status_icon.classList.remove("spinner");
+         status_icon.classList.add("complete");
+
+         {% if redirect_url %}
+         setTimeout(function(){
+           document.location = "{{ redirect_url }}";
+         }, 2000);
+         {% end %}
+       }
+     }
+   };
+
+   exchange_rate_ws.onmessage = function(evt) {
+     var message = JSON.parse(evt.data);
+
+     if (message.type === "new-quote") {
+       if (message.kyber_price && message.kyber_price.wei) {
+         var btn = document.getElementById("kyber-" + message.token_amount);
+         btn.textContent = "Buy for " + message.kyber_price.formatted;
+         btn.removeAttribute("disabled");
+       }
+
+       if (message.uniswap_price && message.uniswap_price.wei) {
+         var btn = document.getElementById("uniswap-" + message.token_amount);
+         btn.textContent = "Buy for " + message.uniswap_price.formatted;
+         btn.removeAttribute("disabled");
+       }
+     }
+   }
+
+
+   for (let btn of document.getElementsByTagName("button")){
+     btn.addEventListener("click", function() {
+       const data = JSON.stringify({
+         "exchange": this.getAttribute("data-exchange"),
+         "amount": this.getAttribute("data-rdn-amount"),
+         "configuration_file_name": "{{ configuration_file.file_name }}",
+         "token": "RDN"
+       });
+
+       message_logger_ws.send(data);
+
+       rate_selection_section.hidden = true;
+       notification_tracker_section.hidden = false;
+
+     });
+   }
+
+ }
+
+</script>
 {% end %}

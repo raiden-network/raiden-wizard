@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="configuration-launcher" hidden>
+  <h1>Launch from Configuration</h1>
+  <p>To run Raiden from an already existing configuration just select a account from the list below and press the launch button.</p>
+  <ul class="available-configurations">
+  </ul>
+</div>
+
+<div id="configuration-setup">
+  <h1>Setup New Configuration</h1>
+  <p>
+    To start using Raiden with a new configuration you need to provide
+    a Infura Project ID. If you do not have a Infura account
+    click <a href="https://medium.com/@raiden_network/6c7c61c5b695"
+    target="_blank">here</a> for instructions on how to get one.
+  </p>
+
+  <div class="prompt">
+    <h2>Enter your Infura Project ID</h2>
+    <div class="form-entry">
+      <input type="text" name="endpoint" placeholder="Your Infura ID">
+      <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+    </div>
+
+    <p class="disclaimer">
+      The code you will be running is partially supplied by the Raiden
+      Project and partially by XXX as open source code and/or
+      software. Please be aware that we cannot be held liable for any
+      damages whatsoever or any loss of funds you may incur when using
+      the code and/or software. Use at your own risk.
+    </p>
+
+    <p class="disclaimer">
+      Note, that we also cannot be held liable for any damages
+      whatsoever or any loss of funds you may incur when using
+      Infura. Please study
+      <a href="https://infura.io/terms" target="_blank">Infura’s Terms
+      of Service</a> for more information.
+    </p>
+
+    <button type="submit" disabled>Create New Configuration</button>
+  </div>
+</div>
+{% end %}
+
+{% block page_header_scripts %}
+  <script src="{{ static_url('js/setup.js') }}"></script>
+{% end %}

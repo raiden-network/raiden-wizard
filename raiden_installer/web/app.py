@@ -21,7 +21,7 @@ from ..token_exchange import Exchange, Kyber, Uniswap
 
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
-PORT = 8888
+PORT = 8080
 
 
 FUNDING_AMOUNTS = [75, 100, 150, 200, 500, 1000]
@@ -38,9 +38,7 @@ def get_data_folder_path():
 
 
 class QuickSetupForm(Form):
-    network = wtforms.SelectField(
-        choices=[(n.name, n.capitalized_name) for n in AVAILABLE_NETWORKS]
-    )
+    network = wtforms.HiddenField("Network", default="mainnet")
     use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=True)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
@@ -275,12 +273,16 @@ class LauncherStatusNotificationHandler(AsyncTaskHandler):
 
 class IndexHandler(RequestHandler):
     def get(self):
-        configuration_files = RaidenConfigurationFile.get_available_configurations()
+        self.render("index.html")
+
+
+class SetupHandler(RequestHandler):
+    def get(self):
         self.render(
-            "index.html",
-            configuration_files=configuration_files,
-            setup_form=QuickSetupForm(),
-            errors=[],
+            "raiden_setup.html",
+            configuration_file_names=[
+                os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()
+            ],
         )
 
 
@@ -327,9 +329,29 @@ class AccountFundingHandler(RequestHandler):
         )
 
 
-class QuickSetupHandler(LaunchHandler):
+class APIHandler(RequestHandler):
+    def set_default_headers(self, *args, **kw):
+        self.set_header("Accept", "application/json")
+        self.set_header("Content-Type", "application/json")
+
+    def render_json(self, data):
+        self.write(json.dumps(data))
+        self.finish()
+
+
+class ConfigurationListAPIHandler(APIHandler):
+    def get(self):
+        self.render_json(
+            [
+                self.reverse_url("api-configuration-detail", os.path.basename(f))
+                for f in RaidenConfigurationFile.list_existing_files()
+            ]
+        )
+
     def post(self):
-        form = QuickSetupForm(self.request.arguments)
+        json_data = json.loads(self.request.body)
+        form_data = {k: [str(v)] for k, v in json_data.items()}
+        form = QuickSetupForm(form_data)
         if form.validate():
             network = Network.get_by_name(form.data["network"])
             url_or_infura_id = form.data["endpoint"].strip()
@@ -349,25 +371,48 @@ class QuickSetupHandler(LaunchHandler):
                 enable_monitoring=form.data["use_rsb"],
             )
             conf_file.save()
-            return self.redirect(self.reverse_url("funding", conf_file.file_name))
-        else:
-            return self.render(
-                "index.html",
-                configuration_files=RaidenConfigurationFile.get_available_configurations(),
-                setup_form=form,
+            self.set_status(201)
+            self.set_header(
+                "Location", self.reverse_url("api-configuration-detail", conf_file.file_name)
             )
+        else:
+            self.set_status(400)
+            self.render_json({"errors": form.errors})
+
+
+class ConfigurationItemAPIHandler(APIHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        w3 = make_web3_provider(
+            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
+        )
+        eth_balance = configuration_file.account.get_ethereum_balance(w3)
+        self.render_json(
+            {
+                "file_name": configuration_file.file_name,
+                "launch_url": self.reverse_url("launch", configuration_file.file_name),
+                "account": configuration_file.account.address,
+                "network": configuration_file.network.name,
+                "balance": {"wei": eth_balance.as_wei, "formatted": eth_balance.formatted},
+            }
+        )
 
 
 if __name__ == "__main__":
     app = Application(
         [
             url(r"/", IndexHandler),
-            url(r"/setup", QuickSetupHandler, name="quick_setup"),
+            url(r"/setup", SetupHandler, name="setup"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
-            url(r"/ws/rates/(.*)", ExchangeRateTrackerHandler, name="exchange_rate_tracker"),
-            url(r"/ws/launch/(.*)", LauncherStatusNotificationHandler, name="launch_tracker"),
-            url(r"/ws/swap", SwapStatusNotificationHandler, name="swap_tracker"),
+            url(
+                r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
+            ),
+            url(
+                r"/api/configuration/(.*)",
+                ConfigurationItemAPIHandler,
+                name="api-configuration-detail",
+            ),
         ],
         debug=DEBUG,
         static_path=os.path.join(get_data_folder_path(), "static"),

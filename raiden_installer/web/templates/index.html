@@ -1,49 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="welcome-screen">
-    {% if configuration_files %}
-    <div class="heading-wrapper">
-        <h1 class="heading">Launch from Configuration</h1>
-        <p class="description">To run Raiden from an already existing configuration just select a account from the list below and press the launch button.</p>
-    </div>
-    <div class="configuration-files-list">
-        {% for configuration_file in configuration_files %}
-        <form action="{{ reverse_url('launch', configuration_file.file_name) }}">
-            <div class="configuration-files-wrapper">
-                <p class="account-address">0x{{ configuration_file.account.address }}</p>
-                <p class="network">{{ configuration_file.network.capitalized_name }}</p>
-                <p class="account-balance">Balance: {{ configuration_file.ethereum_balance.formatted }} </p>
-                <div class="launch-configuration">
-                    <button class="launch-configuration-button" type="submit">Launch</button>
-                </div>
-            </div>
-        </form>
-        {% end %}
-    </div>
-    {% end %}
-    <div class="heading-wrapper">
-        <h1 class="heading">Setup New Configuration</h1>
-        <p class="description">To start using Raiden with a new configuration you need to provide a Infura Project ID. If you don't have a Infura account click <a href="https://medium.com/@raiden_network/6c7c61c5b695" target="_blank">here</a> for instructions on how to get one.</p>
-    </div>
-    <form action="{{ reverse_url('quick_setup') }}" method="POST">
-        <div class="new-configuration-wrapper">
-            <h2 class="input-label">Enter your Infura Project ID</h2>
-            <div class="client">
-                {% raw setup_form.endpoint(onfocus="enableButton(event)", onblur="inputValidation(event)") %}
-            </div>
-            <div class="network-select">
-                {% raw setup_form.network %}
-            </div>
-            <div class="pfs-monitoring">
-                {% raw setup_form.use_rsb %}
-            </div>
-            <p class="setup-error">You need to provide a valid Infura Project ID</p>
-            <p class="disclaimer">The Raiden Wizard is experimental alpha software meant to be tested exclusively on the Görli testnet. Please be aware that we cannot be held liable for any damages whatsoever or any loss of funds you may incur when using the code and/or software. Use it at your own risk. By clicking "Create New Configuration" you confirm that you have read, understood and that you are agreeing to these terms.</p>
-            <div class="new-configuration">
-                <button class="new-configuration-button" type="submit" disabled>Create New Configuration</button>
-            </div>
-        </div>
-    </form>
+<div id="intro">
+  <p class="warning">
+    The Raiden Wizard is experimental alpha software. Please be aware
+    that we cannot be held liable for any damages whatsoever or any
+    loss of funds you may incur when using the code and/or
+    software. Use it at your own risk.
+  </p>
+  <a href="{{ reverse_url('setup') }}" class="button">OK</a>
 </div>
 {% end %}

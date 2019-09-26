@@ -11,6 +11,19 @@ body {
   min-width: 100vw;
 }
 
+.tbd {
+  background-color: #ef5350;
+  text-decoration: italic;
+}
+.tbd::before {
+  content: "COPY TBD: ";
+}
+
+a {
+  color: #28a5c8;
+  text-decoration: none;
+}
+
 button, a.button {
   text-align: center;
   border: 2px solid;
@@ -26,21 +39,23 @@ button:hover, a.button:hover {
   border-color: #28a5c8;
   color: #fff;
 }
-button:disabled, a.button:disabled {
+button:disabled, button[aria-disabled=true], a.button:disabled, a.button[aria-disabled=true] {
   background-color: transparent;
   border-color: rgba(40, 165, 200, 0.3);
   color: rgba(255, 255, 255, 0.3);
-}
-
-a {
-  color: #28a5c8;
-  text-decoration: none;
 }
 
 a.button {
   display: inline-block;
   padding: 2px 6px;
   margin: auto;
+}
+
+a.next-page {
+  display: block;
+  height: 2em;
+  width: 125px;
+  line-height: 2em;
 }
 
 h1, h2 {
@@ -65,6 +80,10 @@ p {
   font-size: 16px;
   font-weight: 300;
   line-height: 21px;
+}
+
+p.long {
+  max-width: 520px;
 }
 
 p.warning {
@@ -121,10 +140,32 @@ div.form-entry input {
   display: block;
 }
 
-ul.available-configurations {
-  border-top: solid 1.5px #0a6e87;
+ul {
   list-style-type: none;
   padding-inline-start: 0;
+}
+
+ul.exchanges {
+  text-align: center;
+}
+ul.exchanges li {
+  line-height: 45px;
+  display: grid;
+  grid-template-columns: auto 150px;
+}
+ul.exchanges li span {
+  align-self: start;
+  text-align: left;
+}
+ul.exchanges li button {
+  align-self: end;
+  margin: auto;
+  height: 33px;
+  width: 150px;
+}
+
+ul.available-configurations {
+  border-top: solid 1.5px #0a6e87;
   max-height: 210px;
   overflow: auto;
 }
@@ -162,14 +203,38 @@ ul.available-configurations li button, ul.available-configurations li a.button {
   line-height: 33px;
 }
 
+p.banner {
+  max-width: 520px;
+}
+
+dd {
+  margin-inline-start: 0;
+}
+
+dl {
+  margin-top: 1em;
+  text-align: center;
+}
+dl dt {
+  font-size: 125%;
+}
+dl dt, dl dd {
+  max-width: 520px;
+}
+dl dd {
+  font-size: 14px;
+  color: #28a5c8;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+dd.highlighted {
+  font-size: 125%;
+  font-weight: 500;
+}
+
 #intro p.warning {
   max-width: 80%;
-}
-#intro a.button {
-  display: block;
-  height: 2em;
-  width: 100px;
-  line-height: 2em;
 }
 
 #configuration-launcher {
@@ -193,99 +258,13 @@ ul.available-configurations li button, ul.available-configurations li a.button {
   justify-self: center;
 }
 
-#welcome-screen {
-  display: grid;
-  grid-template-rows: auto auto auto auto;
-}
-#welcome-screen .heading-wrapper {
-  display: flex;
-  flex-direction: column;
-}
-#welcome-screen .heading-wrapper .description {
-  color: #fff;
-  align-self: center;
-  flex: 0 0 110px;
-  font-weight: 300;
-  line-height: 21px;
-  text-align: center;
-  width: 300px;
-}
-#welcome-screen .heading-wrapper .description a {
-  color: #28a5c8;
-  text-decoration: none;
-}
-#welcome-screen .configuration-files-list {
-  border-top: solid 1.5px #0a6e87;
-  max-height: 210px;
-  overflow: auto;
-}
-#welcome-screen .configuration-files-list .configuration-files-wrapper {
-  background-color: #1e1e1e;
-  display: grid;
-  grid-template-areas: "account-address account-address account-address account-address launch-configuration-button" "network account-balance account-balance account-balance launch-configuration-button";
-  grid-template-columns: 130px 1fr 1fr 1fr 1fr;
-  grid-template-rows: repeat(2, 35px);
-  margin-bottom: 2px;
-}
-#welcome-screen .configuration-files-list .configuration-files-wrapper .account-address {
-  color: #fff;
-  align-self: end;
-  grid-area: account-address;
-  font-weight: 500;
-  padding-left: 20px;
-}
-#welcome-screen .configuration-files-list .configuration-files-wrapper .network {
-  color: #646464;
-  align-self: start;
-  grid-area: network;
-  font-weight: 400;
-  padding-left: 20px;
-}
-#welcome-screen .configuration-files-list .configuration-files-wrapper .account-balance {
-  color: #646464;
-  align-self: flex-start;
-  grid-area: account-balance;
-  font-weight: 400;
-}
-#welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration {
-  align-self: center;
-  grid-area: launch-configuration-button;
-  padding-right: 20px;
+#external-site-redirection {
   text-align: center;
 }
-#welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration button {
+#external-site-redirection button, #external-site-redirection a.button {
   height: 33px;
-  width: 100px;
-}
-#welcome-screen .configuration-files-list .configuration-files-wrapper .launch-configuration button:hover {
-  background-color: #28a5c8;
-  border-color: #28a5c8;
-  color: #fff;
-}
-#welcome-screen .new-configuration-wrapper {
-  display: grid;
-  grid-template-areas: "input-label input-label input-label input-label" "client client client network-select" "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description" "setup-error setup-error setup-error setup-error" "disclaimer disclaimer disclaimer disclaimer" "new-configuration new-configuration new-configuration new-configuration";
-  grid-template-columns: repeat(4, auto);
-  grid-template-rows: 80px 40px 40px 30px auto 80px;
-}
-#welcome-screen .new-configuration-wrapper .input-label {
-  color: #fff;
-  align-self: center;
-  grid-area: input-label;
-  text-align: center;
-}
-#welcome-screen .new-configuration-wrapper .client {
-  grid-area: client;
-  padding-left: 60px;
-}
-#welcome-screen .new-configuration-wrapper .client input {
-  background-color: #323232;
-  border: 0;
-  border-radius: 20px;
-  color: #28a5c8;
-  height: 28px;
-  padding: 0px 10px 0px 10px;
-  width: 350px;
+  width: 180px;
+  margin: 2em auto;
 }
 
 #launcher-screen {

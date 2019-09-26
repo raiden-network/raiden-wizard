@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="funding-options">
+  <h1>Funding</h1>
+  <p class="long tbd">
+    To be able to operate this Raiden node, its account needs to have RDN
+    tokens in its funds to pay for some of the services provided, such
+    as fees for mediated transfers or to have Monitoring Service
+      ensuring you receive payments even if your node is offline.
+  </p>
+
+  <dl>
+    <dt>Account Address</dt>
+    <dd class="highlighted">{{ configuration_file.account.address }}</dd>
+    <dt>Current ETH</dt>
+    <dd class="account-eth-balance">N/A</dd>
+    <dt>Current RDN</dt>
+    <dd class="account-rdn-balance">N/A</dd>
+  </dl>
+
+  <p class="disclaimer tbd">
+      Be aware that you are responsible for the security of any
+      operation you will do related to crypto-currency exchanges.
+  </p>
+
+  <h2>External Decentralized Exchanges</h2>
+  <ul class="exchanges">
+    <li><span>KyberNetwork</span><button data-name="KyberNetwork" data-link="https://kyberswap.com/swap/eth-rdn">Open</button></li>
+    <li><span>Uniswap</span><button data-name="Uniswap" data-link="https://uniswap.ninja/send">Open</button></li>
+  </ul>
+
+  <a class="button next-page" href="{{ reverse_url('launch', configuration_file.file_name) }}" hidden>Launch Raiden</a>
+</div>
+
+<div id="external-site-redirection" hidden>
+  <p class="warning tbd">
+    By clicking on the link below, you will be redirected to <span class="exchange-name">&nbsp;</span>,
+    an external website and accept all responsibility.
+  </p>
+
+  <button class="cancel">Go back</button><br />or<br/> <a class="button next-page external-site" target="_blank">&nbsp;</a>
+</div>
+{% end %}
+
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+ const ETHEREUM_RPC_ENDPOINT = "{{ configuration_file.ethereum_client_rpc_endpoint }}";
+ const ACCOUNT_ADDRESS = "{{ configuration_file.account.address }}";
+
+ function getAccountEthereumBalance() {
+ }
+
+ function getAccountRDNBalance() {
+
+ }
+
+
+ window.onload = function() {
+
+
+   const main_screen = document.getElementById("funding-options");
+   const redirection_panel = document.getElementById("external-site-redirection");
+
+   document.querySelectorAll("ul.exchanges button").forEach(function(elem) {
+     elem.addEventListener("click", function(evt){
+       let site_name = this.getAttribute("data-name");
+       let url = this.getAttribute("data-link");
+       let span_exchange_elem = redirection_panel.querySelector("span.exchange-name");
+       let link_elem = redirection_panel.querySelector("a.external-site");
+       span_exchange_elem.textContent = site_name;
+       link_elem.setAttribute("href", url);
+       link_elem.textContent = "Proceed to " + site_name;
+       main_screen.hidden = true;
+       redirection_panel.hidden = false;
+     });
+   });
+
+   document.querySelectorAll("button.cancel").forEach(function(elem) {
+     elem.addEventListener("click", function(evt) {
+       redirection_panel.hidden = true;
+       main_screen.hidden = false;
+     });
+   });
+ }
+</script>
+{% end %}

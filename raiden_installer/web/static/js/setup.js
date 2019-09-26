@@ -39,7 +39,7 @@ window.onload = function() {
                 config_req.onload = function() {
                     if (this.status == 200){
                         let config_data = JSON.parse(this.response);
-                        document.location = config_data.launch_url;
+                        document.location = config_data.account_page_url;
                     }
                 };
                 config_req.open("GET", new_config_url);
@@ -72,7 +72,7 @@ window.onload = function() {
         network_element.textContent = configuration_data.network;
         balance_element.textContent = "Balance: " + configuration_data.balance.formatted;
         launch_button.textContent = "Launch";
-        launch_button.setAttribute("href", configuration_data.launch_url);
+        launch_button.setAttribute("href", configuration_data.launch_page_url);
 
         configuration_item_container.appendChild(account_element);
         configuration_item_container.appendChild(network_element);

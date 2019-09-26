@@ -297,7 +297,8 @@ class LaunchHandler(RequestHandler):
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         except ValueError as exc:
             self.set_status(400)
-            self.finish(f"{exc}")
+            self.write(str(exc))
+            self.finish()
 
         raiden_client = RaidenClient.select_client_class(configuration_file.network)
 
@@ -308,25 +309,16 @@ class LaunchHandler(RequestHandler):
         )
 
 
+class AccountDetailHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        self.render("account.html", configuration_file=configuration_file)
+
+
 class AccountFundingHandler(RequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        exchange_rate_websocket_url = "ws://{host}{path}".format(
-            host=self.request.host,
-            path=self.reverse_url("exchange_rate_tracker", configuration_file_name),
-        )
-        tracker_websocket_url = "ws://{host}{path}".format(
-            host=self.request.host, path=self.reverse_url("swap_tracker")
-        )
-
-        self.render(
-            "account_funding.html",
-            configuration_file=configuration_file,
-            funding_amounts=[RDNAmount(amount) for amount in FUNDING_AMOUNTS],
-            exchange_rate_websocket_url=exchange_rate_websocket_url,
-            tracker_websocket_url=tracker_websocket_url,
-            redirect_url=self.reverse_url("launch", configuration_file.file_name),
-        )
+        self.render("funding.html", configuration_file=configuration_file)
 
 
 class APIHandler(RequestHandler):
@@ -390,7 +382,9 @@ class ConfigurationItemAPIHandler(APIHandler):
         self.render_json(
             {
                 "file_name": configuration_file.file_name,
-                "launch_url": self.reverse_url("launch", configuration_file.file_name),
+                "account_page_url": self.reverse_url("account", configuration_file.file_name),
+                "launch_page_url": self.reverse_url("launch", configuration_file.file_name),
+                "funding_page_url": self.reverse_url("funding", configuration_file.file_name),
                 "account": configuration_file.account.address,
                 "network": configuration_file.network.name,
                 "balance": {"wei": eth_balance.as_wei, "formatted": eth_balance.formatted},
@@ -403,6 +397,7 @@ if __name__ == "__main__":
         [
             url(r"/", IndexHandler),
             url(r"/setup", SetupHandler, name="setup"),
+            url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
             url(

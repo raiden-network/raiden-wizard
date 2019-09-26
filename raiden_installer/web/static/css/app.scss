@@ -18,6 +18,11 @@ $colors: (
     button-inactive-border: rgba(40, 165, 200, .3),
 );
 
+$dimensions: (
+    horizontal-width: 620px,
+    long-text-width: 520px,
+);
+
 
 @mixin button() {
     border: 2px solid;
@@ -53,6 +58,11 @@ $colors: (
 };
 
 
+@function dimension($width-type) {
+    @return map-get($dimensions, $width-type);
+}
+
+
 body {
     background: color(main-bg);
     font-family: "Roboto", sans-serif;
@@ -66,15 +76,13 @@ body {
     min-width: 100vw;
 }
 
-button, a.button {
-    text-align: center;
-    @include button();
-    @include buttoncolor(color(button-bg), color(button-border), color(text-standard));
-    &:hover {
-        @include buttoncolor(color(button-hover-bg), color(button-border), color(text-standard));
-    }
-    &:disabled {
-        @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
+
+.tbd {
+    background-color: color(text-error);
+    text-decoration: italic;
+
+    &::before {
+        content: "COPY TBD: ";
     }
 }
 
@@ -83,11 +91,30 @@ a {
     text-decoration: none;
 }
 
+button, a.button {
+    text-align: center;
+    @include button();
+    @include buttoncolor(color(button-bg), color(button-border), color(text-standard));
+    &:hover {
+        @include buttoncolor(color(button-hover-bg), color(button-border), color(text-standard));
+    }
+    &:disabled, &[aria-disabled="true"] {
+        @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
+    }
+}
+
 a.button {
     display: inline-block;
     padding: 2px 6px;
     margin: auto;
 }
+
+a.next-page {
+    display: block;
+    @include fixedsize(125px, 2em);
+    line-height: 2em;
+}
+
 
 h1, h2 {
     text-align: center;
@@ -113,6 +140,10 @@ p {
     line-height: 21px;
 }
 
+p.long {
+    max-width: dimension(long-text-width);
+}
+
 p.warning {
     font-size: 18px;
     font-weight: 400;
@@ -123,6 +154,7 @@ p.warning {
 p.disclaimer {
     font-size: 14px;
     font-weight: 300;
+
 }
 
 input {
@@ -137,7 +169,7 @@ span.error {
 
 section.content {
     background-color: color(wizard-bg);
-    width: 620px;
+    width: dimension(horizontal-width);
     justify-self: center;
     display: inline-grid;
 
@@ -161,10 +193,33 @@ div.form-entry input {
     display: block;
 }
 
-ul.available-configurations {
-    border-top: solid 1.5px color(element-border);
+ul {
     list-style-type: none;
     padding-inline-start: 0;
+}
+
+ul.exchanges {
+    text-align: center;
+    li {
+        line-height: 45px;
+        display: grid;
+        grid-template-columns: auto 150px;
+
+        span {
+            align-self: start;
+            text-align: left;
+        }
+
+        button {
+            align-self: end;
+            margin: auto;
+            @include fixedsize(150px, 33px);
+        }
+    }
+}
+
+ul.available-configurations {
+    border-top: solid 1.5px color(element-border);
     max-height: 210px;
     overflow: auto;
 
@@ -210,15 +265,43 @@ ul.available-configurations {
     }
 }
 
+p.banner {
+    max-width: dimension(long-text-width);
+}
+
+dd {
+    margin-inline-start: 0;
+}
+
+dl {
+    margin-top: 1em;
+    text-align: center;
+
+    dt {
+        font-size: 125%;
+    }
+
+    dt, dd {
+        max-width: dimension(long-text-width);
+    }
+
+    dd {
+        font-size: 14px;
+        color: color(text-blue);
+        overflow-x: auto;
+        margin-bottom: 1em;
+    }
+}
+
+dd.highlighted {
+    font-size: 125%;
+    font-weight: 500;
+}
+
+
 #intro {
     p.warning {
         max-width: 80%;
-    }
-
-    a.button {
-        display: block;
-        @include fixedsize(100px, 2em);
-        line-height: 2em;
     }
 }
 
@@ -247,109 +330,14 @@ ul.available-configurations {
     }
 }
 
-#welcome-screen {
-    display: grid;
-    grid-template-rows: auto auto auto auto;
 
-    .heading-wrapper {
-        display: flex;
-        flex-direction: column;
-        .description {
-            color: color(text-standard);
-            align-self: center;
-            flex: 0 0 110px;
-            font-weight: 300;
-            line-height: 21px;
-            text-align: center;
-            width: 300px;
-        }
-        .description a {
-            color: color(text-blue);
-            text-decoration: none;
-        }
-    }
-
-    .configuration-files-list {
-        border-top: solid 1.5px color(element-border);
-        max-height: 210px;
-        overflow: auto;
-
-        .configuration-files-wrapper {
-            background-color: color(list-bg);
-            display: grid;
-            grid-template-areas:
-                "account-address account-address account-address account-address launch-configuration-button"
-                    "network account-balance account-balance account-balance launch-configuration-button";
-            grid-template-columns: 130px 1fr 1fr 1fr 1fr;
-            grid-template-rows: repeat(2, 35px);
-            margin-bottom: 2px;
-
-            .account-address {
-                color: color(text-standard);
-                align-self: end;
-                grid-area: account-address;
-                font-weight: 500;
-                padding-left: 20px;
-            }
-            .network {
-                color: color(text-dark);
-                align-self: start;
-                grid-area: network;
-                font-weight: 400;
-                padding-left: 20px;
-            }
-            .account-balance {
-                color: color(text-dark);
-                align-self: flex-start;
-                grid-area: account-balance;
-                font-weight: 400;
-            }
-            .launch-configuration {
-                align-self: center;
-                grid-area: launch-configuration-button;
-                padding-right: 20px;
-                text-align: center;
-                button {
-                    @include fixedsize(100px, 33px);
-
-                    &:hover {
-                        @include buttoncolor(color(button-hover-bg), color(button-border), color(text-standard));
-                    }
-                }
-
-
-            }
-        }
-    }
-
-    .new-configuration-wrapper {
-        display: grid;
-        grid-template-areas:
-            "input-label input-label input-label input-label"
-                "client client client network-select"
-                "pfs-monitoring pfs-monitoring-description pfs-monitoring-description pfs-monitoring-description"
-                "setup-error setup-error setup-error setup-error"
-                "disclaimer disclaimer disclaimer disclaimer"
-                "new-configuration new-configuration new-configuration new-configuration";
-        grid-template-columns: repeat(4, auto);
-        grid-template-rows: 80px 40px 40px 30px auto 80px;
-
-        .input-label {
-            color: color(text-standard);
-            align-self: center;
-            grid-area: input-label;
-            text-align: center;
-        }
-        .client {
-            grid-area: client;
-            padding-left: 60px;
-            input {
-                @include input(color(element-input-bg), color(text-blue));
-            }
-        }
+#external-site-redirection {
+    text-align: center;
+    button, a.button {
+        @include fixedsize(180px, 33px);
+        margin: 2em auto;
     }
 }
-
 
 #launcher-screen {
     display: grid;

@@ -2,7 +2,6 @@ import os
 import sys
 import re
 import functools
-import logging
 import datetime
 import socket
 import subprocess
@@ -18,12 +17,15 @@ import psutil
 import requests
 from xml.etree import ElementTree
 
+from . import log
 from .network import Network
-
-logger = logging.getLogger(__name__)
 
 
 def extract_version_modifier(release_name):
+
+    if not release_name:
+        return None
+
     pattern = r".*(?P<release>(a|alpha|b|beta))-?(?P<number>\d+)"
     match = re.match(pattern, release_name)
 
@@ -185,6 +187,15 @@ class RaidenClient:
         )
         self._process_id = proc.pid
 
+    def kill(self):
+        process = self._process_id and psutil.Process(self._process_id)
+        if process is not None:
+            log.info(f"Killing process {self._process_id}")
+            process.kill()
+            process.wait()
+            self._process_id = self.get_process_id()
+            assert self._process_id is None
+
     def wait_for_web_ui_ready(self):
         if not self.is_running:
             raise RuntimeError("Raiden is not running")
@@ -193,11 +204,11 @@ class RaidenClient:
 
         while True:
             self._process_id = self.get_process_id()
-            if not self.is_running:
+            if not self.is_running or self.is_zombie:
                 raise RaidenClientError("client process terminated while waiting for web ui")
 
             with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-                logger.info("Waiting for raiden to start...")
+                log.info("Waiting for raiden to start...")
                 try:
                     connected = sock.connect_ex((uri.hostname, uri.port)) == 0
                     if connected:
@@ -234,6 +245,13 @@ class RaidenClient:
     @property
     def is_running(self):
         return self.get_process_id() is not None
+
+    @property
+    def is_zombie(self):
+        if not self._process_id:
+            return False
+
+        return psutil.Process(self._process_id).status() == psutil.STATUS_ZOMBIE
 
     @property
     def install_path(self):

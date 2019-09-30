@@ -2,6 +2,7 @@ import os
 import glob
 from pathlib import Path
 import toml
+from typing import List
 
 from eth_utils import to_checksum_address
 from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
@@ -15,9 +16,6 @@ from .token_exchange import get_contract_address
 
 
 class PassphraseFile:
-    # FIXME: Right now we are writing/reading to a plain text file, which
-    # may be a security risk and put the user's funds at risk.
-
     def __init__(self, file_path: Path):
         self.file_path = file_path
 
@@ -101,13 +99,16 @@ class RaidenConfigurationFile:
         return self.account.get_ethereum_balance(w3)
 
     @classmethod
-    def get_available_configurations(cls):
+    def list_existing_files(cls) -> List[Path]:
         config_glob = str(cls.FOLDER_PATH.joinpath("config-*.toml"))
+        return [Path(file_path) for file_path in glob.glob(config_glob)]
 
+    @classmethod
+    def get_available_configurations(cls):
         configurations = []
-        for config_file_path in glob.glob(config_glob):
+        for config_file_path in cls.list_existing_files():
             try:
-                configurations.append(cls.load(Path(config_file_path)))
+                configurations.append(cls.load(config_file_path))
             except (ValueError, KeyError) as exc:
                 log.warn(f"Failed to load {config_file_path} as configuration file: {exc}")
 
@@ -133,16 +134,12 @@ class RaidenConfigurationFile:
 
     @classmethod
     def get_by_filename(cls, file_name):
-        return cls.load(cls.FOLDER_PATH.joinpath(file_name))
+        file_path = cls.FOLDER_PATH.joinpath(file_name)
 
-    @classmethod
-    def get_launchable_configurations(cls):
-        def is_launchable(cfg):
-            w3 = make_web3_provider(cfg.ethereum_client_rpc_endpoint, cfg.account)
-            balance = cfg.account.get_ethereum_balance(w3)
-            return balance >= cfg.network.MINIMUM_ETHEREUM_BALANCE_REQUIRED
+        if not file_path.exists():
+            raise ValueError(f"{file_path} is not a valid configuration file path")
 
-        return [cfg for cfg in cls.get_available_configurations() if is_launchable(cfg)]
+        return cls.load(file_path)
 
     @classmethod
     def get_ethereum_rpc_endpoints(cls):

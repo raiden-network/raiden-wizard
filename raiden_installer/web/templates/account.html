@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="account-created-results">
+  <p class="banner">
+    An account was created for you to use Raiden at {{
+    configuration_file.network.capitalized_name }}, along with a
+    configuration file that will be used to launch Raiden. Please take
+    note of the following information:
+  </p>
+  <dl class="account-data">
+    <dt>Account Address</dt>
+    <dd class="highlighted">{{ configuration_file.account.address }}</dd>
+  </dl>
+
+  <p class="disclaimer long">
+    <strong>Also please sure to verify and secure the contents of the
+      files listed below.</strong> While they are needed for Raiden to be
+    operational, they contain data that should be private and
+    protected by you. Failure to do so can lead to loss of funds that
+    you might have stored at this account.
+  </p>
+  <dl class="file-data">
+    <dt>Account Keystore File</dt>
+    <dd> {{ configuration_file.account.keystore_file_path }}</dd>
+    <dt>Account Passphrase File</dt>
+    <dd>{{ configuration_file.passphrase_file_path }}</dd>
+    <dt>Raiden Configuration File</dt>
+    <dd>{{ configuration_file.path }}</dd>
+  </dl>
+
+  <a class="button next-page" href="{{ reverse_url('funding', configuration_file.file_name) }}">Next</a>
+</div>
+{% end %}

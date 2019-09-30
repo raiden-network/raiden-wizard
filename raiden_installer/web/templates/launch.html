@@ -1,34 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<script type="text/javascript">
-    var ws = new WebSocket("{{ websocket_url }}");
-
-    ws.onmessage = function(evt) {
-      var message = JSON.parse(evt.data);
-      var li = document.createElement("li");
-      li.classList.add(message.type);
-      li.textContent = message.text;
-      document.querySelector("ul.messages").appendChild(li);
-      
-      if (message.complete){
-        var status_icon = document.querySelector("div.tracker");
-        status_icon.classList.remove("spinner");
-        status_icon.classList.add("complete");
-
-        console.log("will redirect now");
-        setTimeout(function(){
-          document.location = "{{ raiden_url }}";
-        }, 2000);
-      }
-      
-    };
-</script>
 <div id="launcher-screen">
-    <div class="spinner-wrapper">
-      <div class="spinner tracker"></div>
-    </div>
-    <ul class="messages">
-    </ul>
+  {% include "partials/message_tracker.html" %}
 </div>
 {% end %}

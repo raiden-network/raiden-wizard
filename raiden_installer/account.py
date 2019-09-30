@@ -15,8 +15,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from . import log
-from .network import Network
-from .typing import ETH_UNIT
+from .tokens import EthereumAmount, Wei
 
 
 def make_random_string(length=32):
@@ -30,8 +29,6 @@ class Account:
         self.passphrase = passphrase
         self.keystore_file_path = Path(keystore_file_path)
         self.content = self._get_content()
-        self._web3_provider = None
-        self._web3_ethereum_rpc_endpoint = None
 
     def _get_content(self):
         if self.keystore_file_path.exists():
@@ -48,19 +45,18 @@ class Account:
 
     @property
     def address(self):
-        return self.content.get("address")
+        return to_checksum_address(self.content.get("address"))
 
-    def get_wei_balance(self, w3) -> int:
-        return w3.eth.getBalance(to_checksum_address(self.address))
+    def get_ethereum_balance(self, w3) -> EthereumAmount:
+        return EthereumAmount(Wei(w3.eth.getBalance(self.address)))
 
-    def get_ethereum_balance(self, w3) -> ETH_UNIT:
-        return ETH_UNIT(self.get_wei_balance(w3) / (10 ** 18))
-
-    def wait_for_ethereum_funds(self, w3: Web3, network: Network, timeout: int = 180) -> ETH_UNIT:
+    def wait_for_ethereum_funds(
+        self, w3: Web3, expected_amount: EthereumAmount, timeout: int = 300
+    ) -> EthereumAmount:
         time_remaining = timeout
         POLLING_INTERVAL = 1
-        balance = ETH_UNIT(0)
-        while balance < network.MINIMUM_ETHEREUM_BALANCE_REQUIRED and time_remaining > 0:
+        balance = EthereumAmount(Wei(0))
+        while balance < expected_amount and time_remaining > 0:
             balance = self.get_ethereum_balance(w3)
             time.sleep(POLLING_INTERVAL)
             time_remaining -= POLLING_INTERVAL

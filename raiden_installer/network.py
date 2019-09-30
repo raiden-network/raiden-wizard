@@ -3,15 +3,12 @@ import uuid
 
 import requests
 
-from .typing import ETH_UNIT
-
 
 class FundingError(Exception):
     pass
 
 
 class Network:
-    MINIMUM_ETHEREUM_BALANCE_REQUIRED = ETH_UNIT("0.01")
     FAUCET_AVAILABLE = False
     KYBER_RDN_EXCHANGE = False
     UNISWAP_RDN_EXCHANGE = False

@@ -8,7 +8,8 @@ import time
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import make_web3_provider, Infura
 from raiden_installer.network import Network
-from raiden_installer.token_exchange import CustomToken
+from raiden_installer.token_exchange import CustomTokenNetwork
+from raiden_installer.tokens import EthereumAmount, Wei
 
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
@@ -38,13 +39,13 @@ class GoerliTestCase(IntegrationTestCase):
         time_remaining = TIMEOUT
         self.network.fund(self.account)
 
-        balance = 0
-        while time_remaining > 0 or balance == 0:
+        balance = EthereumAmount(Wei(0))
+        while time_remaining > 0 or balance.as_wei == 0:
             balance = self.account.get_ethereum_balance(self.w3)
             time.sleep(INTERVAL)
             time_remaining -= INTERVAL
 
-        self.assertTrue(balance > 0, f"After {TIMEOUT} seconds, balance was not updated")
+        self.assertTrue(balance.as_wei > 0, f"After {TIMEOUT} seconds, balance was not updated")
 
 
 class TokenTestCase(IntegrationTestCase):
@@ -52,15 +53,15 @@ class TokenTestCase(IntegrationTestCase):
 
     def setUp(self):
         super().setUp()
-        self.token = CustomToken(w3=self.w3, account=self.account)
+        self.token_network = CustomTokenNetwork(w3=self.w3)
 
     def test_can_not_mint_tokens_without_gas(self):
         with self.assertRaises(ValueError):
-            self.token.mint(self.token.TOKEN_AMOUNT)
+            self.token_network.mint(self.account, self.token_network.TOKEN_AMOUNT)
 
     def test_can_mint_tokens(self):
         self.network.fund(self.account)
-        self.token.mint(self.token.TOKEN_AMOUNT)
+        self.token_network.mint(self.account, self.token_network.TOKEN_AMOUNT)
 
 
 if __name__ == "__main__":

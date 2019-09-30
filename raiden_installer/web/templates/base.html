@@ -4,13 +4,97 @@
         <title>Raiden Installer</title>
         <link rel="stylesheet" type="text/css" href="{{ static_url('css/app.css') }}"/>
         <script src="{{ static_url('js/app.js') }}"></script>
+        <script type="text/javascript">
+
+         const WEBSOCKET = new WebSocket("ws://{{ request.host }}{{ reverse_url('websocket') }}");
+
+         function launchRaiden(configuration_file_name){
+           let message = {method: "launch", configuration_file_name: configuration_file_name}
+           WEBSOCKET.send(JSON.stringify(message));
+           toggleView();
+         }
+
+         function resetSpinner() {
+           let spinner_elem = document.querySelector("#background-task-tracker div.task-status-icon");
+
+           spinner_elem.classList.remove("complete");
+           spinner_elem.classList.add("spinner");
+
+         }
+
+         function toggleView() {
+           let container = document.querySelector("section > div.container");
+           let tracker_elem = document.querySelector("#background-task-tracker");
+
+           let message_list = tracker_elem.querySelector("ul.messages");
+
+           if (tracker_elem.hidden){
+             container.classList.add("hidden");
+
+             resetSpinner();
+             while (message_list.firstChild) {
+               message_list.removeChild(message_list.firstChild);
+             }
+             tracker_elem.hidden = false;
+           }
+           else {
+             container.classList.remove("hidden");
+             tracker_elem.hidden = true;
+           }
+         }
+
+
+         WEBSOCKET.onmessage = function(evt) {
+           let message = JSON.parse(evt.data);
+           let message_list_elem = document.querySelector("#background-task-tracker ul.messages");
+           let spinner_elem = document.querySelector("#background-task-tracker div.task-status-icon");
+           let li = document.createElement("li");
+
+           let next_view = null;
+
+           resetSpinner();
+
+           switch(message.type){
+             case "error-message":
+               li.classList.add("error");
+               next_view = toggleView;
+               break;
+             case "task-complete":
+               spinner_elem.classList.remove("spinner");
+               spinner_elem.classList.add("complete");
+               next_view = toggleView;
+               break;
+             case "redirect":
+               next_view = function() {
+                 document.location = message.redirect_url;
+               }
+               break;
+           }
+
+           if (message.text) {
+             li.textContent = message.text;
+             message_list_elem.appendChild(li);
+           }
+
+           if (next_view) {
+             setTimeout(next_view, 2000);
+           }
+         }
+        </script>
+
+        {% block page_header_scripts %}
+        {% end %}
     </head>
     <body>
+      <section class="content">
         <div class="container">
-            <div class="launcher-window">
-                {% block content %}
-                {% end %}
-            </div>
+          {% block content %}
+          {% end %}
         </div>
+        <div id="background-task-tracker" hidden>
+          <div class="spinner task-status-icon"></div>
+          <ul class="messages"></ul>
+        </div>
+      </section>
     </body>
 </html>

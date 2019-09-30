@@ -11,6 +11,10 @@ body {
   min-width: 100vw;
 }
 
+.hidden {
+  display: none;
+}
+
 .tbd {
   background-color: #ef5350;
   text-decoration: italic;
@@ -120,11 +124,14 @@ section.content {
   justify-self: center;
   display: inline-grid;
 }
-section.content > div.container {
+section.content div.container {
   display: grid;
   justify-content: center;
   align-items: center;
   justify-self: center;
+}
+section.content div.container.hidden {
+  display: none;
 }
 
 div {
@@ -200,6 +207,8 @@ ul.available-configurations li button, ul.available-configurations li a.button {
   height: 33px;
   width: 100px;
   grid-area: button;
+}
+ul.available-configurations li a.button {
   line-height: 33px;
 }
 

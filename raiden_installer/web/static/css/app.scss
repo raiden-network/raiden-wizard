@@ -76,6 +76,10 @@ body {
     min-width: 100vw;
 }
 
+.hidden {
+    display: none;
+}
+
 
 .tbd {
     background-color: color(text-error);
@@ -173,11 +177,15 @@ section.content {
     justify-self: center;
     display: inline-grid;
 
-    & > div.container {
+    div.container {
         display: grid;
         justify-content: center;
         align-items: center;
         justify-self: center;
+    }
+
+    div.container.hidden {
+        display: none;
     }
 }
 
@@ -260,6 +268,9 @@ ul.available-configurations {
             align-self: center;
             @include fixedsize(100px, 33px);
             grid-area: button;
+        }
+
+        a.button {
             line-height: 33px;
         }
     }

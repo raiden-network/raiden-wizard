@@ -30,7 +30,7 @@
     <li><span>Uniswap</span><button data-name="Uniswap" data-link="https://uniswap.ninja/send">Open</button></li>
   </ul>
 
-  <a class="button next-page" href="{{ reverse_url('launch', configuration_file.file_name) }}" hidden>Launch Raiden</a>
+  <button class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');"hidden>Launch Raiden</a>
 </div>
 
 <div id="external-site-redirection" hidden>
@@ -57,7 +57,7 @@
  }
 
 
- window.onload = function() {
+ window.addEventListener("load", function() {
 
 
    const main_screen = document.getElementById("funding-options");
@@ -83,6 +83,6 @@
        main_screen.hidden = false;
      });
    });
- }
+ });
 </script>
 {% end %}

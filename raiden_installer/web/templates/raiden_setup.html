@@ -24,7 +24,7 @@
       <span class="error" hidden>You need to provide a valid Infura Project ID</span>
     </div>
 
-    <p class="disclaimer">
+    <p class="disclaimer tbd">
       The code you will be running is partially supplied by the Raiden
       Project and partially by XXX as open source code and/or
       software. Please be aware that we cannot be held liable for any
@@ -32,7 +32,7 @@
       the code and/or software. Use at your own risk.
     </p>
 
-    <p class="disclaimer">
+    <p class="disclaimer tbd">
       Note, that we also cannot be held liable for any damages
       whatsoever or any loss of funds you may incur when using
       Infura. Please study
@@ -112,13 +112,17 @@
      const balance_element = document.createElement("span");
      const launch_button = document.createElement("button");
 
+     let balance = configuration_data.balance;
+
      account_element.classList.add("account");
      network_element.classList.add("network");
      balance_element.classList.add("balance");
 
      account_element.textContent = configuration_data.account;
      network_element.textContent = configuration_data.network;
-     balance_element.textContent = "Balance: " + configuration_data.balance.formatted;
+     balance_element.textContent = "Balance: " + balance.ETH.formatted + "/" + balance.RDN.formatted;
+
+     launch_button.disabled = !(balance && balance.RDN.as_wei > 0);
      launch_button.textContent = "Launch";
 
      launch_button.addEventListener("click", function(evt){

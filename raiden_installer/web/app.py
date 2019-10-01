@@ -17,7 +17,7 @@ from ..network import Network
 from ..raiden import RaidenClient, RaidenClientError
 from ..ethereum_rpc import Infura, EthereumRPCProvider, make_web3_provider
 from ..tokens import EthereumAmount, RDNAmount, DAIAmount, Wei
-from ..token_exchange import Exchange
+from ..token_exchange import Exchange, RaidenTokenNetwork
 
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
@@ -197,7 +197,12 @@ class AccountDetailHandler(RequestHandler):
 class AccountFundingHandler(RequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        self.render("funding.html", configuration_file=configuration_file)
+        w3 = make_web3_provider(
+            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
+        )
+        self.render(
+            "funding.html", configuration_file=configuration_file, RDN=RaidenTokenNetwork(w3=w3)
+        )
 
 
 class APIHandler(RequestHandler):
@@ -257,15 +262,21 @@ class ConfigurationItemAPIHandler(APIHandler):
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
+        rdn_balance = RaidenTokenNetwork(w3=w3).balance(configuration_file.account)
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
+
         self.render_json(
             {
+                "url": self.reverse_url("api-configuration-detail", configuration_file.file_name),
                 "file_name": configuration_file.file_name,
                 "account_page_url": self.reverse_url("account", configuration_file.file_name),
                 "funding_page_url": self.reverse_url("funding", configuration_file.file_name),
                 "account": configuration_file.account.address,
                 "network": configuration_file.network.name,
-                "balance": {"wei": eth_balance.as_wei, "formatted": eth_balance.formatted},
+                "balance": {
+                    "ETH": {"as_wei": eth_balance.as_wei, "formatted": eth_balance.formatted},
+                    "RDN": {"as_wei": rdn_balance.as_wei, "formatted": rdn_balance.formatted},
+                },
             }
         )
 

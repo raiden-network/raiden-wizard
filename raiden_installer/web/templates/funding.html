@@ -26,11 +26,11 @@
 
   <h2>External Decentralized Exchanges</h2>
   <ul class="exchanges">
-    <li><span>KyberNetwork</span><button data-name="KyberNetwork" data-link="https://kyberswap.com/swap/eth-rdn">Open</button></li>
+    <li><span>KyberNetwork</span><button data-name="KyberNetwork" data-link="https://kyberswap.com/transfer/eth">Open</button></li>
     <li><span>Uniswap</span><button data-name="Uniswap" data-link="https://uniswap.ninja/send">Open</button></li>
   </ul>
 
-  <button class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');"hidden>Launch Raiden</a>
+  <button id="btn-launch" class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>Launch Raiden</a>
 </div>
 
 <div id="external-site-redirection" hidden>
@@ -48,43 +48,30 @@
 <script type="text/javascript">
  const ETHEREUM_RPC_ENDPOINT = "{{ configuration_file.ethereum_client_rpc_endpoint }}";
  const ACCOUNT_ADDRESS = "{{ configuration_file.account.address }}";
- var counter = 0;
 
- function getAccountEthereumBalance() {
+ function checkBalances(){
+   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
    let req = new XMLHttpRequest();
-   let balance_display_element = document.querySelector("dd.account-eth-balance");
-   counter += 1;
+   let eth_balance_display_element = document.querySelector("dd.account-eth-balance");
+   let rdn_balance_display_element = document.querySelector("dd.account-rdn-balance");
 
-   let data = {
-     jsonrpc: "2.0",
-     method: "eth_getBalance",
-     params: [
-       ACCOUNT_ADDRESS, "latest"
-     ],
-     id: counter
-   }
-   req.open("POST", ETHEREUM_RPC_ENDPOINT);
+   req.open("GET", url);
    req.setRequestHeader("Content-Type", "application/json");
 
    req.onload = function() {
      if (this.status == 200){
-       let total_wei = parseInt(JSON.parse(this.response).result || 0, 16);
-       balance_display_element.textContent = total_wei.toString() + " WEI";
+       let btn = document.querySelector("#btn-launch");
+       let balance = JSON.parse(this.response).balance;
+
+       eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+       rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+       btn.disabled = !(balance && balance.RDN.as_wei > 0);
      }
    }
-   req.send(JSON.stringify(data));
+   req.send();
 
  }
 
- function getAccountRDNBalance() {
-
- }
-
-
- function checkBalances(){
-   getAccountEthereumBalance();
-   getAccountRDNBalance();
- }
 
  window.addEventListener("load", function() {
 

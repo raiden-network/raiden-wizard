@@ -26,11 +26,11 @@
 
   <h2>External Decentralized Exchanges</h2>
   <ul class="exchanges">
-    <li><span>KyberNetwork</span><button data-name="KyberNetwork" data-link="https://kyberswap.com/swap/eth-rdn">Open</button></li>
+    <li><span>KyberNetwork</span><button data-name="KyberNetwork" data-link="https://kyberswap.com/transfer/eth">Open</button></li>
     <li><span>Uniswap</span><button data-name="Uniswap" data-link="https://uniswap.ninja/send">Open</button></li>
   </ul>
 
-  <button class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');"hidden>Launch Raiden</a>
+  <button id="btn-launch" class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>Launch Raiden</a>
 </div>
 
 <div id="external-site-redirection" hidden>
@@ -49,10 +49,26 @@
  const ETHEREUM_RPC_ENDPOINT = "{{ configuration_file.ethereum_client_rpc_endpoint }}";
  const ACCOUNT_ADDRESS = "{{ configuration_file.account.address }}";
 
- function getAccountEthereumBalance() {
- }
+ function checkBalances(){
+   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
+   let req = new XMLHttpRequest();
+   let eth_balance_display_element = document.querySelector("dd.account-eth-balance");
+   let rdn_balance_display_element = document.querySelector("dd.account-rdn-balance");
 
- function getAccountRDNBalance() {
+   req.open("GET", url);
+   req.setRequestHeader("Content-Type", "application/json");
+
+   req.onload = function() {
+     if (this.status == 200){
+       let btn = document.querySelector("#btn-launch");
+       let balance = JSON.parse(this.response).balance;
+
+       eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+       rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+       btn.disabled = !(balance && balance.RDN.as_wei > 0);
+     }
+   }
+   req.send();
 
  }
 
@@ -62,6 +78,8 @@
 
    const main_screen = document.getElementById("funding-options");
    const redirection_panel = document.getElementById("external-site-redirection");
+
+   checkBalances();
 
    document.querySelectorAll("ul.exchanges button").forEach(function(elem) {
      elem.addEventListener("click", function(evt){
@@ -83,6 +101,9 @@
        main_screen.hidden = false;
      });
    });
+
+   setInterval(checkBalances, 5000);
+
  });
 </script>
 {% end %}

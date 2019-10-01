@@ -283,7 +283,7 @@ class Uniswap(Exchange):
         gas = costs["gas"]
         gas_price = costs["gas_price"]
         transaction_params = {
-            "from": account.checksum_address,
+            "from": account.address,
             "value": eth_to_sell.as_wei,
             "gas": gas,
             "gas_price": gas_price,
@@ -322,7 +322,7 @@ class TokenNetwork:
         assert self.TOKEN_AMOUNT_CLASS is not None
 
         return self.TOKEN_AMOUNT_CLASS(
-            Wei(self.token_proxy.functions.balanceOf(account.checksum_address).call())
+            Wei(self.token_proxy.functions.balanceOf(account.address).call())
         )
 
     def is_available(self, network: Network):
@@ -388,7 +388,7 @@ class CustomTokenNetwork(TokenNetwork):
             self.w3,
             account,
             deposit_proxy.functions.deposit,
-            account.checksum_address,
+            account.address,
             amount,
             gas=self.GAS_REQUIRED_FOR_DEPOSIT,
         )

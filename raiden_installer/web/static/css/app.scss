@@ -38,8 +38,9 @@ $dimensions: (
 }
 
 @mixin fixedsize($width, $height) {
-    height: $height;
+    line-height: $height;
     width: $width;
+
 }
 
 @mixin input($background-color, $text-color) {
@@ -105,6 +106,17 @@ button, a.button {
     &:disabled, &[aria-disabled="true"] {
         @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
     }
+
+    &.next-page {
+        display: block;
+        margin: auto;
+        @include fixedsize(125px, 2em);
+    }
+}
+
+#btn-launch {
+    @include fixedsize(200px, 45px);
+    font-size: 18px;
 }
 
 a.button {
@@ -112,13 +124,6 @@ a.button {
     padding: 2px 6px;
     margin: auto;
 }
-
-a.next-page {
-    display: block;
-    @include fixedsize(125px, 2em);
-    line-height: 2em;
-}
-
 
 h1, h2 {
     text-align: center;
@@ -237,7 +242,7 @@ ul.available-configurations {
         background-color: color(list-bg);
         display: grid;
         grid-template: "account account account button" auto
-                                                        "network balance . button" auto;
+                                                        "network balance balance button" auto;
 
         span.account, span.network {
             padding-left: 20px;
@@ -309,6 +314,37 @@ dd.highlighted {
     font-weight: 500;
 }
 
+#background-task-tracker {
+    div.spinner {
+        display: grid;
+        margin: auto;
+        margin-top: 25vh;
+        align-self: center;
+        animation: .8s spin infinite;
+        border: 4px solid color(element-input-bg);
+        border-radius: 50%;
+        border-bottom-color: color(element-border);
+        border-right-color: color(element-border);
+        border-top-color: color(element-border);
+        height: 100px;
+        width: 100px;
+    }
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    ul.messages {
+        color: color(text-standard);
+        line-height: 28px;
+        list-style-type: none;
+        margin: 0;
+        padding: 30px 0px 100px 0px;
+        text-align: center;
+    }
+}
+
 
 #intro {
     p.warning {
@@ -347,42 +383,5 @@ dd.highlighted {
     button, a.button {
         @include fixedsize(180px, 33px);
         margin: 2em auto;
-    }
-}
-
-#launcher-screen {
-    display: grid;
-    grid-template-rows: auto auto;
-
-    .spinner-wrapper {
-        display: grid;
-        justify-items: center;
-        padding-top: 100px;
-
-        .spinner {
-            align-self: center;
-            animation: .8s spin infinite;
-            border: 4px solid color(element-input-bg);
-            border-radius: 50%;
-            border-bottom-color: color(element-border);
-            border-right-color: color(element-border);
-            border-top-color: color(element-border);
-            height: 100px;
-            width: 100px;
-        }
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    }
-
-    .messages {
-        color: color(text-standard);
-        line-height: 28px;
-        list-style-type: none;
-        margin: 0;
-        padding: 30px 0px 100px 0px;
-        text-align: center;
     }
 }

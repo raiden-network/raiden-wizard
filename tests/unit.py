@@ -1,5 +1,5 @@
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
 
 from raiden_installer import base
@@ -46,9 +46,7 @@ class RaidenConfigurationTestCase(unittest.TestCase):
             token=self.token,
         )
 
-        passphrase_file = base.PassphraseFile(
-            self.configuration_file.passphrase_file_path
-        )
+        passphrase_file = base.PassphraseFile(self.configuration_file.passphrase_file_path)
         passphrase_file.store(self.account.passphrase)
 
     def test_can_save_configuration(self):
@@ -64,3 +62,7 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         for config in base.RaidenConfigurationFile.get_available_configurations():
             config.passphrase_file_path.unlink()
             config.path.unlink()
+
+
+if __name__ == "__main__":
+    unittest.main()

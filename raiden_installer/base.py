@@ -22,9 +22,10 @@ from typing import Optional
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
-import psutil
 import requests
 import toml
+
+import psutil
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
 from eth_utils import to_checksum_address
 from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
@@ -35,7 +36,6 @@ from raiden_contracts.contract_manager import (
 )
 from web3 import HTTPProvider, Web3
 from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
-
 from xdg import XDG_DATA_HOME
 
 logger = logging.getLogger(__name__)
@@ -349,6 +349,10 @@ class RaidenClient:
                 if regex:
                     release_date = get_date(release_data["published_at"])
                     major, minor, revision = regex["major"], regex["minor"], regex["revision"]
+                    try:
+                        extra = regex["extra"]
+                    except IndexError:
+                        extra = ""
                     releases.append(
                         cls(
                             release=f"{major}.{minor}.{revision}",
@@ -357,6 +361,7 @@ class RaidenClient:
                             day=release_date.day,
                             major=major,
                             minor=minor,
+                            extra=extra,
                             revision=revision,
                             browser_download_url=asset_data.get("browser_download_url"),
                         )
@@ -378,7 +383,9 @@ class RaidenTestnetRelease(RaidenClient):
 
     @property
     def version(self):
-        return f"Raiden Preview {self.major}.{self.minor}.{self.revision} (Testnet only)"
+        return (
+            f"Raiden Preview {self.major}.{self.minor}.{self.revision}-{self.extra} (Testnet only)"
+        )
 
 
 class RaidenNightly(RaidenClient):

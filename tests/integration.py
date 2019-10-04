@@ -1,10 +1,9 @@
 import os
-import unittest
 import tempfile
+import unittest
 from pathlib import Path
 
-from installer import base
-
+from raiden_installer import base
 
 ETHEREUM_RPC_ENDPOINT = os.getenv("TEST_RAIDEN_INSTALLER_ETH_RPC_URL")
 ETHEREUM_NETWORK_NAME = os.getenv("TEST_RAIDEN_INSTALLER_ETHEREUM_NETWORK")
@@ -19,9 +18,7 @@ class IntegrationTestCase(unittest.TestCase):
         base.Account.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir()).joinpath(
             "raiden", "installer", "integration"
         )
-        self.ethereum_rpc_provider = base.EthereumRPCProvider.make_from_url(
-            ETHEREUM_RPC_ENDPOINT
-        )
+        self.ethereum_rpc_provider = base.EthereumRPCProvider.make_from_url(ETHEREUM_RPC_ENDPOINT)
         self.account = base.Account.create("test_raiden_integration")
         self.network = base.Network.get_by_name(ETHEREUM_NETWORK_NAME)
 
@@ -38,9 +35,7 @@ class NetworkTestCase(IntegrationTestCase):
 class TokenTestCase(IntegrationTestCase):
     def setUp(self):
         super().setUp()
-        self.token = base.Token(
-            ethereum_rpc_endppoint=ETHEREUM_RPC_ENDPOINT, account=self.account
-        )
+        self.token = base.Token(ethereum_rpc_endppoint=ETHEREUM_RPC_ENDPOINT, account=self.account)
 
     def test_can_not_mint_tokens_without_gas(self):
         with self.assertRaises(ValueError):
@@ -48,5 +43,4 @@ class TokenTestCase(IntegrationTestCase):
 
     def test_can_mint_tokens(self):
         self.network.fund(self.account)
-
         self.token.mint(self.token.TOKEN_AMOUNT)

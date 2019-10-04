@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="swap">
+  <h1>Use Wizard to swap ETH <-> RDN via {{ exchange.name }}</h1>
+  <p class="tbd disclaimer">DISCLAIMER: Use at your risk</p>
+  <div class="account-detail">
+    <span class="info-detail">Funds available</span>
+    <span class="account-eth-balance highlighted">{{ balance.formatted }}</span>
+  </div>
+
+  <div class="form-entry">
+    <input type="number" name="token_amount" placeholder="RDN Amount desired"/>
+    <button id="btn-execute-swap" class="next-page" onClick="executeSwap();"disabled>Execute Swap</button>
+  </div>
+</div>
+
+<div id="external-site-redirection">
+  <h1>Acquire tokens directly on Exchange</h1>
+  <p class="warning tbd">
+    By clicking on the link below, you will be redirected to <span class="exchange-name">{{ exchange.name }}</span>'s website,
+    and accept all responsibility.
+  </p>
+
+  <a class="button next-page external-site" href="{{ exchange.TRANSFER_WEBSITE_URL }}" target="_blank">Proceed to {{ exchange.name }}</a>
+  </div>
+{% end %}
+
+{% block page_header_scripts %}
+  <script>
+   function checkEthBalance(){
+     let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
+     let req = new XMLHttpRequest();
+     let eth_balance_display_element = document.querySelector("span.account-eth-balance");
+
+
+     req.open("GET", url);
+     req.setRequestHeader("Content-Type", "application/json");
+
+     req.onload = function() {
+       if (this.status == 200){
+         let btn = document.querySelector("#btn-execute-swap");
+         let balance = JSON.parse(this.response).balance;
+
+         eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+         btn.disabled = !(balance && balance.ETH.as_wei > 0);
+       }
+     }
+     req.send();
+   }
+
+   function executeSwap() {
+     const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
+     const FILE_NAME = "{{ configuration_file.file_name }}";
+     const NETWORK_NAME = "{{ configuration_file.network.name }}";
+     const TOKEN_STICKER = "RDN";
+
+     WEBSOCKET.send(JSON.stringify({
+       method: "swap",
+       configuration_file_name: FILE_NAME,
+       amount: (parseInt(document.querySelector("div.form-entry input").value) * (10 ** 18)).toString(),
+       token: TOKEN_STICKER,
+       exchange: EXCHANGE_NAME
+     }));
+
+     toggleView();
+   }
+
+   window.addEventListener("load", function() {
+     checkEthBalance();
+     setInterval(checkEthBalance, 5000);
+   });
+  </script>
+{% end %}

@@ -70,10 +70,33 @@ class TokenAmount(Generic[Eth_T]):
             raise ValueError(f"Can not compare {self.sticker} with {other.sticker}")
         return self.as_wei < other.as_wei
 
+    def __le__(self, other):
+        if not self.sticker == other.sticker:
+            raise ValueError(f"Can not compare {self.sticker} with {other.sticker}")
+
+        return self.sticker <= other.sticker
+
     def __gt__(self, other):
         if not self.sticker == other.sticker:
             raise ValueError(f"Can not compare {self.sticker} with {other.sticker}")
         return self.as_wei > other.as_wei
+
+    def __ge__(self, other):
+        if not self.sticker == other.sticker:
+            raise ValueError(f"Can not compare {self.sticker} with {other.sticker}")
+
+        return self.sticker >= other.sticker
+
+    @staticmethod
+    def make(sticker: TokenSticker, amount: Wei):
+        currency_class = {
+            "ETH": EthereumAmount,
+            "RDN": RDNAmount,
+            "DAI": DAIAmount,
+            "LDN": GoerliRaidenAmount,
+        }[sticker]
+
+        return currency_class(amount)
 
 
 class EthereumAmount(TokenAmount):

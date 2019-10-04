@@ -76,8 +76,8 @@ class ExchangeError(Exception):
 
 class Exchange:
     GAS_REQUIRED = 0
-
     SUPPORTED_NETWORKS = []
+    TRANSFER_WEBSITE_URL = None
 
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -123,8 +123,8 @@ class Exchange:
 
 class Kyber(Exchange):
     GAS_REQUIRED = 500_000
-
     SUPPORTED_NETWORKS = ["ropsten", "mainnet"]
+    TRANSFER_WEBSITE_URL = "https://kyberswap.com/transfer/eth"
 
     def __init__(self, w3: Web3):
         super().__init__(w3=w3)
@@ -225,6 +225,7 @@ class Uniswap(Exchange):
     }
     EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds
+    TRANSFER_WEBSITE_URL = "https://uniswap.ninja/send"
 
     def get_exchange_proxy(self, token_sticker):
         return self.w3.eth.contract(
@@ -275,7 +276,7 @@ class Uniswap(Exchange):
         }
 
     def buy_tokens(self, account: Account, token_amount: TokenAmount):
-        costs = self.calculate_transaction_costs(token_amount)
+        costs = self.calculate_transaction_costs(token_amount, account)
         exchange_proxy = self.get_exchange_proxy(token_amount.sticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
@@ -286,7 +287,7 @@ class Uniswap(Exchange):
             "from": account.address,
             "value": eth_to_sell.as_wei,
             "gas": gas,
-            "gas_price": gas_price,
+            "gas_price": gas_price.as_wei,
         }
 
         return send_raw_transaction(
@@ -333,6 +334,12 @@ class TokenNetwork:
 
     def _get_token_network_address(self):
         raise NotImplementedError
+
+    @staticmethod
+    def get_by_sticker(sticker: str):
+        return {"RDN": RaidenTokenNetwork, "DAI": DAITokenNetwork, "LDN": CustomTokenNetwork}[
+            sticker
+        ]
 
 
 class CustomTokenNetwork(TokenNetwork):

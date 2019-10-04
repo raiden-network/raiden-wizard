@@ -23,6 +23,12 @@ body {
   content: "COPY TBD: ";
 }
 
+.highlighted {
+  font-size: 125%;
+  font-weight: 500;
+  color: #28a5c8;
+}
+
 a {
   color: #28a5c8;
   text-decoration: none;
@@ -150,6 +156,7 @@ div.prompt button {
 
 div.form-entry input {
   display: block;
+  margin-bottom: 1em;
 }
 
 ul {
@@ -158,22 +165,16 @@ ul {
 }
 
 ul.exchanges {
-  text-align: center;
+  width: 100%;
 }
 ul.exchanges li {
-  line-height: 45px;
-  display: grid;
-  grid-template-columns: auto 150px;
+  display: inline-grid;
+  height: 100px;
+  width: 300px;
 }
-ul.exchanges li span {
-  align-self: start;
-  text-align: left;
-}
-ul.exchanges li button {
-  align-self: end;
-  margin: auto;
+ul.exchanges li a.button, ul.exchanges li button {
   line-height: 33px;
-  width: 150px;
+  width: 120px;
 }
 
 ul.available-configurations {
@@ -221,6 +222,10 @@ p.banner {
   max-width: 520px;
 }
 
+dt, dd {
+  padding-right: 0;
+}
+
 dd {
   margin-inline-start: 0;
 }
@@ -242,9 +247,13 @@ dl dd {
   margin-bottom: 1em;
 }
 
-dd.highlighted {
-  font-size: 125%;
-  font-weight: 500;
+ul.account-info, div.account-detail {
+  margin-top: 1em;
+  text-align: center;
+}
+ul.account-info span.highlighted, div.account-detail span.highlighted {
+  display: block;
+  margin-bottom: 1em;
 }
 
 #background-task-tracker div.spinner {
@@ -283,21 +292,25 @@ dd.highlighted {
   width: 100%;
 }
 
-#configuration-setup {
+#configuration-setup, #swap {
   display: grid;
   grid-template-rows: 50px 120px auto;
 }
-#configuration-setup div.prompt {
+#configuration-setup div.prompt, #swap div.prompt {
   display: grid;
   grid-template-rows: 40px 80px auto auto 60px;
   min-height: 8em;
 }
-#configuration-setup p.disclaimer {
+#configuration-setup p.disclaimer, #swap p.disclaimer {
   max-width: 100%;
   margin-bottom: 2em;
 }
-#configuration-setup button {
+#configuration-setup button, #swap button {
   justify-self: center;
+}
+
+#exchange-options, #external-site-redirection {
+  align-self: start;
 }
 
 #external-site-redirection {

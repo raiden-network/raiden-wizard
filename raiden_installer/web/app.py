@@ -17,7 +17,7 @@ from ..network import Network
 from ..raiden import RaidenClient, RaidenClientError
 from ..ethereum_rpc import Infura, EthereumRPCProvider, make_web3_provider
 from ..tokens import EthereumAmount, RDNAmount, DAIAmount, Wei
-from ..token_exchange import Exchange, RaidenTokenNetwork
+from ..token_exchange import Exchange, TokenNetwork, RaidenTokenNetwork
 
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
@@ -129,34 +129,46 @@ class AsyncTaskHandler(WebSocketHandler):
 
     def _run_swap(self, **kw):
         DEPOSIT_TIMEOUT = 5
-        configuration_file_name = kw.get("configuration_file_name")
+
+        log.info(str(kw))
+
+        try:
+            configuration_file_name = kw.get("configuration_file_name")
+            exchange = kw["exchange"]
+            token_amount = kw["amount"]
+            token_sticker = kw["token"]
+        except (ValueError, KeyError, TypeError) as exc:
+            self._send_error_message(f"Invalid request: {exc}")
+            return
 
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             form = TokenExchangeForm(
                 {
                     "network": [configuration_file.network.name],
-                    "exchange": [kw["exchange"]],
-                    "token_amount": [kw["amount"]],
-                    "token_sticker": [kw["token"]],
+                    "exchange": [exchange],
+                    "token_amount": [token_amount],
+                    "token_sticker": [token_sticker],
                 }
             )
 
             if form.validate():
                 account = configuration_file.account
                 w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-                rdn_amount = RDNAmount(Wei(form.data["token_amount"]))
+                token_network_class = TokenNetwork.get_by_sticker(form.data["token_sticker"])
+                token_network = token_network_class(w3=w3)
+
+                token_amount = token_network.TOKEN_AMOUNT_CLASS(Wei(form.data["token_amount"]))
                 exchange = Exchange.get_by_name(form.data["exchange"])(w3=w3)
 
-                self._send_status_update("")
-                costs = exchange.calculate_transaction_costs(rdn_amount, account)
+                costs = exchange.calculate_transaction_costs(token_amount, account)
                 needed_funds = costs["total"]
                 current_balance = account.get_ethereum_balance(w3)
                 required_deposit_amount = EthereumAmount(
-                    Wei(current_balance.as_wei - needed_funds.as_wei)
+                    Wei(needed_funds.as_wei - current_balance.as_wei)
                 )
 
-                if required_deposit_amount.as_wei > 0:
+                if needed_funds > current_balance:
                     self._send_status_update(
                         f"Please deposit at least {required_deposit_amount.formatted} to "
                         f"{account.address} in the next {DEPOSIT_TIMEOUT} minutes"
@@ -165,9 +177,12 @@ class AsyncTaskHandler(WebSocketHandler):
                     w3, required_deposit_amount, timeout=DEPOSIT_TIMEOUT * 60
                 )
                 self._send_status_update(f"Account balance now is {balance.formatted}")
-                self._send_status_update(f"Executing ETH <-> RDN swap on {exchange.name}")
-                exchange.buy_tokens(account, rdn_amount)
-                self._send_status_update(f"Swap complete. {rdn_amount.balance} available")
+                self._send_status_update(f"Acquiring {token_amount.formatted} via {exchange.name}")
+                self._send_status_update(f"Estimated costs: {needed_funds.formatted}")
+                exchange.buy_tokens(account, token_amount)
+
+                token_balance = token_network.balance(account)
+                self._send_task_complete(f"Swap complete. {token_balance.formatted} available")
 
             else:
                 for key, error_list in form.errors.items():
@@ -197,11 +212,24 @@ class AccountDetailHandler(RequestHandler):
 class AccountFundingHandler(RequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        self.render("funding.html", configuration_file=configuration_file)
+
+
+class SwapHandler(RequestHandler):
+    def get(self, exchange_name, configuration_file_name):
+        exchange_class = Exchange.get_by_name(exchange_name)
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
+
+        exchange = exchange_class(w3=w3)
+        current_balance = configuration_file.account.get_ethereum_balance(w3)
         self.render(
-            "funding.html", configuration_file=configuration_file, RDN=RaidenTokenNetwork(w3=w3)
+            "swap.html",
+            exchange=exchange,
+            configuration_file=configuration_file,
+            balance=current_balance,
         )
 
 
@@ -288,6 +316,7 @@ if __name__ == "__main__":
             url(r"/setup", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
+            url(r"/swap/(kyber|uniswap)/(.*)", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),
             url(
                 r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"

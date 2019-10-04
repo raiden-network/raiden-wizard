@@ -55,7 +55,7 @@ class Account:
     ) -> EthereumAmount:
         time_remaining = timeout
         POLLING_INTERVAL = 1
-        balance = EthereumAmount(Wei(0))
+        balance = self.get_ethereum_balance(w3)
         while balance < expected_amount and time_remaining > 0:
             balance = self.get_ethereum_balance(w3)
             time.sleep(POLLING_INTERVAL)

@@ -67,6 +67,15 @@ class TokenExchangeForm(Form):
     token_amount = wtforms.IntegerField()
 
 
+class FundingOptionsForm(Form):
+    funding_option = wtforms.RadioField(
+        choices=[
+            ("no-action", "User will deposit RDN"),
+            ("run-swap", "Wizard will swap ETH <-> RDN"),
+        ]
+    )
+
+
 class AsyncTaskHandler(WebSocketHandler):
     def _send_status_update(self, message_text):
         self.write_message(json.dumps({"type": "status-update", "text": message_text}))
@@ -214,6 +223,41 @@ class AccountFundingHandler(RequestHandler):
         self.render("funding.html", configuration_file=configuration_file)
 
 
+class FundingOptionsHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        self.render("funding_select_method.html", configuration_file=configuration_file)
+
+    def post(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        form = FundingOptionsForm(self.request.arguments)
+        if form.validate():
+            next_view = {"no-action": "launch", "run-swap": "swap-options"}[
+                form.data["funding_option"]
+            ]
+            return self.redirect(self.reverse_url(next_view, configuration_file.file_name))
+        else:
+            self.render("funding_select_method.html", configuration_file=configuration_file)
+
+
+class LaunchHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        w3 = make_web3_provider(
+            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
+        )
+
+        current_balance = configuration_file.account.get_ethereum_balance(w3)
+
+        self.render("launch.html", configuration_file=configuration_file, balance=current_balance)
+
+
+class SwapOptionsHandler(RequestHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        self.render("swap_options.html", configuration_file=configuration_file)
+
+
 class SwapHandler(RequestHandler):
     def get(self, exchange_name, configuration_file_name):
         exchange_class = Exchange.get_by_name(exchange_name)
@@ -321,7 +365,10 @@ if __name__ == "__main__":
             url(r"/", IndexHandler),
             url(r"/setup", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
+            url(r"/launch/(.*)", LaunchHandler, name="launch"),
+            url(r"/funding/(.*)/options", FundingOptionsHandler, name="funding-options"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
+            url(r"/swap/(.*)/options", SwapOptionsHandler, name="swap-options"),
             url(r"/swap/(kyber|uniswap)/(.*)", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),
             url(

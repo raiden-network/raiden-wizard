@@ -1,29 +1,30 @@
+from typing import Optional
+
 from eth_utils import to_checksum_address
 from ethtoken.abi import EIP20_ABI
-from raiden_contracts.constants import CONTRACT_USER_DEPOSIT, CONTRACT_CUSTOM_TOKEN
+from web3 import Web3
+
+from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import (
     ContractManager,
     contracts_precompiled_path,
     get_contracts_deployment_info,
 )
 
-from web3 import Web3
-
 from . import log
 from .account import Account
+from .kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from .network import Network
-from .kyber.web3 import tokens as kyber_tokens
-from .kyber.web3 import contracts as kyber_contracts
-from .uniswap.web3 import contracts as uniswap_contracts
 from .tokens import (
-    Wei,
-    TokenAmount,
-    EthereumAmount,
-    TokenSticker,
-    RDNAmount,
     DAIAmount,
+    EthereumAmount,
     GoerliRaidenAmount,
+    RDNAmount,
+    TokenAmount,
+    TokenSticker,
+    Wei,
 )
+from .uniswap.web3 import contracts as uniswap_contracts
 
 
 def get_contract_address(chain_id, contract_name):
@@ -319,12 +320,15 @@ class TokenNetwork:
             self.token_network_address = self._get_token_network_address()
             self.token_proxy = self._get_token_proxy()
 
-    def balance(self, account: Account) -> TokenAmount:
-        assert self.TOKEN_AMOUNT_CLASS is not None
+    def balance(self, account: Account) -> Optional[TokenAmount]:
+        try:
+            assert self.TOKEN_AMOUNT_CLASS is not None
 
-        return self.TOKEN_AMOUNT_CLASS(
-            Wei(self.token_proxy.functions.balanceOf(account.address).call())
-        )
+            return self.TOKEN_AMOUNT_CLASS(
+                Wei(self.token_proxy.functions.balanceOf(account.address).call())
+            )
+        except (AttributeError, AssertionError):
+            return None
 
     def is_available(self, network: Network):
         return network.name in self.NETWORKS_DEPLOYED

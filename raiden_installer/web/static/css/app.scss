@@ -78,7 +78,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 
@@ -149,10 +149,11 @@ h2 {
 p {
     margin: auto;
     text-align: center;
-    max-width: 300px;
+    max-width: 420px;
     font-size: 16px;
     font-weight: 300;
     line-height: 21px;
+    margin-bottom: 1em;
 }
 
 p.long {
@@ -172,7 +173,7 @@ p.disclaimer {
 
 }
 
-input {
+input[type=text] {
     @include input(color(element-input-bg), color(text-blue));
 }
 
@@ -362,16 +363,18 @@ ul.account-info, div.account-detail {
 }
 
 #configuration-launcher {
-    width: 100%;
+    width: dimension(horizontal-width);
 }
 
 #configuration-setup, #swap {
     display: grid;
-    grid-template-rows: 50px 120px auto;
+
+    & > div {
+        padding-top: 1em;
+    }
 
     div.prompt {
         display: grid;
-        grid-template-rows: 40px 80px auto auto 60px;
         min-height: 8em;
 
     }

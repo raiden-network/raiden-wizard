@@ -3,72 +3,95 @@
 {% block content %}
 <div id="swap">
   <h1>Use Wizard to swap ETH <-> RDN via {{ exchange.name }}</h1>
-  <p class="tbd disclaimer">DISCLAIMER: Use at your risk</p>
+  <p class="tbd long">
+    The Wizard can take ETH funds that you transfer to this account
+    address and use them to exchange for RDN on {{ exchange.name }}.
+  </p>
+  <div class="ack-panel">
+    <div class="ack-prompt">
+      <input type="checkbox" class="ack-swap" name="ack-automated-swap" />
+      <label class="tbd" for="ack-automated-swap">
+        I acknowledge that the Wizard may make API calls to
+        <a href="{{ exchange.MAIN_WEBSITE_URL }}" target="_blank">{{ exchange.name }}</a>,
+        a third-party service.
+      </label>
+    </div>
+    <div class="ack-prompt">
+      <input type="checkbox" class="ack-exchange" name="ack-fees" />
+      <label class="tbd" for="ack-fees">
+        I understand that this transaction will incur some fees and
+        that there is no price guarantee for the exchange being made.
+      </label>
+    </div>
+  </div>
+
   <div class="account-detail">
     <span class="info-detail">Funds available</span>
     <span class="account-eth-balance highlighted">{{ balance.formatted }}</span>
   </div>
 
-  <div class="form-entry">
-    <input type="number" name="token_amount" placeholder="RDN Amount desired"/>
-    <button id="btn-execute-swap" class="next-page" onClick="executeSwap();"disabled>Execute Swap</button>
+  <div class="form-entry hidden">
+    <input type="number" name="token_amount" placeholder="RDN Amount desired" disabled />
+    <button id="btn-execute-swap" class="next-page" onClick="executeSwap();" disabled>Execute Swap</button>
   </div>
 </div>
-
-<div id="external-site-redirection">
-  <h1>Acquire tokens directly on Exchange</h1>
-  <p class="warning tbd">
-    By clicking on the link below, you will be redirected to <span class="exchange-name">{{ exchange.name }}</span>'s website,
-    and accept all responsibility.
-  </p>
-
-  <a class="button next-page external-site" href="{{ exchange.TRANSFER_WEBSITE_URL }}" target="_blank">Proceed to {{ exchange.name }}</a>
-  </div>
 {% end %}
 
 {% block page_header_scripts %}
-  <script>
-   function checkEthBalance(){
-     let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
-     let req = new XMLHttpRequest();
-     let eth_balance_display_element = document.querySelector("span.account-eth-balance");
+<script>
+ function checkEthBalance(){
+   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
+   let req = new XMLHttpRequest();
+   let eth_balance_display_element = document.querySelector("span.account-eth-balance");
 
+   req.open("GET", url);
+   req.setRequestHeader("Content-Type", "application/json");
 
-     req.open("GET", url);
-     req.setRequestHeader("Content-Type", "application/json");
+   req.onload = function() {
+     if (this.status == 200){
+       let btn = document.querySelector("#btn-execute-swap");
+       let balance = JSON.parse(this.response).balance;
 
-     req.onload = function() {
-       if (this.status == 200){
-         let btn = document.querySelector("#btn-execute-swap");
-         let balance = JSON.parse(this.response).balance;
-
-         eth_balance_display_element.textContent = balance && balance.ETH.formatted;
-         btn.disabled = !(balance && balance.ETH.as_wei > 0);
-       }
+       eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+       btn.disabled = !(balance && balance.ETH.as_wei > 0);
      }
-     req.send();
    }
+   req.send();
+ }
 
-   function executeSwap() {
-     const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
-     const FILE_NAME = "{{ configuration_file.file_name }}";
-     const NETWORK_NAME = "{{ configuration_file.network.name }}";
-     const TOKEN_STICKER = "RDN";
+ function executeSwap() {
+   const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
+   const FILE_NAME = "{{ configuration_file.file_name }}";
+   const NETWORK_NAME = "{{ configuration_file.network.name }}";
+   const TOKEN_STICKER = "RDN";
 
-     WEBSOCKET.send(JSON.stringify({
-       method: "swap",
-       configuration_file_name: FILE_NAME,
-       amount: (parseInt(document.querySelector("div.form-entry input").value) * (10 ** 18)).toString(),
-       token: TOKEN_STICKER,
-       exchange: EXCHANGE_NAME
-     }));
+   WEBSOCKET.send(JSON.stringify({
+     method: "swap",
+     configuration_file_name: FILE_NAME,
+     amount: (parseInt(document.querySelector("div.form-entry input").value) * (10 ** 18)).toString(),
+     token: TOKEN_STICKER,
+     exchange: EXCHANGE_NAME
+   }));
 
-     toggleView();
-   }
+   toggleView();
+ }
 
-   window.addEventListener("load", function() {
-     checkEthBalance();
-     setInterval(checkEthBalance, 5000);
+ window.addEventListener("load", function() {
+   let checkboxes = document.querySelectorAll("input[type=checkbox]");
+   let swap_form = document.querySelector("div.form-entry");
+   let rdn_amount_input = swap_form.querySelector("input");
+
+   checkboxes.forEach(function(elem) {
+     elem.onclick = function(evt) {
+       checkAcknowledgements(checkboxes, rdn_amount_input, function() {
+         swap_form.classList.remove("hidden");
+       });
+     };
    });
-  </script>
+   checkEthBalance();
+   setInterval(checkEthBalance, 5000);
+
+
+ });
+</script>
 {% end %}

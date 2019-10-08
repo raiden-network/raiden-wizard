@@ -16,7 +16,7 @@ from ..base import Account, RaidenConfigurationFile
 from ..ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from ..network import Network
 from ..raiden import RaidenClient, RaidenClientError
-from ..token_exchange import Exchange, RaidenTokenNetwork, TokenNetwork
+from ..token_exchange import Exchange, Kyber, RaidenTokenNetwork, TokenNetwork, Uniswap
 from ..tokens import DAIAmount, EthereumAmount, RDNAmount, Wei
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
@@ -255,7 +255,18 @@ class LaunchHandler(RequestHandler):
 class SwapOptionsHandler(RequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        self.render("swap_options.html", configuration_file=configuration_file)
+        w3 = make_web3_provider(
+            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
+        )
+        kyber = Kyber(w3=w3)
+        uniswap = Uniswap(w3=w3)
+
+        self.render(
+            "swap_options.html",
+            configuration_file=configuration_file,
+            kyber=kyber,
+            uniswap=uniswap,
+        )
 
 
 class SwapHandler(RequestHandler):

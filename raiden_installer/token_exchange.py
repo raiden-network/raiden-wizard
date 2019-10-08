@@ -79,6 +79,8 @@ class Exchange:
     GAS_REQUIRED = 0
     SUPPORTED_NETWORKS = []
     TRANSFER_WEBSITE_URL = None
+    MAIN_WEBSITE_URL = None
+    TERMS_OF_SERVICE_URL = None
 
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -125,7 +127,9 @@ class Exchange:
 class Kyber(Exchange):
     GAS_REQUIRED = 500_000
     SUPPORTED_NETWORKS = ["ropsten", "mainnet"]
+    MAIN_WEBSITE_URL = "https://kyber.network"
     TRANSFER_WEBSITE_URL = "https://kyberswap.com/transfer/eth"
+    TERMS_OF_SERVICE_URL = "https://kyber.network/terms-and-conditions"
 
     def __init__(self, w3: Web3):
         super().__init__(w3=w3)
@@ -227,6 +231,8 @@ class Uniswap(Exchange):
     EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds
     TRANSFER_WEBSITE_URL = "https://uniswap.ninja/send"
+    MAIN_WEBSITE_URL = "https://uniswap.io"
+    TERMS_OF_SERVICE_URL = "https://uniswap.io"
 
     def get_exchange_proxy(self, token_sticker):
         return self.w3.eth.contract(

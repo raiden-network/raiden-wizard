@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="exchange-options">
+  <h2>Acquire RDN through Decentralized Exchanges</h2>
+  <p class="disclaimer tbd">
+    Below we provide exchanges that are integrated with the Wizard. As
+    soon as you deposit some ETH to your account address above, the
+    Wizard can call to these Exchanges API and acquire RDN for you.
+  </p>
+
+  <p class="disclaimer tbd">Use at your risk.</p>
+
+  <ul class="exchanges">
+    <li data-exchange="kyber">
+      <div class="disclaimer hidden">
+        <h2>KyberNetwork</h2>
+        <div class="ack-prompt">
+          <input type="checkbox" class="ack-exchange" name="ack-kyber" />
+          <label class="tbd" for="ack-kyber">
+            I acknowledge that the Wizard may make API calls to <a href="{{ kyber.MAIN_WEBSITE_URL }}" target="_blank">KyberNetwork</a>, a third-party service.
+          </label>
+        </div>
+        <div class="ack-prompt">
+          <input type="checkbox" class="ack-exchange" name="ack-kyber-tos" />
+          <label class="tbd" for="ack-kyber-tos">
+            I've read and accept <a href="{{ kyber.TERMS_OF_SERVICE_URL }}" target="_blank">Kyber's Terms of Service</a>.
+          </label>
+        </div>
+      </div>
+      <button onClick="selectExchange('kyber');" data-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name)}}">KyberNetwork</button>
+    </li>
+    <li data-exchange="uniswap">
+      <div class="disclaimer hidden">
+        <h2>Uniswap</h2>
+        <div class="ack-prompt">
+          <input type="checkbox" class="ack-exchange" name="ack-uniswap" />
+          <label class="tbd" for="ack-uniswap">
+            I acknowledge that the Wizard may make API calls to <a href="{{ uniswap.MAIN_WEBSITE_URL }}" target="_blank">Uniswap</a>, a third-party service.
+          </label>
+        </div>
+      </div>
+      <button onClick="selectExchange('uniswap');" data-url="{{ reverse_url('swap', 'uniswap', configuration_file.file_name)}}">Uniswap</button>
+    </li>
+  </ul>
+</div>
+
+{% end %}
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+ const EXCHANGES = ["kyber", "uniswap"];
+
+
+ function selectExchange(exchange_name){
+   let exchange_item_elems = document.querySelectorAll("ul.exchanges li");
+   exchange_item_elems.forEach(function(elem) {
+     if (elem.getAttribute("data-exchange") != exchange_name) {
+       elem.classList.add("hidden");
+     }
+     else {
+       elem.classList.add("selected");
+       let button = elem.querySelector("button");
+       let checkboxes = elem.querySelectorAll("input[type=checkbox]");
+       let disclaimer_panel = elem.querySelector("div.disclaimer");
+       button.disabled = true;
+       button.textContent = "Select Exchange";
+       button.onclick = function(evt) {
+         document.location = button.getAttribute("data-url");
+       }
+
+       disclaimer_panel.classList.remove("hidden");
+
+       checkboxes.forEach(function(checkbox) {
+         checkbox.onclick = function(evt) { checkAcknowledgements(checkboxes, button) };
+       });
+
+     }
+   });
+
+ }
+</script>
+{% end %}

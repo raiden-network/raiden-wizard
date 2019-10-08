@@ -29,6 +29,34 @@
     <dd>{{ configuration_file.path }}</dd>
   </dl>
 
-  <a class="button next-page" href="{{ reverse_url('funding', configuration_file.file_name) }}">Next</a>
+  <div class="ack-account">
+    <input type="checkbox" class="ack-account" name="ack-account" />
+    <label for="ack-account">
+      I have taken note of the files created, verified their contents and acknowledge my responsibility and keeping them secure
+    </label>
+  </div>
+
+  <button class="next-page" data-url="{{ reverse_url('funding-options', configuration_file.file_name) }}" disabled>Next</a>
 </div>
+{% end %}
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+
+ window.addEventListener("load", function() {
+   const checkboxes = document.querySelectorAll("input[name=ack-account");
+   const next_button = document.querySelector("button.next-page");
+
+   next_button.addEventListener("click", function(evt) {
+     document.location = evt.target.getAttribute("data-url");
+   });
+
+   checkboxes.forEach(function(elem) {
+     elem.addEventListener("change", function(evt) {
+       checkAcknowledgements(checkboxes, next_button);
+     });
+   });
+
+ });
+</script>
 {% end %}

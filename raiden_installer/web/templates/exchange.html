@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="external-site-redirection">
+  <h1>Acquire tokens directly on Exchange</h1>
+  <p class="warning tbd">
+    By clicking on the link below, you will be redirected to <span class="exchange-name">{{ exchange.name }}</span>'s website,
+    and accept all responsibility.
+  </p>
+
+  <a class="button next-page external-site" href="{{ exchange.TRANSFER_WEBSITE_URL }}" target="_blank">Proceed to {{ exchange.name }}</a>
+  </div>
+{% end %}

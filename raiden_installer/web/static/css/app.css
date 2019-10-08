@@ -12,7 +12,7 @@ body {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .tbd {
@@ -91,10 +91,11 @@ h2 {
 p {
   margin: auto;
   text-align: center;
-  max-width: 300px;
+  max-width: 420px;
   font-size: 16px;
   font-weight: 300;
   line-height: 21px;
+  margin-bottom: 1em;
 }
 
 p.long {
@@ -113,7 +114,7 @@ p.disclaimer {
   font-weight: 300;
 }
 
-input {
+input[type=text], input[type=number] {
   background-color: #323232;
   border: 0;
   border-radius: 20px;
@@ -165,16 +166,23 @@ ul {
 }
 
 ul.exchanges {
-  width: 100%;
+  width: 620px;
+  margin-top: 3em;
+  align-content: center;
 }
 ul.exchanges li {
   display: inline-grid;
-  height: 100px;
-  width: 300px;
+  align-self: center;
+  width: 49%;
+}
+ul.exchanges li.selected {
+  width: 100%;
 }
 ul.exchanges li a.button, ul.exchanges li button {
+  display: block;
+  margin: auto;
   line-height: 33px;
-  width: 120px;
+  width: 180px;
 }
 
 ul.available-configurations {
@@ -289,16 +297,17 @@ ul.account-info span.highlighted, div.account-detail span.highlighted {
 }
 
 #configuration-launcher {
-  width: 100%;
+  width: 620px;
 }
 
 #configuration-setup, #swap {
   display: grid;
-  grid-template-rows: 50px 120px auto;
+}
+#configuration-setup > div, #swap > div {
+  padding-top: 1em;
 }
 #configuration-setup div.prompt, #swap div.prompt {
   display: grid;
-  grid-template-rows: 40px 80px auto auto 60px;
   min-height: 8em;
 }
 #configuration-setup p.disclaimer, #swap p.disclaimer {
@@ -307,10 +316,6 @@ ul.account-info span.highlighted, div.account-detail span.highlighted {
 }
 #configuration-setup button, #swap button {
   justify-self: center;
-}
-
-#exchange-options, #external-site-redirection {
-  align-self: start;
 }
 
 #external-site-redirection {

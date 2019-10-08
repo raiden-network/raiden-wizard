@@ -42,6 +42,23 @@
            }
          }
 
+         function checkAcknowledgements(check_input_elems, next_action_elem, callback) {
+           let all_checked = true;
+
+           for (let elem of check_input_elems) {
+             if (!elem.checked) {
+               all_checked = false;
+             }
+           }
+
+           next_action_elem.disabled = !all_checked;
+
+           if (all_checked && callback) {
+             callback();
+           }
+
+         }
+
 
          WEBSOCKET.onmessage = function(evt) {
            let message = JSON.parse(evt.data);

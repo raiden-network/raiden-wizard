@@ -78,7 +78,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 
@@ -149,10 +149,11 @@ h2 {
 p {
     margin: auto;
     text-align: center;
-    max-width: 300px;
+    max-width: 420px;
     font-size: 16px;
     font-weight: 300;
     line-height: 21px;
+    margin-bottom: 1em;
 }
 
 p.long {
@@ -172,7 +173,7 @@ p.disclaimer {
 
 }
 
-input {
+input[type=text],input[type=number] {
     @include input(color(element-input-bg), color(text-blue));
 }
 
@@ -219,15 +220,22 @@ ul {
 }
 
 ul.exchanges {
-    width: 100%;
+    width: dimension(horizontal-width);
+    margin-top: 3em;
+    align-content: center;
     li {
-        
         display: inline-grid;
-        height: 100px;
-        width: 300px;
+        align-self: center;
+        width: 49%;
+
+        &.selected {
+            width: 100%;
+        }
 
         a.button, button {
-            @include fixedsize(120px, 33px);
+            display: block;
+            margin: auto;
+            @include fixedsize(180px, 33px);
         }
     }
 }
@@ -320,7 +328,7 @@ ul.account-info, div.account-detail {
     span.highlighted {
         display: block;
         margin-bottom: 1em;
-    }    
+    }
 }
 
 #background-task-tracker {
@@ -362,16 +370,18 @@ ul.account-info, div.account-detail {
 }
 
 #configuration-launcher {
-    width: 100%;
+    width: dimension(horizontal-width);
 }
 
 #configuration-setup, #swap {
     display: grid;
-    grid-template-rows: 50px 120px auto;
+
+    & > div {
+        padding-top: 1em;
+    }
 
     div.prompt {
         display: grid;
-        grid-template-rows: 40px 80px auto auto 60px;
         min-height: 8em;
 
     }
@@ -386,10 +396,6 @@ ul.account-info, div.account-detail {
     }
 }
 
-
-#exchange-options, #external-site-redirection {
-    align-self: start;
-}
 
 #external-site-redirection {
     text-align: center;

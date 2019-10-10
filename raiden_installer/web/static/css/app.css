@@ -15,18 +15,26 @@ body {
   display: none !important;
 }
 
-.tbd {
-  background-color: #ef5350;
-  text-decoration: italic;
-}
-.tbd::before {
-  content: "COPY TBD: ";
+.tbd::before, .tbd::after {
+  content: "<<<TBD>>>";
 }
 
 .highlighted {
   font-size: 125%;
   font-weight: 500;
   color: #28a5c8;
+}
+
+.prompt-panel {
+  min-height: 2em;
+}
+
+.ack-prompt {
+  display: grid;
+  margin: auto;
+  font-size: 9pt;
+  width: 560px;
+  grid-template-columns: 30px auto;
 }
 
 a {
@@ -57,6 +65,7 @@ button:disabled, button[aria-disabled=true], a.button:disabled, a.button[aria-di
 button.next-page, a.button.next-page {
   display: block;
   margin: auto;
+  margin-top: 5em;
   line-height: 2em;
   width: 125px;
 }
@@ -150,6 +159,11 @@ div {
   justify-self: center;
 }
 
+div.prompt, div.disclaimer {
+  max-width: 560px;
+  margin: auto;
+}
+
 div.prompt button {
   line-height: 40px;
   width: 225px;
@@ -160,13 +174,38 @@ div.form-entry input {
   margin-bottom: 1em;
 }
 
+ol {
+  margin: auto;
+  width: 520px;
+}
+
 ul {
   list-style-type: none;
   padding-inline-start: 0;
 }
 
-ul.exchanges {
+ul.options-panel {
   width: 620px;
+  margin-top: 3em;
+  align-content: center;
+}
+ul.options-panel li {
+  display: inline-grid;
+  align-self: center;
+  width: 49%;
+}
+ul.options-panel li.selected {
+  width: 100%;
+}
+ul.options-panel li a.button, ul.options-panel li button {
+  display: block;
+  margin: auto;
+  line-height: 33px;
+  width: 220px;
+}
+
+ul.exchanges {
+  width: 520px;
   margin-top: 3em;
   align-content: center;
 }
@@ -186,9 +225,8 @@ ul.exchanges li a.button, ul.exchanges li button {
 }
 
 ul.available-configurations {
+  width: 620px;
   border-top: solid 1.5px #0a6e87;
-  max-height: 210px;
-  overflow: auto;
 }
 ul.available-configurations li {
   height: 70px;
@@ -230,38 +268,23 @@ p.banner {
   max-width: 520px;
 }
 
-dt, dd {
-  padding-right: 0;
-}
-
-dd {
-  margin-inline-start: 0;
-}
-
-dl {
-  margin-top: 1em;
-  text-align: center;
-}
-dl dt {
-  font-size: 125%;
-}
-dl dt, dl dd {
-  max-width: 520px;
-}
-dl dd {
-  font-size: 14px;
-  color: #28a5c8;
-  overflow-x: auto;
-  margin-bottom: 1em;
-}
-
 ul.account-info, div.account-detail {
   margin-top: 1em;
+  margin-bottom: 1.5em;
   text-align: center;
 }
-ul.account-info span.highlighted, div.account-detail span.highlighted {
+ul.account-info span.data-attribute, div.account-detail span.data-attribute {
+  font-size: 125%;
+  display: block;
+}
+ul.account-info span.highlighted, ul.account-info span.data-value, div.account-detail span.highlighted, div.account-detail span.data-value {
+  color: #28a5c8;
   display: block;
   margin-bottom: 1em;
+}
+
+div.file-data span.data-value {
+  font-size: 75% !important;
 }
 
 #background-task-tracker div.spinner {
@@ -308,7 +331,7 @@ ul.account-info span.highlighted, div.account-detail span.highlighted {
 }
 #configuration-setup div.prompt, #swap div.prompt {
   display: grid;
-  min-height: 8em;
+  grid-template-rows: auto 3em auto auto;
 }
 #configuration-setup p.disclaimer, #swap p.disclaimer {
   max-width: 100%;

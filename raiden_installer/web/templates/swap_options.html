@@ -71,10 +71,7 @@
 
        disclaimer_panel.classList.remove("hidden");
 
-       checkboxes.forEach(function(checkbox) {
-         checkbox.onclick = function(evt) { checkAcknowledgements(checkboxes, button) };
-       });
-
+       checkAcknowledgements(checkboxes, button);
      }
    });
 

@@ -1,13 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="configuration-launcher" hidden>
-  <h1>Launch from Configuration</h1>
-  <p>To run Raiden from an already existing configuration just select a account from the list below and press the launch button.</p>
-  <ul class="available-configurations">
-  </ul>
-</div>
-
 <div id="configuration-setup">
   <h1>Setup New Configuration</h1>
   <div class="disclaimer disclaimer-panel">
@@ -53,7 +46,7 @@
       <span class="error" hidden>You need to provide a valid Infura Project ID</span>
     </div>
 
-    <button type="submit" disabled>Create New Configuration</button>
+    <button class="next-page" type="submit" disabled>Create New Configuration</button>
   </div>
 </div>
 {% end %}
@@ -67,10 +60,6 @@
    const infura_project_input = document.querySelector("input[name=endpoint]");
    const error_display = document.querySelector("span.error");
    const submit_button = document.querySelector("button");
-
-   const configuration_launcher_section = document.getElementById("configuration-launcher");
-   const configuration_list_container = document.querySelector("ul.available-configurations");
-
 
    function validateInfuraId(evt) {
      const infura_id = evt.target.value;
@@ -116,67 +105,6 @@
      req.send(data);
    }
 
-   function addConfiguration(configuration_data) {
-     // Function that loads existing configuration asynchronously,
-     // To avoid taking too-long to load all configurations before rendering anything.
-     const configuration_item_container = document.createElement("li");
-     const account_element = document.createElement("span");
-     const network_element = document.createElement("span");
-     const balance_element = document.createElement("span");
-     const launch_button = document.createElement("button");
-
-     let balance = configuration_data.balance;
-
-     let eth_balance = (balance.ETH && balance.ETH.formatted) || "ETH N/A";
-     let rdn_balance = (balance.RDN && balance.RDN.formatted) || "RDN N/A";
-
-     account_element.classList.add("account");
-     network_element.classList.add("network");
-     balance_element.classList.add("balance");
-
-     account_element.textContent = configuration_data.account;
-     network_element.textContent = configuration_data.network;
-     balance_element.textContent = "Balance: " + eth_balance + " / " + rdn_balance;
-
-     launch_button.disabled = !(balance && balance.RDN && balance.RDN.as_wei > 0);
-     launch_button.textContent = "Launch";
-
-     launch_button.addEventListener("click", function(evt){
-       launchRaiden(configuration_data.file_name);
-     });
-
-     configuration_item_container.appendChild(account_element);
-     configuration_item_container.appendChild(network_element);
-     configuration_item_container.appendChild(balance_element);
-     configuration_item_container.appendChild(launch_button);
-
-     configuration_list_container.appendChild(configuration_item_container);
-
-     configuration_launcher_section.hidden = false;
-   }
-
-   function getExistingConfigurations() {
-     const req = new XMLHttpRequest();
-     req.open("GET", API_CONFIGURATION_LIST_ENDPOINT, true);
-
-     req.onload = function() {
-       if (this.status == 200) {
-         const urls = JSON.parse(this.response);
-         urls.forEach(function(conf_url) {
-           var conf_req = new XMLHttpRequest();
-           conf_req.open("GET", conf_url, true);
-           conf_req.onload = function() {
-             if (this.status == 200) {
-               addConfiguration(JSON.parse(this.response));
-             }
-           }
-           conf_req.send();
-         });
-       }
-     }
-
-     req.send();
-   }
 
    // Attaching event handlers
    infura_project_input.addEventListener("blur", validateInfuraId);
@@ -202,8 +130,6 @@
      });
    });
 
-   // Load configurations
-   getExistingConfigurations();
  });
 </script>
 {% end %}

@@ -8,10 +8,10 @@
     configuration file that will be used to launch Raiden. Please take
     note of the following information:
   </p>
-  <dl class="account-data">
-    <dt>Account Address</dt>
-    <dd class="highlighted">{{ configuration_file.account.address }}</dd>
-  </dl>
+  <div class="account-detail">
+    <span class="data-attribute">Account Address</span>
+    <span class="data-value highlighted">{{ configuration_file.account.address }}</span>
+  </div>
 
   <p class="disclaimer long">
     <strong>Also please sure to verify and secure the contents of the
@@ -20,23 +20,26 @@
     protected by you. Failure to do so can lead to loss of funds that
     you might have stored at this account.
   </p>
-  <dl class="file-data">
-    <dt>Account Keystore File</dt>
-    <dd> {{ configuration_file.account.keystore_file_path }}</dd>
-    <dt>Account Passphrase File</dt>
-    <dd>{{ configuration_file.passphrase_file_path }}</dd>
-    <dt>Raiden Configuration File</dt>
-    <dd>{{ configuration_file.path }}</dd>
-  </dl>
+  <div class="account-detail file-data">
+    <span class="data-attribute">Account Keystore File</span>
+    <span class="data-value"> {{ configuration_file.account.keystore_file_path }}</span>
+    <span class="data-attribute">Account Passphrase File</span>
+    <span class="data-value">{{ configuration_file.passphrase_file_path }}</span>
+    <span class="data-attribute">Raiden Configuration File</span>
+    <span class="data-value">{{ configuration_file.path }}</span>
+  </div>
 
-  <div class="ack-account">
+  <div class="ack-prompt">
     <input type="checkbox" class="ack-account" name="ack-account" />
     <label for="ack-account">
-      I have taken note of the files created, verified their contents and acknowledge my responsibility and keeping them secure
+      I have taken note of the files created, verified their contents
+      and acknowledge my responsibility and keeping them secure.
     </label>
   </div>
 
-  <button class="next-page" data-url="{{ reverse_url('funding-options', configuration_file.file_name) }}" disabled>Next</a>
+  <button class="link-button next-page" data-link-url="{{ reverse_url('funding-options', configuration_file.file_name) }}" disabled>
+    Next
+  </button>
 </div>
 {% end %}
 
@@ -47,16 +50,7 @@
    const checkboxes = document.querySelectorAll("input[name=ack-account");
    const next_button = document.querySelector("button.next-page");
 
-   next_button.addEventListener("click", function(evt) {
-     document.location = evt.target.getAttribute("data-url");
-   });
-
-   checkboxes.forEach(function(elem) {
-     elem.addEventListener("change", function(evt) {
-       checkAcknowledgements(checkboxes, next_button);
-     });
-   });
-
+   checkAcknowledgements(checkboxes, next_button);
  });
 </script>
 {% end %}

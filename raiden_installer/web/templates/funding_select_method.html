@@ -26,19 +26,21 @@
           <span>I will transfer some ETH to this account and I will authorize the Wizard to exchange them for RDN</span>
         </li>
       </ul>
-      <div class="disclaimer hidden" data-option="no-action">
-        <input type="checkbox" name="ack-self-funded" />
-        <label class="tbd" for="ack-self-funded">
-          I acknowledge that I am doing operations involving funds and
-          that I assume responsibility for all risks in doing so
-        </label>
-      </div>
-      <div class="disclaimer hidden" data-option="run-swap">
-        <input type="checkbox" name="ack-swap" />
-        <label class="tbd" for="ack-swap">
-          I acknowledge that the software will execute operations that
-          will involve funds and that I am using it at my own risk.
-        </label>
+      <div class="prompt-panel">
+        <div class="disclaimer ack-prompt" data-option="no-action">
+          <input class="hidden" type="checkbox" name="ack-self-funded" />
+          <label class="hidden tbd" for="ack-self-funded">
+            I acknowledge that I am doing operations involving funds and
+            that I assume responsibility for all risks in doing so
+          </label>
+        </div>
+        <div class="disclaimer ack-prompt" data-option="run-swap">
+          <input class="hidden" type="checkbox" name="ack-swap" />
+          <label class="hidden tbd" for="ack-swap">
+            I acknowledge that the software will execute operations that
+            will involve funds and that I am using it at my own risk.
+          </label>
+        </div>
       </div>
       <button class="next-page" type="submit" disabled>OK</button>
     </form>
@@ -54,18 +56,8 @@
    const checkboxes = document.querySelectorAll("input[type=checkbox]");
    const submit_button = document.querySelector("button");
 
-   checkboxes.forEach(function(elem) {
-     elem.addEventListener("change", function(evt) {
-       let any_checked = false;
-       for (checkbox of checkboxes) {
-         if (checkbox.checked) {
-           any_checked = true;
-         }
-       }
-
-       submit_button.disabled = !any_checked;
-     });
-   });
+   checkAcknowledgements(document.querySelectorAll("input[name=ack-self-funded"), submit_button);
+   checkAcknowledgements(document.querySelectorAll("input[name=ack-swap"), submit_button);
 
    input_options.forEach(function(elem) {
      elem.addEventListener("change", function(evt){
@@ -80,11 +72,12 @@
        submit_button.disabled = true;
 
        disclaimer_panels.forEach(function(panel) {
+         let children = panel.querySelectorAll("*");
          if (elem.checked && panel.getAttribute("data-option") == option) {
-           panel.classList.remove("hidden");
+           children.forEach(function(el) { el.classList.remove("hidden") });
          }
          else {
-           panel.classList.add("hidden");
+           children.forEach(function(el) { el.classList.add("hidden") });
          }
        });
      });

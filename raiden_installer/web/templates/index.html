@@ -2,12 +2,66 @@
 
 {% block content %}
 <div id="intro">
-  <p class="warning">
-    The Raiden Wizard is experimental alpha software. Please be aware
+  <h1>Welcome to the Raiden Wizard</h1>
+  <p class="long tbd">
+    The Raiden Wizard is a tool to help you in your first steps to get
+    started with running an operating a Raiden Node. By following
+    through with the wizard, we will be able to help you:
+  </p>
+
+  <ol>
+    <li>Generate an Ethereum account (a keystore file along with its secret passphrase) that should be used exclusively by Raiden</li>
+    <li>Generate the configuration file that will be used by Raiden</li>
+    <li>Get instructions on how to fund this account so that Raiden can be operational</li>
+    <li>Download and install the latest version of Raiden</li>
+    <li>Launch Raiden with the existing configuration</li>
+  </ol>
+
+  <p class="tbd warning">
+    Disclaimer: the Raiden Wizard is experimental alpha software. Please be aware
     that we cannot be held liable for any damages whatsoever or any
     loss of funds you may incur when using the code and/or
     software. Use it at your own risk.
   </p>
-  <a class="button next-page" href="{{ reverse_url('setup') }}">OK</a>
+
+  <div class="ack-prompt">
+    <input type="checkbox" name="ack-wizard" />
+    <label class="tbd" for="ack-wizard">
+      I acknowledge that I am fully responsible for the usage of the
+      Wizard and I am aware of risks of operating softwarew that
+      involves transactions in the Ethereum blockchain
+    </label>
+  </div>
+  <ul class="options-panel">
+    <li>
+      <button class="link-button" data-link-url="{{ reverse_url('setup') }}" disabled>
+        Setup new Configuration
+      </button>
+    </li>
+    {% if has_existing_configurations %}
+    <li>
+      <button class="link-button" data-link-url="{{ reverse_url('configuration-list') }}" disabled>
+        Launch Existing Configuration
+      </button>
+    </li>
+    {% end %}
+  </ul>
+
 </div>
+{% end %}
+
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+ window.addEventListener("load", function() {
+   let checkboxes = document.querySelectorAll("input[type=checkbox]");
+   let buttons = document.querySelectorAll("button.link-button");
+
+   buttons.forEach(function(btn_elem) {
+     checkAcknowledgements(checkboxes, btn_elem);
+   });
+
+
+ });
+</script>
 {% end %}

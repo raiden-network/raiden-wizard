@@ -19,8 +19,9 @@ $colors: (
 );
 
 $dimensions: (
-    horizontal-width: 620px,
-    long-text-width: 520px,
+    full-column-width: 620px,
+    padded-block-width: 560px,
+    padded-text-width: 520px,
 );
 
 
@@ -83,18 +84,29 @@ body {
 
 
 .tbd {
-    background-color: color(text-error);
-    text-decoration: italic;
-
-    &::before {
-        content: "COPY TBD: ";
+    &::before, &::after {
+        content: "<<<TBD>>>";
     }
+
 }
 
 .highlighted {
     font-size: 125%;
     font-weight: 500;
     color: color(text-blue);
+}
+
+.prompt-panel {
+    min-height: 2em;
+}
+
+.ack-prompt {
+    display: grid;
+    margin: auto;
+    font-size: 9pt;
+    width: dimension(padded-block-width);
+
+    grid-template-columns: 30px auto;
 }
 
 a {
@@ -116,6 +128,7 @@ button, a.button {
     &.next-page {
         display: block;
         margin: auto;
+        margin-top: 5em;
         @include fixedsize(125px, 2em);
     }
 }
@@ -157,7 +170,7 @@ p {
 }
 
 p.long {
-    max-width: dimension(long-text-width);
+    max-width: dimension(padded-text-width);
 }
 
 p.warning {
@@ -185,7 +198,7 @@ span.error {
 
 section.content {
     background-color: color(wizard-bg);
-    width: dimension(horizontal-width);
+    width: dimension(full-column-width);
     justify-self: center;
     display: inline-grid;
 
@@ -205,6 +218,11 @@ div {
     justify-self: center;
 }
 
+div.prompt, div.disclaimer {
+    max-width: dimension(padded-block-width);
+    margin: auto;
+}
+
 div.prompt button {
     @include fixedsize(225px, 40px);
 }
@@ -214,13 +232,39 @@ div.form-entry input {
     margin-bottom: 1em;
 }
 
+ol {
+    margin: auto;
+    width: dimension(padded-text-width);
+}
+
 ul {
     list-style-type: none;
     padding-inline-start: 0;
 }
 
+ul.options-panel {
+    width: dimension(full-column-width);
+    margin-top: 3em;
+    align-content: center;
+    li {
+        display: inline-grid;
+        align-self: center;
+        width: 49%;
+
+        &.selected {
+            width: 100%;
+        }
+
+        a.button, button {
+            display: block;
+            margin: auto;
+            @include fixedsize(220px, 33px);
+        }
+    }
+}
+
 ul.exchanges {
-    width: dimension(horizontal-width);
+    width: dimension(padded-text-width);
     margin-top: 3em;
     align-content: center;
     li {
@@ -241,9 +285,8 @@ ul.exchanges {
 }
 
 ul.available-configurations {
+    width: dimension(full-column-width);
     border-top: solid 1.5px color(element-border);
-    max-height: 210px;
-    overflow: auto;
 
     li {
         height: 70px;
@@ -291,43 +334,27 @@ ul.available-configurations {
 }
 
 p.banner {
-    max-width: dimension(long-text-width);
-}
-
-dt, dd {
-    padding-right: 0;
-}
-
-dd {
-    margin-inline-start: 0;
-}
-
-dl {
-    margin-top: 1em;
-    text-align: center;
-
-    dt {
-        font-size: 125%;
-    }
-
-    dt, dd {
-        max-width: dimension(long-text-width);
-    }
-
-    dd {
-        font-size: 14px;
-        color: color(text-blue);
-        overflow-x: auto;
-        margin-bottom: 1em;
-    }
+    max-width: dimension(padded-text-width);
 }
 
 ul.account-info, div.account-detail {
     margin-top: 1em;
+    margin-bottom: 1.5em;
     text-align: center;
-    span.highlighted {
+    span.data-attribute {
+        font-size: 125%;
+        display: block;
+    }
+    span.highlighted, span.data-value {
+        color: color(text-blue);
         display: block;
         margin-bottom: 1em;
+    }
+}
+
+div.file-data {
+    span.data-value {
+        font-size: 75% !important;
     }
 }
 
@@ -370,7 +397,7 @@ ul.account-info, div.account-detail {
 }
 
 #configuration-launcher {
-    width: dimension(horizontal-width);
+    width: dimension(full-column-width);
 }
 
 #configuration-setup, #swap {
@@ -382,8 +409,7 @@ ul.account-info, div.account-detail {
 
     div.prompt {
         display: grid;
-        min-height: 8em;
-
+        grid-template-rows: auto 3em auto auto;
     }
 
     p.disclaimer {

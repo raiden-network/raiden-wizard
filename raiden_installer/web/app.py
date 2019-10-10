@@ -202,7 +202,18 @@ class AsyncTaskHandler(WebSocketHandler):
 
 class IndexHandler(RequestHandler):
     def get(self):
-        self.render("index.html")
+        self.render(
+            "index.html",
+            has_existing_configurations=bool(len(RaidenConfigurationFile.list_existing_files())),
+        )
+
+
+class ConfigurationListHandler(RequestHandler):
+    def get(self):
+        if not RaidenConfigurationFile.list_existing_files():
+            raise HTTPError(404)
+
+        self.render("configuration_list.html")
 
 
 class SetupHandler(RequestHandler):
@@ -374,6 +385,7 @@ if __name__ == "__main__":
     app = Application(
         [
             url(r"/", IndexHandler),
+            url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
             url(r"/setup", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),

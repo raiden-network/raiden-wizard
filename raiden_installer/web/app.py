@@ -26,6 +26,7 @@ PORT = 8080
 FUNDING_AMOUNTS = [75, 100, 150, 200, 500, 1000]
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
+DEFAULT_NETWORK = Network.get_by_name("mainnet")
 
 
 def get_data_folder_path():
@@ -37,7 +38,7 @@ def get_data_folder_path():
 
 
 class QuickSetupForm(Form):
-    network = wtforms.HiddenField("Network", default="mainnet")
+    network = wtforms.HiddenField("Network", default=DEFAULT_NETWORK.name)
     use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=True)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 

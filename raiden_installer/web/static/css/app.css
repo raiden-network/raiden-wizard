@@ -177,7 +177,7 @@ section.content div.container div.hero {
 section.content div.container div.action {
   align-items: start;
 }
-section.content div.container div.action button {
+section.content div.container div.action button, section.content div.container div.action a.button {
   font-size: 18px;
   line-height: 21px;
   line-height: 40px;

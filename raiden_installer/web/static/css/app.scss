@@ -233,7 +233,7 @@ section.content {
 
         div.action {
             align-items: start;
-            button {
+            button, a.button {
                 font-size: 18px;
                 line-height: 21px;
                 @include fixedsize(210px, 40px);

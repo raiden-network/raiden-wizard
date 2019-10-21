@@ -118,6 +118,9 @@
         {% end %}
     </head>
     <body>
+      <div class="logo {% block logo_class %}business-card{% end %}">
+        <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
+      </div>
       <section class="content">
         <div class="container">
           {% block content %}

@@ -69,8 +69,7 @@ body {
     font-family: "Roboto", sans-serif;
     color: color(text-standard);
     margin: 0;
-    padding: 0;
-    display: grid;
+    padding: 0;   
     min-height: 100vh;
     min-width: dimension(full-column-width);
 }
@@ -195,10 +194,27 @@ span.error {
     font-size: 12px;
 }
 
+div.logo {
+    width: dimension(full-column-width);
+    margin: 33px auto 0;
+    text-align: center;
+    img {
+        width: 370px;
+        height: 105px;
+    }
+    &.business-card {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        margin-left: 0 !important;
+        text-align: left;
+    }
+}
+
 section.content {
     width: dimension(full-column-width);
-    justify-self: center;
-    display: inline-grid;
+    margin: 0 auto;
+    padding-top: 33px;
 
     div.container {
         display: grid;
@@ -206,19 +222,8 @@ section.content {
         align-items: center;
         justify-self: center;
 
-        grid-template-rows: 185px 155px 175px minmax(40px, 160px) 80px 40px;
+        grid-template-rows: 95px 175px minmax(40px, 160px) 80px 40px;
 
-        div.logo.home {
-            align-self: end;
-            img {
-                width: 370px;
-                height: 105px;
-            }
-        }
-
-        h1 {
-            margin: 1vh auto;
-        }
         div.hero {
             font-size: 50px;
             line-height: 60px;

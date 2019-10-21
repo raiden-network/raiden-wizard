@@ -5,7 +5,6 @@ body {
   color: #fff;
   margin: 0;
   padding: 0;
-  display: grid;
   min-height: 100vh;
   min-width: 960px;
 }
@@ -140,27 +139,34 @@ span.error {
   font-size: 12px;
 }
 
+div.logo {
+  width: 960px;
+  margin: 33px auto 0;
+  text-align: center;
+}
+div.logo img {
+  width: 370px;
+  height: 105px;
+}
+div.logo.business-card {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  margin-left: 0 !important;
+  text-align: left;
+}
+
 section.content {
   width: 960px;
-  justify-self: center;
-  display: inline-grid;
+  margin: 0 auto;
+  padding-top: 33px;
 }
 section.content div.container {
   display: grid;
   justify-content: center;
   align-items: center;
   justify-self: center;
-  grid-template-rows: 185px 155px 175px minmax(40px, 160px) 80px 40px;
-}
-section.content div.container div.logo.home {
-  align-self: end;
-}
-section.content div.container div.logo.home img {
-  width: 370px;
-  height: 105px;
-}
-section.content div.container h1 {
-  margin: 1vh auto;
+  grid-template-rows: 95px 175px minmax(40px, 160px) 80px 40px;
 }
 section.content div.container div.hero {
   font-size: 50px;

@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 
+{% block logo_class %}home{% end %}
+
 {% block content %}
-<div class="logo home">
-  <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
-</div>
 <h1>{{ network.capitalized_name }} Wizard</h1>
 <div class="hero">
   Your tool to easy get started running and operating a Raiden fullnode

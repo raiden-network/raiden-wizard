@@ -21,7 +21,9 @@
   <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
 </div>
 <div class="action">
-  <button class="link-button" data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}" disabled>Convert ETH into RDN</button>
+  <button class="link-button" data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}" disabled>
+    Convert ETH into RDN
+  </button>
 </div>
 {% end %}
 
@@ -48,6 +50,11 @@
        let has_enough_eth = Boolean(balance && balance.ETH.as_wei >= REQUIRED_ETH_IN_WEI);
        let has_enough_rdn = Boolean(balance && balance.RDN && balance.RDN.as_wei >= REQUIRED_RDN_IN_WEI);
 
+       if (has_enough_eth && has_enough_rdn) {
+         launchRaiden("{{ configuration_file.file_name }}");
+         return;
+       }
+
        if (balance && balance.ETH) {
          eth_balance_display_element.textContent = balance && balance.ETH.formatted;
        }
@@ -56,6 +63,7 @@
          rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
        }
        btn.disabled = !(has_enough_eth && !has_enough_rdn);
+
      }
    }
    req.send();

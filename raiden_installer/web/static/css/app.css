@@ -175,7 +175,18 @@ section.content div.container div.info-panel span.private {
   text-overflow: ellipsis;
 }
 section.content div.container div.action {
+  display: inline-grid;
   align-items: start;
+}
+section.content div.container div.action.split-2 {
+  grid-template-columns: 1fr 1fr;
+  justify-self: normal;
+}
+section.content div.container div.action.split-2 div {
+  width: 50%;
+}
+section.content div.container div.action > div, section.content div.container div.action > button, section.content div.container div.action a.button {
+  align-self: center;
 }
 section.content div.container div.action button, section.content div.container div.action a.button {
   font-size: 18px;

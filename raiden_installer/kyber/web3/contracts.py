@@ -370,8 +370,9 @@ KYBER_NETWORK_PROXY_ABI = [
 
 def get_network_proxy_address(chain_id: int):
     network_module = NETWORK_ADDRESS_MODULES_BY_CHAIN_ID.get(chain_id)
+    proxy = network_module and network_module.ContractAddress.KyberNetworkProxy
 
-    return network_module.ContractAddress.KyberNetworkProxy.value
+    return proxy and proxy.value
 
 
 def get_network_contract_proxy(w3: Web3):

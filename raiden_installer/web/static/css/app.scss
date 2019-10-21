@@ -70,7 +70,7 @@ body {
     font-size: 24px;
     color: color(text-standard);
     margin: 0;
-    padding: 0;   
+    padding: 0;
     min-height: 100vh;
     min-width: dimension(full-column-width);
 }
@@ -219,7 +219,7 @@ section.content {
             font-size: 50px;
             line-height: 60px;
             text-align: center;
-            align-self: start;            
+            align-self: start;
         }
 
         div.info-panel {
@@ -235,12 +235,29 @@ section.content {
         }
 
         div.action {
+            display: inline-grid;
             align-items: start;
+
+            &.split-2 {
+                grid-template-columns: 1fr 1fr;
+                justify-self: normal;
+                div {
+                    width: 50%;
+                }
+            }
+            
+
+            & > div, & > button, a.button {
+                align-self: center;
+            }
+
             button, a.button {
                 font-size: 18px;
                 line-height: 21px;
                 @include fixedsize(210px, 40px);
             }
+
+
         }
 
         div.ack-prompt {

@@ -1,80 +1,70 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="exchange-options">
-  <h2>Acquire RDN through Decentralized Exchanges</h2>
-  <p class="disclaimer tbd">
-    Below we provide exchanges that are integrated with the Wizard. As
-    soon as you deposit some ETH to your account address above, the
-    Wizard can call to these Exchanges API and acquire RDN for you.
-  </p>
-
-  <p class="disclaimer tbd">Use at your risk.</p>
-
-  <ul class="exchanges">
-    <li data-exchange="kyber">
-      <div class="disclaimer hidden">
-        <h2>KyberNetwork</h2>
-        <div class="ack-prompt">
-          <input type="checkbox" class="ack-exchange" name="ack-kyber" />
-          <label class="tbd" for="ack-kyber">
-            I acknowledge that the Wizard may make API calls to <a href="{{ kyber.MAIN_WEBSITE_URL }}" target="_blank">KyberNetwork</a>, a third-party service.
-          </label>
-        </div>
-        <div class="ack-prompt">
-          <input type="checkbox" class="ack-exchange" name="ack-kyber-tos" />
-          <label class="tbd" for="ack-kyber-tos">
-            I've read and accept <a href="{{ kyber.TERMS_OF_SERVICE_URL }}" target="_blank">Kyber's Terms of Service</a>.
-          </label>
-        </div>
-      </div>
-      <button onClick="selectExchange('kyber');" data-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name)}}">KyberNetwork</button>
+<h1>Swap ETH for RDN</h1>
+<div class="hero">
+  Choose between Kyber and Uniswap decentralized exchanges to get RDN
+</div>
+<div class="info-panel">
+  <p>Available funds</p>
+  <ul class="account-info">
+    <li>
+      <span class="account-eth-balance highlighted">N/A ETH</span>
     </li>
-    <li data-exchange="uniswap">
-      <div class="disclaimer hidden">
-        <h2>Uniswap</h2>
-        <div class="ack-prompt">
-          <input type="checkbox" class="ack-exchange" name="ack-uniswap" />
-          <label class="tbd" for="ack-uniswap">
-            I acknowledge that the Wizard may make API calls to <a href="{{ uniswap.MAIN_WEBSITE_URL }}" target="_blank">Uniswap</a>, a third-party service.
-          </label>
-        </div>
-      </div>
-      <button onClick="selectExchange('uniswap');" data-url="{{ reverse_url('swap', 'uniswap', configuration_file.file_name)}}">Uniswap</button>
+    <li>
+      <span class="account-rdn-balance highlighted">N/A RDN</span>
     </li>
   </ul>
 </div>
-
+<div class="action split-2">
+  <div>
+    <button class="link-button" data-link-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name)}}"
+            {% if not kyber.is_listing_token('RDN') %}disabled{% end %}>
+      KyberNetwork
+    </button>
+  </div>
+  <div>
+  <button class="link-button" data-link-url="{{ reverse_url('swap', 'uniswap', configuration_file.file_name)}}"
+          {% if not uniswap.is_listing_token('RDN') %}disabled{% end %}>
+    Uniswap
+  </button>
+  </div>
+</div>
 {% end %}
 
 {% block page_header_scripts %}
 <script type="text/javascript">
- const EXCHANGES = ["kyber", "uniswap"];
+ function checkBalances(){
+   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
+   let req = new XMLHttpRequest();
+   let eth_balance_display_element = document.querySelector("span.account-eth-balance");
+   let rdn_balance_display_element = document.querySelector("span.account-rdn-balance");
 
+   req.open("GET", url);
+   req.setRequestHeader("Content-Type", "application/json");
 
- function selectExchange(exchange_name){
-   let exchange_item_elems = document.querySelectorAll("ul.exchanges li");
-   exchange_item_elems.forEach(function(elem) {
-     if (elem.getAttribute("data-exchange") != exchange_name) {
-       elem.classList.add("hidden");
-     }
-     else {
-       elem.classList.add("selected");
-       let button = elem.querySelector("button");
-       let checkboxes = elem.querySelectorAll("input[type=checkbox]");
-       let disclaimer_panel = elem.querySelector("div.disclaimer");
-       button.disabled = true;
-       button.textContent = "Select Exchange";
-       button.onclick = function(evt) {
-         document.location = button.getAttribute("data-url");
+   req.onload = function() {
+     if (this.status == 200){
+       let balance = JSON.parse(this.response).balance;
+
+       if (balance && balance.ETH) {
+         eth_balance_display_element.textContent = balance && balance.ETH.formatted;
        }
 
-       disclaimer_panel.classList.remove("hidden");
-
-       checkAcknowledgements(checkboxes, button);
+       if (balance && balance.RDN) {
+         rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+       }
      }
-   });
+   }
+   req.send();
 
  }
+
+ window.addEventListener("load", function() {
+   checkBalances();
+   setInterval(checkBalances, 5000);
+ });
+
+
 </script>
 {% end %}

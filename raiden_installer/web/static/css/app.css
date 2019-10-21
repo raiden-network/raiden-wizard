@@ -1,14 +1,13 @@
 @import url("https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap");
 body {
-  background: linear-gradient(90deg, #313030 0%, #000000 100%);
+  background-color: #0f0e10;
   font-family: "Roboto", sans-serif;
   color: #fff;
   margin: 0;
   padding: 0;
   display: grid;
-  padding-top: 50px;
   min-height: 100vh;
-  min-width: 100vw;
+  min-width: 960px;
 }
 
 .hidden {
@@ -33,7 +32,7 @@ body {
   display: grid;
   margin: auto;
   font-size: 9pt;
-  width: 560px;
+  width: 900px;
   grid-template-columns: 30px auto;
 }
 
@@ -88,8 +87,10 @@ h1, h2 {
 }
 
 h1 {
-  font-size: 28px;
-  font-weight: 500;
+  font-size: 80px;
+  line-height: 94px;
+  font-weight: 900;
+  font-style: normal;
 }
 
 h2 {
@@ -108,7 +109,7 @@ p {
 }
 
 p.long {
-  max-width: 520px;
+  max-width: 840px;
 }
 
 p.warning {
@@ -140,8 +141,7 @@ span.error {
 }
 
 section.content {
-  background-color: #0f0e10;
-  width: 620px;
+  width: 960px;
   justify-self: center;
   display: inline-grid;
 }
@@ -150,9 +150,36 @@ section.content div.container {
   justify-content: center;
   align-items: center;
   justify-self: center;
+  grid-template-rows: 185px 155px 175px minmax(40px, 160px) 80px 40px;
 }
-section.content div.container.hidden {
-  display: none;
+section.content div.container div.logo.home {
+  align-self: end;
+}
+section.content div.container div.logo.home img {
+  width: 370px;
+  height: 105px;
+}
+section.content div.container h1 {
+  margin: 1vh auto;
+}
+section.content div.container div.hero {
+  font-size: 50px;
+  line-height: 60px;
+  text-align: center;
+  align-self: start;
+}
+section.content div.container div.action {
+  align-items: start;
+}
+section.content div.container div.action button {
+  font-size: 18px;
+  line-height: 21px;
+  line-height: 40px;
+  width: 210px;
+}
+section.content div.container div.ack-prompt {
+  line-height: 21px;
+  max-width: 630px;
 }
 
 div {
@@ -160,7 +187,7 @@ div {
 }
 
 div.prompt, div.disclaimer {
-  max-width: 560px;
+  max-width: 900px;
   margin: auto;
 }
 
@@ -176,7 +203,7 @@ div.form-entry input {
 
 ol {
   margin: auto;
-  width: 520px;
+  width: 840px;
 }
 
 ul {
@@ -185,7 +212,7 @@ ul {
 }
 
 ul.options-panel {
-  width: 620px;
+  width: 960px;
   margin-top: 3em;
   align-content: center;
 }
@@ -205,7 +232,7 @@ ul.options-panel li a.button, ul.options-panel li button {
 }
 
 ul.exchanges {
-  width: 520px;
+  width: 840px;
   margin-top: 3em;
   align-content: center;
 }
@@ -225,7 +252,7 @@ ul.exchanges li a.button, ul.exchanges li button {
 }
 
 ul.available-configurations {
-  width: 620px;
+  width: 960px;
   border-top: solid 1.5px #0a6e87;
 }
 ul.available-configurations li {
@@ -265,7 +292,7 @@ ul.available-configurations li a.button {
 }
 
 p.banner {
-  max-width: 520px;
+  max-width: 840px;
 }
 
 ul.account-info, div.account-detail {
@@ -315,12 +342,8 @@ div.file-data span.data-value {
   text-align: center;
 }
 
-#intro p.warning {
-  max-width: 80%;
-}
-
 #configuration-launcher {
-  width: 620px;
+  width: 960px;
 }
 
 #configuration-setup, #swap {

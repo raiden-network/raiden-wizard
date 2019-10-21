@@ -19,11 +19,10 @@ $colors: (
 );
 
 $dimensions: (
-    full-column-width: 620px,
-    padded-block-width: 560px,
-    padded-text-width: 520px,
+    full-column-width: 960px,
+    padded-block-width: 900px,
+    padded-text-width: 840px,
 );
-
 
 @mixin button() {
     border: 2px solid;
@@ -66,16 +65,14 @@ $dimensions: (
 
 
 body {
-    background: color(main-bg);
+    background-color: color(wizard-bg);
     font-family: "Roboto", sans-serif;
     color: color(text-standard);
     margin: 0;
     padding: 0;
-
     display: grid;
-    padding-top: 50px;
     min-height: 100vh;
-    min-width: 100vw;
+    min-width: dimension(full-column-width);
 }
 
 .hidden {
@@ -150,8 +147,10 @@ h1, h2 {
 }
 
 h1 {
-    font-size: 28px;
-    font-weight: 500;
+    font-size: 80px;
+    line-height: 94px;
+    font-weight: 900;
+    font-style: normal;
 }
 
 h2 {
@@ -197,7 +196,6 @@ span.error {
 }
 
 section.content {
-    background-color: color(wizard-bg);
     width: dimension(full-column-width);
     justify-self: center;
     display: inline-grid;
@@ -207,10 +205,40 @@ section.content {
         justify-content: center;
         align-items: center;
         justify-self: center;
-    }
 
-    div.container.hidden {
-        display: none;
+        grid-template-rows: 185px 155px 175px minmax(40px, 160px) 80px 40px;
+
+        div.logo.home {
+            align-self: end;
+            img {
+                width: 370px;
+                height: 105px;
+            }
+        }
+
+        h1 {
+            margin: 1vh auto;
+        }
+        div.hero {
+            font-size: 50px;
+            line-height: 60px;
+            text-align: center;
+            align-self: start;
+        }
+
+        div.action {
+            align-items: start;
+            button {
+                font-size: 18px;
+                line-height: 21px;
+                @include fixedsize(210px, 40px);
+            }
+        }
+
+        div.ack-prompt {
+            line-height: 21px;
+            max-width: 630px;
+        }
     }
 }
 
@@ -389,12 +417,6 @@ div.file-data {
     }
 }
 
-
-#intro {
-    p.warning {
-        max-width: 80%;
-    }
-}
 
 #configuration-launcher {
     width: dimension(full-column-width);

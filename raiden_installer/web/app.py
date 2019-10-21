@@ -203,10 +203,17 @@ class AsyncTaskHandler(WebSocketHandler):
 
 class IndexHandler(RequestHandler):
     def get(self):
-        self.render(
-            "index.html",
-            has_existing_configurations=bool(len(RaidenConfigurationFile.list_existing_files())),
-        )
+        network = DEFAULT_NETWORK
+        try:
+            configuration_file = [
+                rc
+                for rc in RaidenConfigurationFile.get_available_configurations()
+                if rc.network.name == network.name
+            ].pop()
+        except IndexError:
+            configuration_file = None
+
+        self.render("index.html", network=network, configuration_file=configuration_file)
 
 
 class ConfigurationListHandler(RequestHandler):

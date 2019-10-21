@@ -8,7 +8,12 @@
 
 <div class="info-panel">
   <p>Your private key</p>
-  <span class="highlighted private-key">{{ configuration_file.account.private_key.hex() }}</span>
+  <span class="highlighted private private-key">{{ configuration_file.account.private_key.hex() }}</span>
+  <p>
+    Be aware everyone with access to this privatekey and / or your
+  keystore and passphrase installed on your computer will be able to
+  access your Raiden account
+  </p>
 </div>
 <div class="action">
   <a class="button" href="{{ reverse_url('funding-options', configuration_file.file_name) }}">

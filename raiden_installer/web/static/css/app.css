@@ -2,6 +2,7 @@
 body {
   background-color: #0f0e10;
   font-family: "Roboto", sans-serif;
+  font-size: 24px;
   color: #fff;
   margin: 0;
   padding: 0;
@@ -97,20 +98,6 @@ h2 {
   font-weight: 400;
 }
 
-p {
-  margin: auto;
-  text-align: center;
-  max-width: 420px;
-  font-size: 16px;
-  font-weight: 300;
-  line-height: 21px;
-  margin-bottom: 1em;
-}
-
-p.long {
-  max-width: 840px;
-}
-
 p.warning {
   font-size: 18px;
   font-weight: 400;
@@ -166,13 +153,26 @@ section.content div.container {
   justify-content: center;
   align-items: center;
   justify-self: center;
-  grid-template-rows: 95px 175px minmax(40px, 160px) 80px 40px;
+  grid-template-rows: 95px 175px minmax(40px, 240px) 80px 40px;
+}
+section.content div.container div {
+  justify-self: center;
 }
 section.content div.container div.hero {
   font-size: 50px;
   line-height: 60px;
   text-align: center;
   align-self: start;
+}
+section.content div.container div.info-panel {
+  max-width: 785px;
+  text-align: center;
+}
+section.content div.container div.info-panel span.private {
+  display: inline-block;
+  max-width: 16em;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
 }
 section.content div.container div.action {
   align-items: start;
@@ -186,10 +186,6 @@ section.content div.container div.action button, section.content div.container d
 section.content div.container div.ack-prompt {
   line-height: 21px;
   max-width: 630px;
-}
-
-div {
-  justify-self: center;
 }
 
 div.prompt, div.disclaimer {

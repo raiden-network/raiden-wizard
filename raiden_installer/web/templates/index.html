@@ -12,7 +12,7 @@
 
 <div class="action">
   {% if configuration_file %}
-  <button class="link-button" data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}" disabled>
+  <button class="link-button" data-link-url="{{ reverse_url('funding', configuration_file.file_name) }}" disabled>
     Launch
   </button>
   {% else %}

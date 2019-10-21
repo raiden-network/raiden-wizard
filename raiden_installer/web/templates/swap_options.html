@@ -34,37 +34,17 @@
 
 {% block page_header_scripts %}
 <script type="text/javascript">
- function checkBalances(){
-   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
-   let req = new XMLHttpRequest();
-   let eth_balance_display_element = document.querySelector("span.account-eth-balance");
-   let rdn_balance_display_element = document.querySelector("span.account-rdn-balance");
-
-   req.open("GET", url);
-   req.setRequestHeader("Content-Type", "application/json");
-
-   req.onload = function() {
-     if (this.status == 200){
-       let balance = JSON.parse(this.response).balance;
-
-       if (balance && balance.ETH) {
-         eth_balance_display_element.textContent = balance && balance.ETH.formatted;
-       }
-
-       if (balance && balance.RDN) {
-         rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
-       }
-     }
-   }
-   req.send();
-
+ function checkBalances() {
+   updateBalanceDisplay(
+     "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}",
+     document.querySelector("span.account-eth-balance"),
+     document.querySelector("span.account-rdn-balance")
+   );
  }
 
  window.addEventListener("load", function() {
    checkBalances();
    setInterval(checkBalances, 5000);
  });
-
-
 </script>
 {% end %}

@@ -42,6 +42,28 @@
            }
          }
 
+         function updateBalanceDisplay(configuration_file_url, eth_balance_display_element, rdn_balance_display_element){
+           let req = new XMLHttpRequest();
+           req.open("GET", configuration_file_url);
+           req.setRequestHeader("Content-Type", "application/json");
+
+           req.onload = function() {
+             if (this.status == 200){
+               let balance = JSON.parse(this.response).balance;
+
+               if (balance && balance.ETH && eth_balance_display_element) {
+                 eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+               }
+
+               if (balance && balance.RDN && rdn_balance_display_element) {
+                 rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+               }
+             }
+           }
+           req.send();
+         }
+
+
          function checkAcknowledgements(check_input_elems, next_action_elem, callback) {
 
            check_input_elems.forEach(function(checkbox) {

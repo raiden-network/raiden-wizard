@@ -153,7 +153,7 @@ section.content div.container {
   justify-content: center;
   align-items: center;
   justify-self: center;
-  grid-template-rows: 95px 175px minmax(40px, 240px) 80px 40px;
+  grid-template-rows: 95px 175px minmax(40px, 280px) 80px 40px;
 }
 section.content div.container div {
   justify-self: center;
@@ -298,9 +298,7 @@ p.banner {
 }
 
 ul.account-info, div.account-detail {
-  margin-top: 1em;
-  margin-bottom: 1.5em;
-  text-align: center;
+  margin: 0.25em auto;
 }
 ul.account-info span.data-attribute, div.account-detail span.data-attribute {
   font-size: 125%;
@@ -309,7 +307,7 @@ ul.account-info span.data-attribute, div.account-detail span.data-attribute {
 ul.account-info span.highlighted, ul.account-info span.data-value, div.account-detail span.highlighted, div.account-detail span.data-value {
   color: #28a5c8;
   display: block;
-  margin-bottom: 1em;
+  margin-bottom: 0.25em;
 }
 
 div.file-data span.data-value {

@@ -209,7 +209,7 @@ section.content {
         align-items: center;
         justify-self: center;
 
-        grid-template-rows: 95px 175px minmax(40px, 240px) 80px 40px;
+        grid-template-rows: 95px 175px minmax(40px, 280px) 80px 40px;
 
         div {
             justify-self: center;
@@ -370,9 +370,7 @@ p.banner {
 }
 
 ul.account-info, div.account-detail {
-    margin-top: 1em;
-    margin-bottom: 1.5em;
-    text-align: center;
+    margin: 0.25em auto;
     span.data-attribute {
         font-size: 125%;
         display: block;
@@ -380,7 +378,7 @@ ul.account-info, div.account-detail {
     span.highlighted, span.data-value {
         color: color(text-blue);
         display: block;
-        margin-bottom: 1em;
+        margin-bottom: 0.25em;
     }
 }
 

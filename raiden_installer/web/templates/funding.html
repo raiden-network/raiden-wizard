@@ -1,55 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="funding-options">
-  <div class="balance-tracker">
-    <p class="long tbd">
-      To be able to operate this Raiden node, its account needs to have RDN
-      tokens in its funds to pay for some of the services provided, such
-      as fees for mediated transfers or to have Monitoring Service
-      ensuring you receive payments even if your node is offline.
-    </p>
-
-    <p class="long tbd">
-      You will be able to launch Raiden as soon as this account is funded with at least 1 RDN.
-    </p>
-
-
-    <ul class="account-info">
-      <li>
-        <span class="info-detail">Account Address:</span><span class="account-address highlighted">{{ configuration_file.account.address }}</span>
-      </li>
-      <li>
-        <span class="info-detail">Current ETH:</span><span class="account-eth-balance highlighted">N/A</span>
-      </li>
-      <li>
-        <span class="info-detail">Current RDN:</span><span class="account-rdn-balance highlighted">N/A</span>
-      </li>
-    </ul>
-    <button id="btn-launch" class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>
-      Launch Raiden
-    </button>
-  </div>
+<h1>Fund Wallet</h1>
+<div class="hero">
+  Fund your wallet with ETH and 5.5 RDN in order to launch Raiden
 </div>
 
-<div id="exchange-options">
-  <h2>Acquire RDN through Decentralized Exchanges</h2>
-  <p class="disclaimer tbd">
-    Below we provide exchanges that are integrated with the Wizard. As
-    soon as you deposit some ETH to your account address above, the
-    Wizard can call to these Exchanges API and acquire RDN for you.
-  </p>
-  <p class="disclaimer tbd">Use at your risk.</p>
-
-
-  <ul class="exchanges">
+<div class="info-panel">
+  <p>Available funds</p>
+  <ul class="account-info">
     <li>
-      <a class="button" href="{{ reverse_url('swap', 'kyber', configuration_file.file_name)}}" disabled>KyberNetwork</a>
+      <span class="account-eth-balance highlighted">N/A ETH</span>
     </li>
     <li>
-      <a class="button" href="{{ reverse_url('swap', 'uniswap', configuration_file.file_name)}}" disabled>Uniswap</a>
+      <span class="account-rdn-balance highlighted">N/A RDN</span>
     </li>
   </ul>
+
+  <p>Wallet Address</p>
+  <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
+</div>
+<div class="action">
+  <button class="link-button" data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}" disabled>Convert ETH into RDN</button>
 </div>
 {% end %}
 
@@ -57,6 +29,9 @@
 {% block page_header_scripts %}
 <script type="text/javascript">
  function checkBalances(){
+   const REQUIRED_RDN_IN_WEI = 5.5 * (10 ** 18);
+   const REQUIRED_ETH_IN_WEI = 10 ** 16;
+   
    let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
    let req = new XMLHttpRequest();
    let eth_balance_display_element = document.querySelector("span.account-eth-balance");
@@ -67,12 +42,20 @@
 
    req.onload = function() {
      if (this.status == 200){
-       let btn = document.querySelector("#btn-launch");
+       let btn = document.querySelector("button");
        let balance = JSON.parse(this.response).balance;
 
-       eth_balance_display_element.textContent = balance && balance.ETH.formatted;
-       rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
-       btn.disabled = !(balance && balance.RDN.as_wei > 0);
+       let has_enough_eth = Boolean(balance && balance.ETH.as_wei >= REQUIRED_ETH_IN_WEI);
+       let has_enough_rdn = Boolean(balance && balance.RDN && balance.RDN.as_wei >= REQUIRED_RDN_IN_WEI);
+
+       if (balance && balance.ETH) {
+         eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+       }
+
+       if (balance && balance.RDN) {
+         rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+       }
+       btn.disabled = !(has_enough_eth && !has_enough_rdn);
      }
    }
    req.send();
@@ -81,36 +64,8 @@
 
 
  window.addEventListener("load", function() {
-
-
-   const main_screen = document.getElementById("funding-options");
-   const redirection_panel = document.getElementById("external-site-redirection");
-
    checkBalances();
-
-   document.querySelectorAll("ul.exchanges button").forEach(function(elem) {
-     elem.addEventListener("click", function(evt){
-       let site_name = this.getAttribute("data-name");
-       let url = this.getAttribute("data-link");
-       let span_exchange_elem = redirection_panel.querySelector("span.exchange-name");
-       let link_elem = redirection_panel.querySelector("a.external-site");
-       span_exchange_elem.textContent = site_name;
-       link_elem.setAttribute("href", url);
-       link_elem.textContent = "Proceed to " + site_name;
-       main_screen.hidden = true;
-       redirection_panel.hidden = false;
-     });
-   });
-
-   document.querySelectorAll("button.cancel").forEach(function(elem) {
-     elem.addEventListener("click", function(evt) {
-       redirection_panel.hidden = true;
-       main_screen.hidden = false;
-     });
-   });
-
    setInterval(checkBalances, 5000);
-
  });
 </script>
 {% end %}

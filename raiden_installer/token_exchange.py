@@ -438,6 +438,7 @@ class RaidenTokenNetwork(TokenNetwork):
             "ropsten": "0x5422Ef695ED0B1213e2B953CFA877029637D9D26",
             "rinkeby": "0x51892e7e4085df269de688b273209f3969f547e0",
             "kovan": "0x3a03155696708f517c53ffc4f696dfbfa7743795",
+            "goerli": "0x06b05eb77f6d7c4e7449105d36c7e04fa9cff3ca",
         }[network.name]
 
         return to_checksum_address(address)

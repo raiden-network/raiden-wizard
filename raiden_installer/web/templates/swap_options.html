@@ -16,27 +16,24 @@
     </li>
   </ul>
 </div>
-<div class="action split-2">
-  <div>
-    <button class="link-button" data-link-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name)}}"
-            {% if not kyber.is_listing_token('RDN') %}disabled{% end %}>
-      KyberNetwork
-    </button>
-  </div>
-  <div>
+<div class="action">
+  <button class="link-button" data-link-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name)}}"
+          {% if not kyber.is_listing_token('RDN') %}disabled{% end %}>
+    KyberNetwork
+  </button>
   <button class="link-button" data-link-url="{{ reverse_url('swap', 'uniswap', configuration_file.file_name)}}"
           {% if not uniswap.is_listing_token('RDN') %}disabled{% end %}>
     Uniswap
   </button>
-  </div>
 </div>
 {% end %}
 
 {% block page_header_scripts %}
 <script type="text/javascript">
- function checkBalances() {
+ async function checkBalances() {
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
    updateBalanceDisplay(
-     "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}",
+     balance,
      document.querySelector("span.account-eth-balance"),
      document.querySelector("span.account-rdn-balance")
    );

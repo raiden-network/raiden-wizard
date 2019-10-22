@@ -7,8 +7,19 @@
         <script type="text/javascript">
 
          const WEBSOCKET = new WebSocket("ws://{{ request.host }}{{ reverse_url('websocket') }}");
-         const REQUIRED_RDN_AS_WEI = parseInt("{{ minimum_rdn_required_as_wei }}");
-         const REQUIRED_ETH_AS_WEI = parseInt("{{ minimum_eth_required_as_wei }}");
+         const REQUIRED_RDN_AS_WEI = parseInt("{{ minimum_rdn_required.as_wei }}");
+         const REQUIRED_ETH_AS_WEI = parseInt("{{ minimum_eth_required.as_wei }}");
+
+         async function getKyberExchangeRate(token) {
+           const url = "https://api.kyber.network/api/tokens/pairs";
+           let token_sticker = (token || "RDN").toUpperCase();
+
+           let request = await fetch(url);
+           let response_data = await request.json();
+           let token_data = response_data["ETH_" + token_sticker];
+
+           return token_data && token_data.currentPrice;
+         }
 
          function launchRaiden(configuration_file_name){
            let message = {method: "launch", configuration_file_name: configuration_file_name}
@@ -53,25 +64,21 @@
            }
          }
 
-         function updateBalanceDisplay(configuration_file_url, eth_balance_display_element, rdn_balance_display_element){
-           let req = new XMLHttpRequest();
-           req.open("GET", configuration_file_url);
-           req.setRequestHeader("Content-Type", "application/json");
+         async function getBalances(configuration_file_url) {
+           let request = await fetch(configuration_file_url);
+           let response_data = await request.json();
+           return response_data && response_data.balance;
+         }
 
-           req.onload = function() {
-             if (this.status == 200){
-               let balance = JSON.parse(this.response).balance;
+         function updateBalanceDisplay(balance, eth_balance_display_element, rdn_balance_display_element){
 
-               if (balance && balance.ETH && eth_balance_display_element) {
-                 eth_balance_display_element.textContent = balance && balance.ETH.formatted;
-               }
-
-               if (balance && balance.RDN && rdn_balance_display_element) {
-                 rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
-               }
-             }
+           if (balance && balance.ETH && eth_balance_display_element) {
+             eth_balance_display_element.textContent = balance && balance.ETH.formatted;
            }
-           req.send();
+           
+           if (balance && balance.RDN && rdn_balance_display_element) {
+             rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+           }
          }
 
 
@@ -152,7 +159,7 @@
     </head>
     <body>
       <div class="logo {% block logo_class %}business-card{% end %}">
-        <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
+        <a href="{{ reverse_url('index') }}"><img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" /></a>
       </div>
       <section class="content">
         <div class="container">

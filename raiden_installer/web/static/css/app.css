@@ -127,13 +127,14 @@ span.error {
 }
 
 div.logo {
-  width: 960px;
+  width: 370px;
+  height: 105px;
   margin: 33px auto 0;
   text-align: center;
 }
 div.logo img {
-  width: 370px;
-  height: 105px;
+  width: 100%;
+  height: 100%;
 }
 div.logo.business-card {
   position: absolute;
@@ -141,6 +142,8 @@ div.logo.business-card {
   left: 10px;
   margin-left: 0 !important;
   text-align: left;
+  width: 222px;
+  height: 63px;
 }
 
 section.content {
@@ -153,7 +156,8 @@ section.content div.container {
   justify-content: center;
   align-items: center;
   justify-self: center;
-  grid-template-rows: 95px 175px minmax(40px, 280px) 80px 40px;
+  min-height: 700px;
+  grid-template-rows: 100px minmax(120px, 150px) auto 120px 80px;
 }
 section.content div.container div {
   justify-self: center;
@@ -194,24 +198,17 @@ section.content div.container div.info-panel .action-copy-paste.clipboard::after
   background-image: none !important;
 }
 section.content div.container div.action {
+  width: 100%;
   display: inline-grid;
-  align-items: start;
-}
-section.content div.container div.action.split-2 {
-  grid-template-columns: 1fr 1fr;
-  justify-self: normal;
-}
-section.content div.container div.action.split-2 div {
-  width: 50%;
-}
-section.content div.container div.action > div, section.content div.container div.action > button, section.content div.container div.action a.button {
-  align-self: center;
+  grid-auto-flow: column;
+  justify-content: space-evenly;
 }
 section.content div.container div.action button, section.content div.container div.action a.button {
   font-size: 18px;
   line-height: 21px;
   line-height: 40px;
   width: 210px;
+  display: inline-grid;
 }
 section.content div.container div.ack-prompt {
   line-height: 21px;

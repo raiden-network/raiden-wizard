@@ -3,11 +3,17 @@
 {% block content %}
 <h1>Fund Wallet</h1>
 <div class="hero">
-  Fund your wallet with ETH and {{ minimum_rdn_required_as_wei / 10 ** 18 }} RDN in order to launch Raiden
+  Raiden needs funds for its operation.
 </div>
 
 <div class="info-panel">
-  <p>Available funds</p>
+  <p>
+    For example, ETH is required to create payment channels while RDN is the currency used
+    by the
+    <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
+      Raiden Service Bundle</a>.
+    Please fund the Raiden account (with address below) with at least {{ minimum_eth_required.formatted }} and {{ minimum_rdn_required.formatted }}. <em>If you don't have RDN tokens, send ETH and we can help you use it to buy RDN at a later step.</em></p>
+  <p>Current balance</p>
   <ul class="account-info">
     <li>
       <span class="account-eth-balance highlighted">N/A ETH</span>
@@ -23,8 +29,14 @@
   </div>
 </div>
 <div class="action">
-  <button class="link-button" data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}" disabled>
+  <button id="btn-web3" class="hidden">
+    Connect to Web3
+  </button>
+  <button id="btn-swap" class="link-button" data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}" disabled>
     Convert ETH into RDN
+  </button>
+  <button id="btn-launch" onClick="launchRaiden('{{ configuration_file.file_name }}')" disabled>
+    Launch
   </button>
 </div>
 {% end %}
@@ -32,56 +44,48 @@
 
 {% block page_header_scripts %}
 <script type="text/javascript">
- function checkBalances(){
+ async function checkBalances() {
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
 
-   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
-   let req = new XMLHttpRequest();
+   let kyber_exchange_rate = await getKyberExchangeRate("RDN");
+
    let eth_balance_display_element = document.querySelector("span.account-eth-balance");
    let rdn_balance_display_element = document.querySelector("span.account-rdn-balance");
+   let button_launch = document.getElementById("btn-launch");
+   let button_swap = document.getElementById("btn-swap");
 
-   req.open("GET", url);
-   req.setRequestHeader("Content-Type", "application/json");
+   let eth_balance = balance && balance.ETH.as_wei;
+   let rdn_balance = balance && balance.RDN.as_wei;
 
-   req.onload = function() {
-     if (this.status == 200){
-       let btn = document.querySelector("button");
-       let balance = JSON.parse(this.response).balance;
+   let needed_rdn = REQUIRED_RDN_AS_WEI;
 
-       let has_enough_eth = Boolean(balance && balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
-       let has_enough_rdn = Boolean(balance && balance.RDN && balance.RDN.as_wei >= REQUIRED_RDN_AS_WEI);
-
-       if (has_enough_eth && has_enough_rdn) {
-         document.location = "{{ reverse_url('launch', configuration_file.file_name) }}";
-       }
-       else {
-         if (balance && balance.ETH) {
-           eth_balance_display_element.textContent = balance && balance.ETH.formatted;
-         }
-
-         if (balance && balance.RDN) {
-           rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
-         }
-         btn.disabled = !(has_enough_eth && !has_enough_rdn);
-
-       }
-     }
+   if (rdn_balance) {
+     needed_rdn -= rdn_balance;
    }
-   req.send();
 
+   let has_enough_eth = Boolean(eth_balance && eth_balance >= REQUIRED_ETH_AS_WEI);
+   let has_enough_rdn = Boolean(needed_rdn <= 0);
+
+   let may_buy_rdn_wei = (eth_balance && kyber_exchange_rate) && parseInt(eth_balance / kyber_exchange_rate);
+
+   updateBalanceDisplay(balance, eth_balance_display_element, rdn_balance_display_element);
+
+   button_launch.disabled = !(has_enough_eth && has_enough_rdn);
+   button_swap.disabled = !(may_buy_rdn_wei && may_buy_rdn_wei > needed_rdn && !has_enough_rdn);
  }
 
 
- window.addEventListener("load", function() {
-   checkBalances();
-   setInterval(checkBalances, 5000);
+     window.addEventListener("load", async function () {
+       checkBalances();
+       setInterval(checkBalances, 5000);
 
-   let address_div_elem = document.querySelector("div.action-copy-paste");
-   let account_address_elem = address_div_elem.querySelector("span.account-address");
+       let address_div_elem = document.querySelector("div.action-copy-paste");
+       let account_address_elem = address_div_elem.querySelector("span.account-address");
 
-   address_div_elem.addEventListener("click", function(evt) {
-     copyToClipboard(address_div_elem, account_address_elem);
-   });
+       address_div_elem.addEventListener("click", function(evt) {
+         copyToClipboard(address_div_elem, account_address_elem);
+       });
 
- });
+     });
 </script>
 {% end %}

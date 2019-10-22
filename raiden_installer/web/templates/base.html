@@ -7,6 +7,9 @@
         <script type="text/javascript">
 
          const WEBSOCKET = new WebSocket("ws://{{ request.host }}{{ reverse_url('websocket') }}");
+         const REQUIRED_RDN_AS_WEI = parseInt("{{ minimum_rdn_required_as_wei }}");
+         const REQUIRED_ETH_AS_WEI = parseInt("{{ minimum_eth_required_as_wei }}");
+
          function launchRaiden(configuration_file_name){
            let message = {method: "launch", configuration_file_name: configuration_file_name}
            WEBSOCKET.send(JSON.stringify(message));

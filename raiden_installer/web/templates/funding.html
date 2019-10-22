@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Fund Wallet</h1>
 <div class="hero">
-  Fund your wallet with ETH and 5.5 RDN in order to launch Raiden
+  Fund your wallet with ETH and {{ minimum_rdn_required_as_wei / 10 ** 18 }} RDN in order to launch Raiden
 </div>
 
 <div class="info-panel">
@@ -31,9 +31,7 @@
 {% block page_header_scripts %}
 <script type="text/javascript">
  function checkBalances(){
-   const REQUIRED_RDN_IN_WEI = 5.5 * (10 ** 18);
-   const REQUIRED_ETH_IN_WEI = 10 ** 16;
-   
+
    let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
    let req = new XMLHttpRequest();
    let eth_balance_display_element = document.querySelector("span.account-eth-balance");
@@ -47,23 +45,23 @@
        let btn = document.querySelector("button");
        let balance = JSON.parse(this.response).balance;
 
-       let has_enough_eth = Boolean(balance && balance.ETH.as_wei >= REQUIRED_ETH_IN_WEI);
-       let has_enough_rdn = Boolean(balance && balance.RDN && balance.RDN.as_wei >= REQUIRED_RDN_IN_WEI);
+       let has_enough_eth = Boolean(balance && balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
+       let has_enough_rdn = Boolean(balance && balance.RDN && balance.RDN.as_wei >= REQUIRED_RDN_AS_WEI);
 
        if (has_enough_eth && has_enough_rdn) {
-         launchRaiden("{{ configuration_file.file_name }}");
-         return;
+         document.location = "{{ reverse_url('launch', configuration_file.file_name) }}";
        }
+       else {
+         if (balance && balance.ETH) {
+           eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+         }
 
-       if (balance && balance.ETH) {
-         eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+         if (balance && balance.RDN) {
+           rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+         }
+         btn.disabled = !(has_enough_eth && !has_enough_rdn);
+
        }
-
-       if (balance && balance.RDN) {
-         rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
-       }
-       btn.disabled = !(has_enough_eth && !has_enough_rdn);
-
      }
    }
    req.send();

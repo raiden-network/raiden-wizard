@@ -275,6 +275,10 @@ section.content {
                 line-height: 21px;
                 @include fixedsize(210px, 40px);
                 display: inline-grid;
+
+                &.hide-when-disabled:disabled {
+                    display: none !important;
+                }
             }
         }
 

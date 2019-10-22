@@ -37,8 +37,9 @@
      if (infura_id && infura_id.length != 32) {
        error_display.textContent = error_message;
        error_display.hidden = false;
-       submit_button.disabled = true;
-
+       if (!submit_button.disabled) {
+         submit_button.disabled = true;
+       }
      }
      else {
        error_display.hidden = true;

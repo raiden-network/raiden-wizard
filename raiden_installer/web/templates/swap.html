@@ -43,9 +43,15 @@
    );
  }
 
- function validateForm(input_field, submit_button) {
+ function validateForm(checkboxes, input_field, submit_button) {
    let amount = input_field.value;
-   submit_button.disabled = !(amount && (parseFloat(amount) > 0));
+   let all_checked = true;
+   checkboxes.forEach(function(checkbox) {
+     if (!checkbox.checked) {
+       all_checked = false;
+     }
+   });
+   submit_button.disabled = !(all_checked && amount && (parseFloat(amount) > 0));
  }
 
 
@@ -54,11 +60,18 @@
    let rdn_amount_input = document.querySelector("input[name=token_amount]");
    let swap_button = document.querySelector("div.action button");
 
-   document.addEventListener("keypress", function(evt) {validateForm(rdn_amount_input, swap_button); });
-   rdn_amount_input.addEventListener("blur", function(evt) { validateForm(evt.target, swap_button); });
-   rdn_amount_input.addEventListener("change", function(evt) {validateForm(evt.target, swap_button); });
-   rdn_amount_input.addEventListener("click", function(evt) {validateForm(evt.target, swap_button); });
+   function runValidation(evt) {
+     validateForm(checkboxes, rdn_amount_input, swap_button);
+   }
 
+   document.addEventListener("keypress", runValidation);
+   rdn_amount_input.addEventListener("blur", runValidation);
+   rdn_amount_input.addEventListener("change", runValidation);
+   rdn_amount_input.addEventListener("click", runValidation);
+
+   checkboxes.forEach(function(checkbox) {
+     checkbox.addEventListener("click", runValidation);
+   });
 
    swap_button.onclick = function(evt) {
      const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();

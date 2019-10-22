@@ -12,7 +12,8 @@
     by the
     <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
       Raiden Service Bundle</a>.
-    Please fund the Raiden account (with address below) with at least {{ minimum_eth_required.formatted }} and {{ minimum_rdn_required.formatted }}. <em>If you don't have RDN tokens, send ETH and we can help you use it to buy RDN at a later step.</em></p>
+    Please fund the Raiden account (with address below) with at least <strong>{{ minimum_eth_required.formatted }}</strong> and <strong>{{ minimum_rdn_required.formatted }}</strong>.</p>
+  <p><em>If you don't have RDN tokens, send ETH and we can help you use it to buy RDN at a later step.</em></p>
   <p>Current balance</p>
   <ul class="account-info">
     <li>
@@ -30,7 +31,7 @@
 </div>
 <div class="action">
   <button disabled id="btn-web3" class="hide-when-disabled" onClick="sendViaWeb3(this);">
-    Connect to web3 wallet
+    Transfer via web3 browser
   </button>
 
   <button disabled
@@ -39,7 +40,9 @@
           data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}">
     Convert ETH into RDN
   </button>
-  <button id="btn-launch" class="hide-when-disabled" onClick="launchRaiden('{{ configuration_file.file_name }}')" disabled>
+  <button disabled
+          id="btn-launch" class="link-button hide-when-disabled"
+          data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}">
     Launch
   </button>
 </div>
@@ -59,20 +62,18 @@
    let eth_amount = button_elem.getAttribute(WEB3_ETH_AMOUNT_ATTRIBUTE);
    let rdn_amount = button_elem.getAttribute(WEB3_RDN_AMOUNT_ATTRIBUTE);
    let kyber_rate = button_elem.getAttribute(KYBER_EXCHANGE_RATE_ATTRIBUTE);
+   let web3 = window.web3;
 
    if (eth_amount === null || rdn_amount === null) {
      console.error("No amount established to be sent");
      return
    }
 
-   eth_amount += Math.ceil(rdn_amount * kyber_rate);
-
-   if (eth_amount <= 0) {
+   if (eth_amount <= 0 && rdn_amount <= 0) {
      alert("You have enough funds already!");
      return
    }
 
-   let web3 = window.web3;
    let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
 
    let transaction_data = {
@@ -148,7 +149,7 @@
    let button_launch = document.getElementById("btn-launch");
    let button_swap = document.getElementById("btn-swap");
    let button_web3 = document.getElementById("btn-web3");
-   let has_web3 = (window.ethereum || window.web3);
+   let has_web3 = Boolean(window.ethereum || window.web3);
 
    updateDisplay(calculated_funds);
 
@@ -167,37 +168,8 @@
    button_web3.setAttribute(KYBER_EXCHANGE_RATE_ATTRIBUTE, calculated_funds.exchange_rates.kyber);
    button_web3.disabled = !(has_web3 && (!has_enough_eth || !has_enough_rdn));
  }
- /* let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
-  * let kyber_exchange_rate = await getKyberExchangeRate("RDN");
-
-  * let button_launch = document.getElementById("btn-launch");
-  * let button_swap = document.getElementById("btn-swap");
-
-  * let eth_balance = balance && balance.ETH.as_wei;
-  * let rdn_balance = balance && balance.RDN.as_wei;
-
-  * let needed_eth = REQUIRED_ETH_AS_WEI;
-  * let needed_rdn = REQUIRED_RDN_AS_WEI;
-
-
-  * let has_enough_eth = Boolean(needed_eth <= 0);
-  * let has_enough_rdn = Boolean(needed_rdn <= 0);
-
-  * let may_buy_rdn_wei = (eth_balance && kyber_exchange_rate) && parseInt(eth_balance / kyber_exchange_rate);
-
-  * updateBalanceDisplay(balance, eth_balance_display_element, rdn_balance_display_element);
-
-
-  *
-
-  * if (has_web3 && !(has_enough_rdn && has_enough_eth)){
-  *   connectWeb3(needed_eth);
-  * }
-    }
-  */
 
  window.addEventListener("load", async function () {
-   console.log(CHAIN_ID);
    let address_div_elem = document.querySelector("div.action-copy-paste");
    let account_address_elem = address_div_elem.querySelector("span.account-address");
 
@@ -205,7 +177,7 @@
      copyToClipboard(address_div_elem, account_address_elem);
    });
 
-   let has_web3 = (window.ethereum || window.web3);
+   let has_web3 = Boolean(window.ethereum || window.web3);
 
    if (has_web3) {
      // Modern dapp browsers...
@@ -215,6 +187,16 @@
        try {
          // Request account access if needed
          await ethereum.enable();
+
+         web3.version.getNetwork(function(error, chain_id){
+           if (error) {
+             console.error(error);             
+           }
+
+           if (chain_id != CHAIN_ID) {
+             alert("Web3 Browser detected, but not connected to {{ network.capitalized_name }}");
+           }
+         });
        } catch (error) {
          console.log(error);
        }

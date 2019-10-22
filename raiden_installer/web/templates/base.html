@@ -75,7 +75,7 @@
            if (balance && balance.ETH && eth_balance_display_element) {
              eth_balance_display_element.textContent = balance && balance.ETH.formatted;
            }
-           
+
            if (balance && balance.RDN && rdn_balance_display_element) {
              rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
            }
@@ -139,6 +139,10 @@
            if (next_view) {
              setTimeout(next_view, 2000);
            }
+         }
+
+         function addFeedbackMessage(message) {
+           WEBSOCKET.onmessage({data: JSON.stringify({text: message})});
          }
 
          window.addEventListener("load", function() {

@@ -24,18 +24,6 @@ body {
   color: #28a5c8;
 }
 
-.prompt-panel {
-  min-height: 2em;
-}
-
-.ack-prompt {
-  display: grid;
-  margin: auto;
-  font-size: 9pt;
-  width: 900px;
-  grid-template-columns: 30px auto;
-}
-
 a {
   color: #28a5c8;
   text-decoration: none;
@@ -61,19 +49,6 @@ button:disabled, button[aria-disabled=true], a.button:disabled, a.button[aria-di
   border-color: rgba(40, 165, 200, 0.3);
   color: rgba(255, 255, 255, 0.3);
 }
-button.next-page, a.button.next-page {
-  display: block;
-  margin: auto;
-  margin-top: 5em;
-  line-height: 2em;
-  width: 125px;
-}
-
-#btn-launch {
-  line-height: 45px;
-  width: 200px;
-  font-size: 18px;
-}
 
 a.button {
   display: inline-block;
@@ -93,21 +68,9 @@ h1 {
   font-style: normal;
 }
 
-h2 {
-  font-size: 19px;
-  font-weight: 400;
-}
-
-p.warning {
-  font-size: 18px;
-  font-weight: 400;
-  margin: 2em auto;
-  padding-bottom: 1em;
-}
-
-p.disclaimer {
-  font-size: 14px;
-  font-weight: 300;
+ul {
+  list-style-type: none;
+  padding-inline-start: 0;
 }
 
 input[type=text], input[type=number] {
@@ -146,6 +109,61 @@ div.logo.business-card {
   height: 63px;
 }
 
+ul.available-configurations {
+  width: 100%;
+  border-top: solid 1.5px #0a6e87;
+  font-size: 75%;
+}
+ul.available-configurations li {
+  width: 100%;
+  height: 70px;
+  margin-bottom: 2px;
+  background-color: #1e1e1e;
+  display: grid;
+  grid-template: "account account account button" auto "network balance balance button" auto;
+}
+ul.available-configurations li span.account, ul.available-configurations li span.network {
+  padding-left: 20px;
+}
+ul.available-configurations li span.network, ul.available-configurations li span.balance {
+  text-transform: capitalize;
+  color: #646464;
+}
+ul.available-configurations li span.account {
+  grid-area: account;
+  align-self: end;
+  font-weight: 500;
+}
+ul.available-configurations li span.network {
+  align-self: start;
+  grid-area: network;
+}
+ul.available-configurations li span.balance {
+  grid-area: balance;
+}
+ul.available-configurations li button, ul.available-configurations li a.button {
+  align-self: center;
+  line-height: 33px;
+  width: 100px;
+  grid-area: button;
+}
+ul.available-configurations li a.button {
+  line-height: 33px;
+}
+
+ul.account-info {
+  margin: 0.25em auto;
+}
+ul.account-info span.data-attribute {
+  font-size: 125%;
+  display: block;
+}
+ul.account-info span.highlighted, ul.account-info span.data-value {
+  color: #28a5c8;
+  display: block;
+  margin-bottom: 0.25em;
+}
+
 section.content {
   width: 960px;
   margin: 0 auto;
@@ -169,7 +187,6 @@ section.content div.container div.hero {
   align-self: start;
 }
 section.content div.container div.info-panel {
-  max-width: 785px;
   text-align: center;
 }
 section.content div.container div.info-panel span.private {
@@ -207,141 +224,19 @@ section.content div.container div.action button, section.content div.container d
   font-size: 18px;
   line-height: 21px;
   line-height: 40px;
-  width: 210px;
+  width: 270px;
   display: inline-grid;
 }
 section.content div.container div.action button.hide-when-disabled:disabled, section.content div.container div.action a.button.hide-when-disabled:disabled {
   display: none !important;
 }
 section.content div.container div.ack-prompt {
+  display: inline-grid;
+  grid-template-columns: 30px auto;
   line-height: 21px;
   max-width: 630px;
-}
-
-div.prompt, div.disclaimer {
-  max-width: 900px;
   margin: auto;
-}
-
-div.prompt button {
-  line-height: 40px;
-  width: 225px;
-}
-
-div.form-entry input {
-  display: block;
-  margin-bottom: 1em;
-}
-
-ol {
-  margin: auto;
-  width: 840px;
-}
-
-ul {
-  list-style-type: none;
-  padding-inline-start: 0;
-}
-
-ul.options-panel {
-  width: 960px;
-  margin-top: 3em;
-  align-content: center;
-}
-ul.options-panel li {
-  display: inline-grid;
-  align-self: center;
-  width: 49%;
-}
-ul.options-panel li.selected {
-  width: 100%;
-}
-ul.options-panel li a.button, ul.options-panel li button {
-  display: block;
-  margin: auto;
-  line-height: 33px;
-  width: 220px;
-}
-
-ul.exchanges {
-  width: 840px;
-  margin-top: 3em;
-  align-content: center;
-}
-ul.exchanges li {
-  display: inline-grid;
-  align-self: center;
-  width: 49%;
-}
-ul.exchanges li.selected {
-  width: 100%;
-}
-ul.exchanges li a.button, ul.exchanges li button {
-  display: block;
-  margin: auto;
-  line-height: 33px;
-  width: 180px;
-}
-
-ul.available-configurations {
-  width: 960px;
-  border-top: solid 1.5px #0a6e87;
-}
-ul.available-configurations li {
-  height: 70px;
-  margin-bottom: 2px;
-  background-color: #1e1e1e;
-  display: grid;
-  grid-template: "account account account button" auto "network balance balance button" auto;
-}
-ul.available-configurations li span.account, ul.available-configurations li span.network {
-  padding-left: 20px;
-}
-ul.available-configurations li span.network, ul.available-configurations li span.balance {
-  text-transform: capitalize;
-  color: #646464;
-}
-ul.available-configurations li span.account {
-  grid-area: account;
-  align-self: end;
-  font-weight: 500;
-}
-ul.available-configurations li span.network {
-  align-self: start;
-  grid-area: network;
-}
-ul.available-configurations li span.balance {
-  grid-area: balance;
-}
-ul.available-configurations li button, ul.available-configurations li a.button {
-  align-self: center;
-  line-height: 33px;
-  width: 100px;
-  grid-area: button;
-}
-ul.available-configurations li a.button {
-  line-height: 33px;
-}
-
-p.banner {
-  max-width: 840px;
-}
-
-ul.account-info, div.account-detail {
-  margin: 0.25em auto;
-}
-ul.account-info span.data-attribute, div.account-detail span.data-attribute {
-  font-size: 125%;
-  display: block;
-}
-ul.account-info span.highlighted, ul.account-info span.data-value, div.account-detail span.highlighted, div.account-detail span.data-value {
-  color: #28a5c8;
-  display: block;
-  margin-bottom: 0.25em;
-}
-
-div.file-data span.data-value {
-  font-size: 75% !important;
+  font-size: 50%;
 }
 
 #background-task-tracker div.spinner {
@@ -370,37 +265,6 @@ div.file-data span.data-value {
   margin: 0;
   padding: 30px 0px 100px 0px;
   text-align: center;
-}
-
-#configuration-launcher {
-  width: 960px;
-}
-
-#configuration-setup, #swap {
-  display: grid;
-}
-#configuration-setup > div, #swap > div {
-  padding-top: 1em;
-}
-#configuration-setup div.prompt, #swap div.prompt {
-  display: grid;
-  grid-template-rows: auto 3em auto auto;
-}
-#configuration-setup p.disclaimer, #swap p.disclaimer {
-  max-width: 100%;
-  margin-bottom: 2em;
-}
-#configuration-setup button, #swap button {
-  justify-self: center;
-}
-
-#external-site-redirection {
-  text-align: center;
-}
-#external-site-redirection button, #external-site-redirection a.button {
-  line-height: 33px;
-  width: 180px;
-  margin: 2em auto;
 }
 
 /*# sourceMappingURL=app.css.map */

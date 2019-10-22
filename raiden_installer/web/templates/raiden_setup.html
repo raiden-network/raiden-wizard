@@ -73,6 +73,9 @@
      req.open("POST", API_CONFIGURATION_LIST_ENDPOINT, true);
      req.setRequestHeader("Content-Type", "application/json");
      req.send(data);
+     toggleView();
+
+     addFeedbackMessage("Generating new wallet and configuration file for raiden");
    }
 
 

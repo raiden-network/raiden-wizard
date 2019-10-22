@@ -170,9 +170,28 @@ section.content div.container div.info-panel {
 }
 section.content div.container div.info-panel span.private {
   display: inline-block;
-  max-width: 16em;
+  max-width: 12em;
   overflow-x: hidden;
   text-overflow: ellipsis;
+}
+section.content div.container div.info-panel .action-copy-paste {
+  cursor: pointer;
+}
+section.content div.container div.info-panel .action-copy-paste::after {
+  font-size: 12px;
+  background-repeat: no-repeat;
+  display: inline-block;
+  content: "";
+  background-image: url("../images/copy-icon.svg");
+  min-width: 24px;
+  height: 35px;
+  line-height: 35px;
+  background-size: 24px 35px;
+}
+section.content div.container div.info-panel .action-copy-paste.clipboard::after {
+  vertical-align: top;
+  content: "copied!" !important;
+  background-image: none !important;
 }
 section.content div.container div.action {
   display: inline-grid;

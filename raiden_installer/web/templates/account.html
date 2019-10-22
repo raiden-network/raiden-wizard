@@ -7,8 +7,12 @@
 </div>
 
 <div class="info-panel">
-  <p>Your private key</p>
-  <span class="highlighted private private-key">{{ configuration_file.account.private_key.hex() }}</span>
+  <p>Your private key (click to copy)</p>
+  <div class="action-copy-paste">
+    <span class="highlighted private private-key">
+      {{ configuration_file.account.private_key.hex() }}
+    </span>
+  </div>
   <p>
     Be aware everyone with access to this privatekey and / or your
   keystore and passphrase installed on your computer will be able to
@@ -20,4 +24,18 @@
     Next
   </a>
 </div>
+{% end %}
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+ window.addEventListener("load", function() {
+   let account_div_elem = document.querySelector("div.info-panel > div");
+   let account_private_key_elem = account_div_elem.querySelector("span.private");
+
+   account_div_elem.addEventListener("click", function(evt) {
+     copyToClipboard(account_div_elem, account_private_key_elem);
+   });
+ });
+</script>
+
 {% end %}

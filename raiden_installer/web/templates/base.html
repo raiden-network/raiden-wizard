@@ -24,6 +24,14 @@
 
          }
 
+         function copyToClipboard(container_element, content_element) {
+           container_element.classList.add("clipboard");
+           navigator.clipboard.writeText(content_element.textContent);
+           setTimeout(function() {
+             container_element.classList.remove("clipboard");
+           }, 1000);
+         }
+
          function toggleView() {
            let container = document.querySelector("section > div.container");
            let tracker_elem = document.querySelector("#background-task-tracker");

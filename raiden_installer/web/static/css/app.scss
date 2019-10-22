@@ -228,9 +228,32 @@ section.content {
 
             span.private {
                 display: inline-block;
-                max-width: 16em;
+                max-width: 12em;
                 overflow-x: hidden;
                 text-overflow: ellipsis;
+            }
+
+            .action-copy-paste {
+                cursor: pointer;
+            }
+
+            .action-copy-paste::after {
+                font-size: 12px;
+                background-repeat: no-repeat;
+                display: inline-block;
+                content: '';
+                background-image: url("../images/copy-icon.svg");
+                min-width: 24px;
+                height: 35px;
+                line-height: 35px;
+                background-size: 24px 35px;
+
+            }
+
+            .action-copy-paste.clipboard::after {
+                vertical-align: top;
+                content: 'copied!' !important;
+                background-image: none !important;
             }
         }
 
@@ -241,11 +264,11 @@ section.content {
             &.split-2 {
                 grid-template-columns: 1fr 1fr;
                 justify-self: normal;
+
                 div {
                     width: 50%;
                 }
             }
-            
 
             & > div, & > button, a.button {
                 align-self: center;

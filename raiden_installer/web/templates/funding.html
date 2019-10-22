@@ -18,7 +18,9 @@
   </ul>
 
   <p>Wallet Address</p>
-  <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
+  <div class="action-copy-paste">
+    <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
+  </div>
 </div>
 <div class="action">
   <button class="link-button" data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}" disabled>
@@ -72,6 +74,14 @@
  window.addEventListener("load", function() {
    checkBalances();
    setInterval(checkBalances, 5000);
+
+   let address_div_elem = document.querySelector("div.action-copy-paste");
+   let account_address_elem = address_div_elem.querySelector("span.account-address");
+
+   address_div_elem.addEventListener("click", function(evt) {
+     copyToClipboard(address_div_elem, account_address_elem);
+   });
+
  });
 </script>
 {% end %}

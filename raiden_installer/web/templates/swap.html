@@ -1,97 +1,101 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="swap">
-  <h1>Use Wizard to swap ETH <-> RDN via {{ exchange.name }}</h1>
-  <p class="tbd long">
-    The Wizard can take ETH funds that you transfer to this account
-    address and use them to exchange for RDN on {{ exchange.name }}.
-  </p>
-  <div class="ack-panel">
-    <div class="ack-prompt">
-      <input type="checkbox" class="ack-swap" name="ack-automated-swap" />
-      <label class="tbd" for="ack-automated-swap">
-        I acknowledge that the Wizard may make API calls to
-        <a href="{{ exchange.MAIN_WEBSITE_URL }}" target="_blank">{{ exchange.name }}</a>,
-        a third-party service.
-      </label>
-    </div>
-    <div class="ack-prompt">
-      <input type="checkbox" class="ack-exchange" name="ack-fees" />
-      <label class="tbd" for="ack-fees">
-        I understand that this transaction will incur some fees and
-        that there is no price guarantee for the exchange being made.
-      </label>
-    </div>
-  </div>
-
-  <div class="account-detail">
-    <span class="info-detail">Funds available</span>
-    <span class="account-eth-balance highlighted">{{ balance.formatted }}</span>
-  </div>
-
-  <div class="form-entry hidden">
-    <input type="number" name="token_amount" placeholder="RDN Amount desired" disabled />
-    <button id="btn-execute-swap" class="next-page" onClick="executeSwap();" disabled>Execute Swap</button>
-  </div>
+<h1>Swap with {{ exchange.name }}</h1>
+<div class="hero">
+  Use a decentralized exchange to buy RDN
+</div>
+<div class="info-panel">
+  <p>Available funds</p>
+  <ul class="account-info">
+    <li>
+      <span class="account-eth-balance highlighted">N/A ETH</span>
+    </li>
+    <li>
+      <span class="account-rdn-balance highlighted">N/A RDN</span>
+    </li>
+  </ul>
+  <input type="number" name="token_amount" placeholder="RDN Amount desired" disabled />
+</div>
+<div class="action">
+  <button disabled>Execute Swap</button>
+</div>
+<div class="ack-prompt">
+  <input type="checkbox" class="ack-swap" name="ack-automated-swap" />
+  <label for="ack-automated-swap">
+    I acknowledge that the Wizard may make API calls to
+    <a href="{{ exchange.MAIN_WEBSITE_URL }}" target="_blank">{{ exchange.name }}</a>,
+    a third-party service. I also understand there is no price
+    guarantee regarding the acquisition and exchange of tokens and I
+    am aware of the fees incurred on this operation.
+  </label>
 </div>
 {% end %}
 
 {% block page_header_scripts %}
 <script>
- function checkEthBalance(){
-   let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
-   let req = new XMLHttpRequest();
-   let eth_balance_display_element = document.querySelector("span.account-eth-balance");
+ async function checkBalances() {
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
+   updateBalanceDisplay(
+     balance,
+     document.querySelector("span.account-eth-balance"),
+     document.querySelector("span.account-rdn-balance")
+   );
+ }
 
-   req.open("GET", url);
-   req.setRequestHeader("Content-Type", "application/json");
-
-   req.onload = function() {
-     if (this.status == 200){
-       let btn = document.querySelector("#btn-execute-swap");
-       let balance = JSON.parse(this.response).balance;
-
-       eth_balance_display_element.textContent = balance && balance.ETH.formatted;
-       btn.disabled = !(balance && balance.ETH.as_wei > 0);
+ function validateForm(checkboxes, input_field, submit_button) {
+   let amount = input_field.value;
+   let all_checked = true;
+   checkboxes.forEach(function(checkbox) {
+     if (!checkbox.checked) {
+       all_checked = false;
      }
-   }
-   req.send();
- }
-
- function executeSwap() {
-   const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
-   const FILE_NAME = "{{ configuration_file.file_name }}";
-   const NETWORK_NAME = "{{ configuration_file.network.name }}";
-   const TOKEN_STICKER = "RDN";
-
-   WEBSOCKET.send(JSON.stringify({
-     method: "swap",
-     configuration_file_name: FILE_NAME,
-     amount: (parseInt(document.querySelector("div.form-entry input").value) * (10 ** 18)).toString(),
-     token: TOKEN_STICKER,
-     exchange: EXCHANGE_NAME
-   }));
-
-   toggleView();
- }
-
- window.addEventListener("load", function() {
-   let checkboxes = document.querySelectorAll("input[type=checkbox]");
-   let swap_form = document.querySelector("div.form-entry");
-   let rdn_amount_input = swap_form.querySelector("input");
-
-   checkboxes.forEach(function(elem) {
-     elem.onclick = function(evt) {
-       checkAcknowledgements(checkboxes, rdn_amount_input, function() {
-         swap_form.classList.remove("hidden");
-       });
-     };
    });
-   checkEthBalance();
-   setInterval(checkEthBalance, 5000);
+   submit_button.disabled = !(all_checked && amount && (parseFloat(amount) > 0));
+ }
 
 
+ window.addEventListener("load", async function() {
+   let checkboxes = document.querySelectorAll("input[type=checkbox]");
+   let rdn_amount_input = document.querySelector("input[name=token_amount]");
+   let swap_button = document.querySelector("div.action button");
+
+   function runValidation(evt) {
+     validateForm(checkboxes, rdn_amount_input, swap_button);
+   }
+
+   document.addEventListener("keypress", runValidation);
+   rdn_amount_input.addEventListener("blur", runValidation);
+   rdn_amount_input.addEventListener("change", runValidation);
+   rdn_amount_input.addEventListener("click", runValidation);
+
+   checkboxes.forEach(function(checkbox) {
+     checkbox.addEventListener("click", runValidation);
+   });
+
+   swap_button.onclick = function(evt) {
+     const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
+     const FILE_NAME = "{{ configuration_file.file_name }}";
+     const NETWORK_NAME = "{{ configuration_file.network.name }}";
+     const TOKEN_STICKER = "RDN";
+
+     let amount = rdn_amount_input.value;
+
+     WEBSOCKET.send(JSON.stringify({
+       method: "swap",
+       configuration_file_name: FILE_NAME,
+       amount: parseInt(amount * (10 ** 18)).toString(),
+       token: TOKEN_STICKER,
+       exchange: EXCHANGE_NAME
+     }));
+
+     toggleView();
+   }
+
+   checkAcknowledgements(checkboxes, rdn_amount_input);
+
+   checkBalances();
+   setInterval(checkBalances, 5000);
  });
 </script>
 {% end %}

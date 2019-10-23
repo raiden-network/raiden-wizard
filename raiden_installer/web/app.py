@@ -23,7 +23,9 @@ DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
 
 
-FUNDING_AMOUNTS = [75, 100, 150, 200, 500, 1000]
+MINIMUM_RDN_REQUIRED = RDNAmount(Wei(6 * (10 ** 18)))
+MINIMUM_ETH_REQUIRED = EthereumAmount(Wei(5 * (10 ** 15)))
+
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
 DEFAULT_NETWORK = Network.get_by_name("mainnet")
@@ -201,15 +203,33 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_error_message(str(exc))
 
 
-class IndexHandler(RequestHandler):
-    def get(self):
-        self.render(
-            "index.html",
-            has_existing_configurations=bool(len(RaidenConfigurationFile.list_existing_files())),
+class BaseRequestHandler(RequestHandler):
+    def render(self, template_name, **context_data):
+        context_data.update(
+            {
+                "network": DEFAULT_NETWORK,
+                "minimum_eth_required": MINIMUM_ETH_REQUIRED,
+                "minimum_rdn_required": MINIMUM_RDN_REQUIRED,
+            }
         )
+        return super().render(template_name, **context_data)
 
 
-class ConfigurationListHandler(RequestHandler):
+class IndexHandler(BaseRequestHandler):
+    def get(self):
+        try:
+            configuration_file = [
+                rc
+                for rc in RaidenConfigurationFile.get_available_configurations()
+                if rc.network.name == DEFAULT_NETWORK.name
+            ].pop()
+        except IndexError:
+            configuration_file = None
+
+        self.render("index.html", configuration_file=configuration_file)
+
+
+class ConfigurationListHandler(BaseRequestHandler):
     def get(self):
         if not RaidenConfigurationFile.list_existing_files():
             raise HTTPError(404)
@@ -217,25 +237,25 @@ class ConfigurationListHandler(RequestHandler):
         self.render("configuration_list.html")
 
 
-class SetupHandler(RequestHandler):
+class SetupHandler(BaseRequestHandler):
     def get(self):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
         self.render("raiden_setup.html", configuration_file_names=file_names)
 
 
-class AccountDetailHandler(RequestHandler):
+class AccountDetailHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         self.render("account.html", configuration_file=configuration_file)
 
 
-class AccountFundingHandler(RequestHandler):
+class AccountFundingHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         self.render("funding.html", configuration_file=configuration_file)
 
 
-class FundingOptionsHandler(RequestHandler):
+class FundingOptionsHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         self.render("funding_select_method.html", configuration_file=configuration_file)
@@ -252,7 +272,7 @@ class FundingOptionsHandler(RequestHandler):
             self.render("funding_select_method.html", configuration_file=configuration_file)
 
 
-class LaunchHandler(RequestHandler):
+class LaunchHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
@@ -264,7 +284,7 @@ class LaunchHandler(RequestHandler):
         self.render("launch.html", configuration_file=configuration_file, balance=current_balance)
 
 
-class SwapOptionsHandler(RequestHandler):
+class SwapOptionsHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
@@ -281,7 +301,7 @@ class SwapOptionsHandler(RequestHandler):
         )
 
 
-class SwapHandler(RequestHandler):
+class SwapHandler(BaseRequestHandler):
     def get(self, exchange_name, configuration_file_name):
         exchange_class = Exchange.get_by_name(exchange_name)
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
@@ -385,12 +405,11 @@ class ConfigurationItemAPIHandler(APIHandler):
 if __name__ == "__main__":
     app = Application(
         [
-            url(r"/", IndexHandler),
+            url(r"/", IndexHandler, name="index"),
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
             url(r"/setup", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
-            url(r"/funding/(.*)/options", FundingOptionsHandler, name="funding-options"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
             url(r"/swap/(.*)/options", SwapOptionsHandler, name="swap-options"),
             url(r"/swap/(kyber|uniswap)/(.*)", SwapHandler, name="swap"),

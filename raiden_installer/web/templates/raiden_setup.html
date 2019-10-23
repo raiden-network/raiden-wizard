@@ -1,53 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="configuration-setup">
-  <h1>Setup New Configuration</h1>
-  <div class="disclaimer disclaimer-panel">
-    <p class="disclaimer tbd">
-      The code you will be running is partially supplied by the Raiden
-      Project and partially by XXX as open source code and/or
-      software. Please be aware that we cannot be held liable for any
-      damages whatsoever or any loss of funds you may incur when using
-      the code and/or software. Use at your own risk.
-    </p>
+<h1>Connect Infura</h1>
+<div class="hero">
+  Provide your existing Infura Project ID or
+  <a href="https://medium.com/@raiden_network/6c7c61c5b695" target="_blank">click here</a> for instructions on how to get one.
+</div>
 
-    <p class="disclaimer tbd">
-      Note, that we also cannot be held liable for any damages
-      whatsoever or any loss of funds you may incur when using
-      Infura. Please study <a href="https://infura.io/terms" target="_blank">Infura's Terms of Service</a> for more
-      information.
-    </p>
-
-    <div class="ack-prompt">
-      <input type="checkbox" class="ack-infura" name="ack-infura-operation" />
-      <label class="tbd" for="ack-infura-operation">I understand that I am connecting with Infura and I am responsible for any operation</label>
-    </div>
-    <div class="ack-prompt">
-      <input type="checkbox" class="ack-infura" name="ack-infura-tos" />
-      <label class="tbd" for="ack-infura-tos">
-        I have read and accept Infura's <a href="https://infura.io/terms" target="_blank">Terms of Service</a>
-      </label>
-    </div>
+<div class="info-panel">
+  <div>
+    <input type="text" name="endpoint" placeholder="Your Infura ID" />
   </div>
+  <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+</div>
 
-
-  <div class="prompt hidden">
-    <p>
-      To start using Raiden with a new configuration you need to provide
-      a Infura Project ID. If you do not have a Infura account
-      click <a href="https://medium.com/@raiden_network/6c7c61c5b695"
-               target="_blank">here</a> for instructions on how to get one.
-    </p>
-
-    <h2>Enter your Infura Project ID</h2>
-    <div class="form-entry">
-      <input type="text" name="endpoint" placeholder="Your Infura ID" disabled/>
-      <span class="error" hidden>You need to provide a valid Infura Project ID</span>
-    </div>
-
-    <button class="next-page" type="submit" disabled>Create New Configuration</button>
-  </div>
+<div class="action">
+  <button type="submit" disabled>Confirm</button>
+</div>
 </div>
 {% end %}
 
@@ -68,8 +37,9 @@
      if (infura_id && infura_id.length != 32) {
        error_display.textContent = error_message;
        error_display.hidden = false;
-       submit_button.disabled = true;
-
+       if (!submit_button.disabled) {
+         submit_button.disabled = true;
+       }
      }
      else {
        error_display.hidden = true;
@@ -103,6 +73,9 @@
      req.open("POST", API_CONFIGURATION_LIST_ENDPOINT, true);
      req.setRequestHeader("Content-Type", "application/json");
      req.send(data);
+     toggleView();
+
+     addFeedbackMessage("Generating new wallet and configuration file for raiden");
    }
 
 
@@ -110,25 +83,6 @@
    infura_project_input.addEventListener("blur", validateInfuraId);
    infura_project_input.addEventListener("change", validateInfuraId);
    submit_button.addEventListener("click", submitConfiguration);
-
-   // Allow display/input into infura id only after ticking checkboxes
-   let infura_ack_checkboxes = document.querySelectorAll("input.ack-infura");
-   let infura_id_input = document.querySelector("input[name=endpoint]");
-
-   infura_ack_checkboxes.forEach(function(elem) {
-     elem.addEventListener("change", function(evt) {
-       checkAcknowledgements(infura_ack_checkboxes, infura_id_input, function() {
-         let disclaimer_elems = document.querySelectorAll(".disclaimer");
-         let infura_prompt = document.querySelector("div.prompt");
-
-         disclaimer_elems.forEach(function(elem) {
-           elem.classList.add("hidden");
-         });
-
-         infura_prompt.classList.remove("hidden");
-       });
-     });
-   });
 
  });
 </script>

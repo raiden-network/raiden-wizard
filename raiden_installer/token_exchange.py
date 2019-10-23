@@ -136,14 +136,12 @@ class Kyber(Exchange):
         self.network_contract_proxy = kyber_contracts.get_network_contract_proxy(self.w3)
 
     def is_listing_token(self, sticker: TokenSticker):
-        try:
-            self.get_token_network_address(sticker)
-            return True
-        except (KeyError, ExchangeError):
-            return False
+        token_network_address = self.get_token_network_address(sticker)
+        return token_network_address is not None
 
     def get_token_network_address(self, sticker: TokenSticker):
-        return to_checksum_address(kyber_tokens.get_token_network_address(self.chain_id, sticker))
+        token_network_address = kyber_tokens.get_token_network_address(self.chain_id, sticker)
+        return token_network_address and to_checksum_address(token_network_address)
 
     def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
         eth_address = to_checksum_address(
@@ -438,6 +436,7 @@ class RaidenTokenNetwork(TokenNetwork):
             "ropsten": "0x5422Ef695ED0B1213e2B953CFA877029637D9D26",
             "rinkeby": "0x51892e7e4085df269de688b273209f3969f547e0",
             "kovan": "0x3a03155696708f517c53ffc4f696dfbfa7743795",
+            "goerli": "0x06b05eb77f6d7c4e7449105d36c7e04fa9cff3ca",
         }[network.name]
 
         return to_checksum_address(address)

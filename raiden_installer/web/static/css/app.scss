@@ -19,11 +19,10 @@ $colors: (
 );
 
 $dimensions: (
-    full-column-width: 620px,
-    padded-block-width: 560px,
-    padded-text-width: 520px,
+    full-column-width: 960px,
+    padded-block-width: 900px,
+    padded-text-width: 840px,
 );
-
 
 @mixin button() {
     border: 2px solid;
@@ -66,22 +65,19 @@ $dimensions: (
 
 
 body {
-    background: color(main-bg);
+    background-color: color(wizard-bg);
     font-family: "Roboto", sans-serif;
+    font-size: 24px;
     color: color(text-standard);
     margin: 0;
     padding: 0;
-
-    display: grid;
-    padding-top: 50px;
     min-height: 100vh;
-    min-width: 100vw;
+    min-width: dimension(full-column-width);
 }
 
 .hidden {
     display: none !important;
 }
-
 
 .tbd {
     &::before, &::after {
@@ -94,19 +90,6 @@ body {
     font-size: 125%;
     font-weight: 500;
     color: color(text-blue);
-}
-
-.prompt-panel {
-    min-height: 2em;
-}
-
-.ack-prompt {
-    display: grid;
-    margin: auto;
-    font-size: 9pt;
-    width: dimension(padded-block-width);
-
-    grid-template-columns: 30px auto;
 }
 
 a {
@@ -124,18 +107,6 @@ button, a.button {
     &:disabled, &[aria-disabled="true"] {
         @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
     }
-
-    &.next-page {
-        display: block;
-        margin: auto;
-        margin-top: 5em;
-        @include fixedsize(125px, 2em);
-    }
-}
-
-#btn-launch {
-    @include fixedsize(200px, 45px);
-    font-size: 18px;
 }
 
 a.button {
@@ -150,40 +121,15 @@ h1, h2 {
 }
 
 h1 {
-    font-size: 28px;
-    font-weight: 500;
+    font-size: 80px;
+    line-height: 94px;
+    font-weight: 900;
+    font-style: normal;
 }
 
-h2 {
-    font-size: 19px;
-    font-weight: 400;
-}
-
-p {
-    margin: auto;
-    text-align: center;
-    max-width: 420px;
-    font-size: 16px;
-    font-weight: 300;
-    line-height: 21px;
-    margin-bottom: 1em;
-}
-
-p.long {
-    max-width: dimension(padded-text-width);
-}
-
-p.warning {
-    font-size: 18px;
-    font-weight: 400;
-    margin: 2em auto;
-    padding-bottom: 1em;
-}
-
-p.disclaimer {
-    font-size: 14px;
-    font-weight: 300;
-
+ul {
+    list-style-type: none;
+    padding-inline-start: 0;
 }
 
 input[type=text],input[type=number] {
@@ -196,99 +142,36 @@ span.error {
     font-size: 12px;
 }
 
-section.content {
-    background-color: color(wizard-bg);
-    width: dimension(full-column-width);
-    justify-self: center;
-    display: inline-grid;
+div.logo {
+    width: 370px;
+    height: 105px;
 
-    div.container {
-        display: grid;
-        justify-content: center;
-        align-items: center;
-        justify-self: center;
+    margin: 33px auto 0;
+    text-align: center;
+    img {
+        width: 100%;
+        height: 100%;
     }
+    &.business-card {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        margin-left: 0 !important;
+        text-align: left;
 
-    div.container.hidden {
-        display: none;
-    }
-}
-
-div {
-    justify-self: center;
-}
-
-div.prompt, div.disclaimer {
-    max-width: dimension(padded-block-width);
-    margin: auto;
-}
-
-div.prompt button {
-    @include fixedsize(225px, 40px);
-}
-
-div.form-entry input {
-    display: block;
-    margin-bottom: 1em;
-}
-
-ol {
-    margin: auto;
-    width: dimension(padded-text-width);
-}
-
-ul {
-    list-style-type: none;
-    padding-inline-start: 0;
-}
-
-ul.options-panel {
-    width: dimension(full-column-width);
-    margin-top: 3em;
-    align-content: center;
-    li {
-        display: inline-grid;
-        align-self: center;
-        width: 49%;
-
-        &.selected {
-            width: 100%;
-        }
-
-        a.button, button {
-            display: block;
-            margin: auto;
-            @include fixedsize(220px, 33px);
-        }
-    }
-}
-
-ul.exchanges {
-    width: dimension(padded-text-width);
-    margin-top: 3em;
-    align-content: center;
-    li {
-        display: inline-grid;
-        align-self: center;
-        width: 49%;
-
-        &.selected {
-            width: 100%;
-        }
-
-        a.button, button {
-            display: block;
-            margin: auto;
-            @include fixedsize(180px, 33px);
-        }
+        // 60% of image size
+        width: 222px;
+        height: 63px;
     }
 }
 
 ul.available-configurations {
-    width: dimension(full-column-width);
+    width: 100%;
     border-top: solid 1.5px color(element-border);
+    font-size: 75%;
 
     li {
+        width: 100%;
         height: 70px;
         margin-bottom: 2px;
         background-color: color(list-bg);
@@ -333,14 +216,8 @@ ul.available-configurations {
     }
 }
 
-p.banner {
-    max-width: dimension(padded-text-width);
-}
-
-ul.account-info, div.account-detail {
-    margin-top: 1em;
-    margin-bottom: 1.5em;
-    text-align: center;
+ul.account-info {
+    margin: 0.25em auto;
     span.data-attribute {
         font-size: 125%;
         display: block;
@@ -348,13 +225,97 @@ ul.account-info, div.account-detail {
     span.highlighted, span.data-value {
         color: color(text-blue);
         display: block;
-        margin-bottom: 1em;
+        margin-bottom: 0.25em;
     }
 }
 
-div.file-data {
-    span.data-value {
-        font-size: 75% !important;
+
+section.content {
+    width: dimension(full-column-width);
+    margin: 0 auto;
+    padding-top: 33px;
+
+    div.container {
+        display: grid;
+        justify-content: center;
+        align-items: center;
+        justify-self: center;
+        min-height: 700px;
+
+        grid-template-rows: 100px minmax(120px, 150px) auto 120px 80px;
+
+        div {
+            justify-self: center;
+        }
+
+        div.hero {
+            font-size: 50px;
+            line-height: 60px;
+            text-align: center;
+            align-self: start;
+        }
+
+        div.info-panel {
+//            max-width: 785px;
+            text-align: center;
+
+            span.private {
+                display: inline-block;
+                max-width: 12em;
+                overflow-x: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .action-copy-paste {
+                cursor: pointer;
+            }
+
+            .action-copy-paste::after {
+                font-size: 12px;
+                background-repeat: no-repeat;
+                display: inline-block;
+                content: '';
+                background-image: url("../images/copy-icon.svg");
+                min-width: 24px;
+                height: 35px;
+                line-height: 35px;
+                background-size: 24px 35px;
+
+            }
+
+            .action-copy-paste.clipboard::after {
+                vertical-align: top;
+                content: 'copied!' !important;
+                background-image: none !important;
+            }
+        }
+
+        div.action {
+            width: 100%;
+            display: inline-grid;
+            grid-auto-flow: column;
+            justify-content: space-evenly;
+
+            button, a.button {
+                font-size: 18px;
+                line-height: 21px;
+                @include fixedsize(270px, 40px);
+                display: inline-grid;
+
+                &.hide-when-disabled:disabled {
+                    display: none !important;
+                }
+            }
+        }
+
+        div.ack-prompt {
+            display: inline-grid;
+            grid-template-columns: 30px auto;
+            line-height: 21px;
+            max-width: 630px;
+            margin: auto;
+            font-size: 50%;
+        }
     }
 }
 
@@ -386,47 +347,5 @@ div.file-data {
         margin: 0;
         padding: 30px 0px 100px 0px;
         text-align: center;
-    }
-}
-
-
-#intro {
-    p.warning {
-        max-width: 80%;
-    }
-}
-
-#configuration-launcher {
-    width: dimension(full-column-width);
-}
-
-#configuration-setup, #swap {
-    display: grid;
-
-    & > div {
-        padding-top: 1em;
-    }
-
-    div.prompt {
-        display: grid;
-        grid-template-rows: auto 3em auto auto;
-    }
-
-    p.disclaimer {
-        max-width: 100%;
-        margin-bottom: 2em;
-    }
-
-    button {
-        justify-self: center;
-    }
-}
-
-
-#external-site-redirection {
-    text-align: center;
-    button, a.button {
-        @include fixedsize(180px, 33px);
-        margin: 2em auto;
     }
 }

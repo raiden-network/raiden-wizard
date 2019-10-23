@@ -1,24 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="launchpad">
-  <p class="long">
-    You will be able to launch Raiden as soon as this account is funded with at least 1 RDN.
-  </p>
-
-  <ul class="account-info">
-    <li>
-      <span class="info-detail">Account Address:</span><span class="account-address highlighted">{{ configuration_file.account.address }}</span>
-    </li>
-    <li>
-      <span class="info-detail">Current RDN balance:</span><span class="account-rdn-balance highlighted">N/A</span>
-    </li>
-  </ul>
-  <button id="btn-launch" class="button next-page" onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>
+<h1>Almost there</h1>
+<div class="hero"></div>
+<div class="info-panel"></div>
+<div class="action">
+  <button onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>
     Launch Raiden
   </button>
 </div>
-
 {% end %}
 
 
@@ -27,18 +17,16 @@
  function checkBalances(){
    let url = "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
    let req = new XMLHttpRequest();
-   let rdn_balance_display_element = document.querySelector("span.account-rdn-balance");
 
    req.open("GET", url);
    req.setRequestHeader("Content-Type", "application/json");
 
    req.onload = function() {
      if (this.status == 200){
-       let btn = document.querySelector("#btn-launch");
+       let btn = document.querySelector("div.action button");
        let balance = JSON.parse(this.response).balance;
 
-       rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
-       btn.disabled = !(balance && balance.RDN.as_wei > 0);
+       btn.disabled = !(balance && balance.RDN.as_wei >= REQUIRED_RDN_AS_WEI);
      }
    }
    req.send();

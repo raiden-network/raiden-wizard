@@ -2,11 +2,27 @@
 
 {% block content %}
 <h1>Almost there</h1>
-<div class="hero"></div>
-<div class="info-panel"></div>
+<div class="hero">Last checks before launching Raiden</div>
+<div class="info-panel">
+  <ul class="checklist">
+    <li id="display-checklist"></li>
+    <li data-check="eth-balance">
+      <p>ETH Balance</p>
+      <span class="check-value highlighted"></span>
+    </li>
+    <li data-check="rdn-balance">
+      <p>RDN Balance</p>
+      <span class="check-value highlighted"></span>
+    </li>
+  </ul>
+</div>
 <div class="action">
-  <button onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>
-    Launch Raiden
+  <button id="btn-funding" class="link-button hide-when-disabled" data-link-url="{{ reverse_url('funding', configuration_file.file_name) }}" disabled>
+    Let's add some funds
+  </button>
+
+  <button id="btn-launch" class="hide-when-disabled" onClick="launchRaiden('{{ configuration_file.file_name }}');" disabled>
+    Let's go!
   </button>
 </div>
 {% end %}
@@ -33,10 +49,49 @@
 
  }
 
+ async function refresh() {
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name); }}");
+   let checklist_elem = document.querySelector("ul.checklist");
+   let eth_balance_check_elem = checklist_elem.querySelector("li[data-check=eth-balance]");
+   let rdn_balance_check_elem = checklist_elem.querySelector("li[data-check=rdn-balance]");
 
- window.addEventListener("load", function() {
-   checkBalances();
-   setInterval(checkBalances, 5000);
+   let btn_funding = document.getElementById("btn-funding");
+   let btn_launch = document.getElementById("btn-launch");
+
+   let eth_balance_display_elem = eth_balance_check_elem.querySelector("span.check-value");
+   let rdn_balance_display_elem = rdn_balance_check_elem.querySelector("span.check-value");
+
+   let has_enough_eth = (balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
+   let has_enough_rdn = (balance.RDN.as_wei >= REQUIRED_RDN_AS_WEI);
+
+
+   eth_balance_display_elem.textContent = balance.ETH.formatted;
+   eth_balance_display_elem.classList.toggle("ok", has_enough_eth);
+   eth_balance_display_elem.classList.toggle("nok", !has_enough_eth);
+
+   rdn_balance_display_elem.textContent = balance.RDN.formatted;
+   rdn_balance_display_elem.classList.toggle("ok", has_enough_rdn);
+   rdn_balance_display_elem.classList.toggle("nok", !has_enough_rdn);
+
+   let can_launch = (has_enough_eth && has_enough_rdn);
+
+   btn_funding.disabled = can_launch;
+   btn_launch.disabled = !can_launch;
+
+
+   let result_display = document.getElementById("display-checklist");
+   result_display.textContent = can_launch ? "All good!" : "Not all funding requirements satisfied";
+   result_display.classList.toggle("pass", can_launch);
+   result_display.classList.toggle("fail", !can_launch);
+
+ }
+
+
+ window.addEventListener("load", async function() {
+
+
+   refresh();
+   setInterval(refresh, 5000);
  });
 </script>
 

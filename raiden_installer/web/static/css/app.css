@@ -109,6 +109,26 @@ div.logo.business-card {
   height: 63px;
 }
 
+ul.checklist li {
+  display: block;
+}
+ul.checklist li.fail, ul.checklist li.pass {
+  font-weight: 600;
+  font-size: 150%;
+}
+ul.checklist li.fail {
+  color: #ef5350;
+}
+ul.checklist li.pass {
+  color: #28a5c8;
+}
+ul.checklist li span.check-value.nok {
+  color: #ef5350 !important;
+}
+ul.checklist li span.check-value.ok {
+  color: #28a5c8 !important;
+}
+
 ul.available-configurations {
   width: 100%;
   border-top: solid 1.5px #0a6e87;

@@ -27,6 +27,16 @@
            toggleView();
          }
 
+         function trackTransaction(tx_hash, configuration_file_name) {
+           let message = {
+             method: "track_transaction",
+             configuration_file_name: configuration_file_name,
+             tx_hash: tx_hash
+           }
+           WEBSOCKET.send(JSON.stringify(message));
+           toggleView();
+         }
+
          function resetSpinner() {
            let spinner_elem = document.querySelector("#background-task-tracker div.task-status-icon");
 

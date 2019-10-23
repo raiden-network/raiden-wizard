@@ -4,10 +4,11 @@ import sys
 import webbrowser
 from pathlib import Path
 from urllib.parse import urlparse
+import time
 
 import tornado.ioloop
 import wtforms
-from tornado.web import Application, RequestHandler, url
+from tornado.web import Application, HTTPError, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
 
@@ -104,6 +105,7 @@ class AsyncTaskHandler(WebSocketHandler):
             "close": self._run_close,
             "launch": self._run_launch,
             "swap": self._run_swap,
+            "track_transaction": self._run_track_transaction,
         }.get(method)
 
         return action and action(**data)
@@ -200,6 +202,28 @@ class AsyncTaskHandler(WebSocketHandler):
                     error_message = f"{key}: {'/'.join(error_list)}"
                     self._send_error_message(error_message)
         except (json.decoder.JSONDecodeError, KeyError) as exc:
+            self._send_error_message(str(exc))
+
+    def _run_track_transaction(self, **kw):
+        POLLING_INTERVAL = 10
+        configuration_file_name = kw.get("configuration_file_name")
+        tx_hash = kw.get("tx_hash")
+        time_elapsed = 0
+
+        try:
+            configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+            account = configuration_file.account
+            w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+            self._send_status_update(f"Waiting for confirmation of transaction {tx_hash}")
+
+            while not w3.eth.getTransactionReceipt(tx_hash):
+                time.sleep(POLLING_INTERVAL)
+                time_elapsed += POLLING_INTERVAL
+
+                self._send_status_update(f"Not confirmed after {time_elapsed} seconds...")
+            self._send_status_update("Transaction confirmed")
+            self._send_redirect(self.reverse_url("funding", configuration_file_name))
+        except Exception as exc:
             self._send_error_message(str(exc))
 
 

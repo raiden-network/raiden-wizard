@@ -83,7 +83,14 @@
    }
 
    web3.eth.sendTransaction(transaction_data, function(error, result) {
-     console.log(arguments);
+     if (result) {
+       // result is the transaction hash
+       trackTransaction(result, "{{ configuration_file.file_name }}");
+     }
+
+     if (error) {
+       console.error(error);
+     }
    });
  };
 

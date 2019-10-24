@@ -55,6 +55,10 @@
  }
 
 
+ function main() {
+   checkBalances();
+ }
+
  window.addEventListener("load", async function() {
    let checkboxes = document.querySelectorAll("input[type=checkbox]");
    let rdn_amount_input = document.querySelector("input[name=token_amount]");
@@ -93,9 +97,8 @@
    }
 
    checkAcknowledgements(checkboxes, rdn_amount_input);
-
-   checkBalances();
-   setInterval(checkBalances, 5000);
+   window.MAIN_VIEW_INTERVAL = 6000;
+   window.runMainView();
  });
 </script>
 {% end %}

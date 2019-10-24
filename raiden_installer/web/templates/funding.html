@@ -13,27 +13,43 @@
     <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
       Raiden Service Bundle</a>.
     Please fund the Raiden account (with address below) with at least <strong>{{ minimum_eth_required.formatted }}</strong> and <strong>{{ minimum_rdn_required.formatted }}</strong>.</p>
-  <p><em>If you don't have RDN tokens, send ETH and we can help you use it to buy RDN at a later step.</em></p>
-  <p>Current balance</p>
-  <ul class="account-info">
-    <li>
-      <span class="account-eth-balance highlighted">N/A ETH</span>
-    </li>
-    <li>
-      <span class="account-rdn-balance highlighted">N/A RDN</span>
-    </li>
-  </ul>
+  <p><em>If you don't have RDN tokens, send some extra ETH and we can help you use it to buy RDN at a later step.</em></p>
+  <div class="transfer-data-display">
+    <div>
+      <p>Current balance</p>
+      <ul class="account-info">
+        <li>
+          <span class="account-eth-balance highlighted">N/A ETH</span>
+        </li>
+        <li>
+          <span class="account-rdn-balance highlighted">N/A RDN</span>
+        </li>
+      </ul>
 
+      <ul class="action-list">
+        <li>
+          <button disabled class="hide-when-disabled" id="btn-web3-eth" onClick="sendEthViaWeb3();">
+            Send ETH via web3
+          </button>
+        </li>
+        <li>
+          <button disabled class="hide-when-disabled" id="btn-web3-rdn" onClick="sendRdnViaWeb3();">
+            Send RDN via web3
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div>
+      <p>Wallet QR Code</p>
+      <div id="address-qr-code" class="qr-code"></div>
+    </div>
+  </div>
   <p>Wallet Address</p>
   <div class="action-copy-paste">
     <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
   </div>
 </div>
 <div class="action">
-  <button disabled id="btn-web3" class="hide-when-disabled" onClick="sendViaWeb3(this);">
-    Transfer via web3 browser
-  </button>
-
   <button disabled
           id="btn-swap"
           class="link-button hide-when-disabled"
@@ -41,7 +57,7 @@
     Convert ETH into RDN
   </button>
   <button disabled
-          id="btn-launch" class="link-button hide-when-disabled"
+          id="btn-launch" class="link-button"
           data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}">
     Launch
   </button>
@@ -54,35 +70,25 @@
  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
  const WEB3_RDN_AMOUNT_ATTRIBUTE = "data-requested-rdn-amount";
  const KYBER_EXCHANGE_RATE_ATTRIBUTE = "data-kyber-exchange-rate";
- const CHAIN_ID = "{{ configuration_file.network.chain_id }}";
+ const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
 
- function sendViaWeb3(button_elem) {
-   const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
+ function checkWeb3Network() {
+   let required_chain_id = "{{ configuration_file.network.chain_id }}";
+   web3.version.getNetwork(function(error, chain_id){
+     if (error) {
+       console.error(error);
+     }
 
-   let eth_amount = button_elem.getAttribute(WEB3_ETH_AMOUNT_ATTRIBUTE);
-   let rdn_amount = button_elem.getAttribute(WEB3_RDN_AMOUNT_ATTRIBUTE);
-   let kyber_rate = button_elem.getAttribute(KYBER_EXCHANGE_RATE_ATTRIBUTE);
-   let web3 = window.web3;
+     if (chain_id != required_chain_id) {
+       let current_chain_name = CHAIN_ID_MAPPING[chain_id];
+       let required_chain_name = CHAIN_ID_MAPPING[required_chain_id];
+       alert(`Web3 Browser connected to ${current_chain_name}, please change to ${required_chain_name}.`);
+     }
+   })
+ }
 
-   if (eth_amount === null || rdn_amount === null) {
-     console.error("No amount established to be sent");
-     return
-   }
-
-   if (eth_amount <= 0 && rdn_amount <= 0) {
-     alert("You have enough funds already!");
-     return
-   }
-
-   let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
-
-   let transaction_data = {
-     from: sender_address,
-     to: TARGET_ADDRESS,
-     value: eth_amount
-   }
-
-   web3.eth.sendTransaction(transaction_data, function(error, result) {
+ function makeWeb3Transaction(w3, transaction_data) {
+   w3.eth.sendTransaction(transaction_data, function(error, result) {
      if (result) {
        // result is the transaction hash
        trackTransaction(result, "{{ configuration_file.file_name }}");
@@ -92,10 +98,42 @@
        console.error(error);
      }
    });
+ }
+
+ function sendEthViaWeb3(wei_to_send) {
+   checkWeb3Network();
+   let web3 = window.web3;
+   let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
+
+   let transaction_data = {
+     from: sender_address,
+     to: TARGET_ADDRESS,
+     value: wei_to_send || REQUIRED_ETH_AS_WEI
+   }
+
+   makeWeb3Transaction(web3, transaction_data);
  };
 
- async function calculateNeededFunds() {
-   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
+ function sendRdnViaWeb3(rei_to_send) {
+   checkWeb3Network();
+
+   let web3 = window.web3;
+   let rdn_address = RDN_TOKEN_ADDRESSES["{{ configuration_file.network.name }}"];
+   let rdn_amount = rei_to_send || REQUIRED_RDN_AS_WEI;
+   let contract = web3.eth.contract(EIP20_ABI).at(rdn_address);
+   let contract_data = contract.transfer.getData(TARGET_ADDRESS, rdn_amount);
+   let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
+
+   let transaction_data = {
+     from: sender_address,
+     to: rdn_address,
+     data: contract_data
+   }
+
+   makeWeb3Transaction(web3, transaction_data);
+ }
+
+ async function calculateNeededFunds(balance) {
    let kyber_exchange_rate = await getKyberExchangeRate("RDN");
 
    let eth_balance = balance && balance.ETH.as_wei;
@@ -123,68 +161,52 @@
    needed_rdn = Math.max(needed_rdn, 0);
 
    return {
-     account_status: balance,
-     exchange_rates: {
-       kyber: kyber_exchange_rate
-     },
-     eth: {
-       balance: eth_balance,
-       needed: needed_eth,
-       swap_for_rdn: {
-         kyber: (eth_balance && kyber_exchange_rate) && parseInt(eth_balance / kyber_exchange_rate)
-       }
-     },
-     rdn: {
-       balance: rdn_balance,
-       needed: needed_rdn
-     }
+     eth: needed_eth,
+     rdn: needed_rdn
    }
  }
 
- function updateDisplay(calculated_funds) {
+ function updateDisplay(balance) {
    let eth_balance_display_element = document.querySelector("span.account-eth-balance");
    let rdn_balance_display_element = document.querySelector("span.account-rdn-balance");
 
-   updateBalanceDisplay(calculated_funds.account_status, eth_balance_display_element, rdn_balance_display_element);
+   updateBalanceDisplay(balance, eth_balance_display_element, rdn_balance_display_element);
  }
 
- async function updateActionButtons(balance) {}
-
  async function poll() {
-   let calculated_funds = await calculateNeededFunds();
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
 
    let button_launch = document.getElementById("btn-launch");
    let button_swap = document.getElementById("btn-swap");
-   let button_web3 = document.getElementById("btn-web3");
    let has_web3 = Boolean(window.ethereum || window.web3);
 
-   updateDisplay(calculated_funds);
+   updateDisplay(balance);
 
-   let has_enough_eth = Boolean(calculated_funds.eth.needed <= 0);
-   let has_enough_rdn = Boolean(calculated_funds.rdn.needed <= 0);
+   button_launch.disabled = !(hasEnoughBalanceToLaunchRaiden(balance));
+   button_swap.disabled = !(balance.ETH && balance.ETH.as_wei > 0 && !hasEnoughRdnToLaunchRaiden(balance));
+ }
 
-   let funds_for_kyber_swap = calculated_funds.eth.swap_for_rdn.kyber || 0;
-   let needed_rdn = calculated_funds.rdn.needed;
-   let needed_eth = calculated_funds.eth.needed;
+ function generateQRCode(display_element) {
+   let address = "{{ configuration_file.account.address }}";
 
-   button_launch.disabled = !(has_enough_eth && has_enough_rdn);
-   button_swap.disabled = !((funds_for_kyber_swap  > needed_rdn) && !has_enough_rdn);
+   return new QRCode(display_element, {
+     text: `ethereum:${address}`,
+     colorDark : "#000000",
+     colorLight : "#ffffff",
+     correctLevel : QRCode.CorrectLevel.H
+   });
+ }
 
-   button_web3.setAttribute(WEB3_ETH_AMOUNT_ATTRIBUTE, needed_eth);
-   button_web3.setAttribute(WEB3_RDN_AMOUNT_ATTRIBUTE, needed_rdn);
-   button_web3.setAttribute(KYBER_EXCHANGE_RATE_ATTRIBUTE, calculated_funds.exchange_rates.kyber);
-   button_web3.disabled = !(has_web3 && (!has_enough_eth || !has_enough_rdn));
+ function main() {
+   poll();
  }
 
  window.addEventListener("load", async function () {
-   let address_div_elem = document.querySelector("div.action-copy-paste");
-   let account_address_elem = address_div_elem.querySelector("span.account-address");
-
-   address_div_elem.addEventListener("click", function(evt) {
-     copyToClipboard(address_div_elem, account_address_elem);
-   });
-
    let has_web3 = Boolean(window.ethereum || window.web3);
+   let button_send_eth = document.getElementById("btn-web3-eth");
+   let button_send_rdn = document.getElementById("btn-web3-rdn");
+
+   button_send_eth.disabled = button_send_rdn.disabled = !has_web3;
 
    if (has_web3) {
      // Modern dapp browsers...
@@ -194,16 +216,6 @@
        try {
          // Request account access if needed
          await ethereum.enable();
-
-         web3.version.getNetwork(function(error, chain_id){
-           if (error) {
-             console.error(error);             
-           }
-
-           if (chain_id != CHAIN_ID) {
-             alert("Web3 Browser detected, but not connected to {{ network.capitalized_name }}");
-           }
-         });
        } catch (error) {
          console.log(error);
        }
@@ -218,10 +230,21 @@
        console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
      }
    }
+ });
 
-   poll();
 
-   setInterval(poll, 5000);
+ window.addEventListener("load", function () {
+   let address_div_elem = document.querySelector("div.action-copy-paste");
+   let account_address_elem = address_div_elem.querySelector("span.account-address");
+   let qr_code = generateQRCode(document.getElementById("address-qr-code"));
+
+
+   address_div_elem.addEventListener("click", function(evt) {
+     copyToClipboard(address_div_elem, account_address_elem);
+   });
+
+   window.MAIN_VIEW_INTERVAL = 10000;
+   window.runMainView();
  });
 </script>
 {% end %}

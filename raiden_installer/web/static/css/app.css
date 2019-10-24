@@ -30,11 +30,13 @@ a {
 }
 
 button, a.button {
-  text-align: center;
+  line-height: 40px;
+  width: 270px;
   border: 2px solid;
   border-radius: 29px;
   font-weight: 400;
-  font-size: 14px;
+  font-size: 18px;
+  text-align: center;
   background-color: transparent;
   border-color: #28a5c8;
   color: #fff;
@@ -49,11 +51,8 @@ button:disabled, button[aria-disabled=true], a.button:disabled, a.button[aria-di
   border-color: rgba(40, 165, 200, 0.3);
   color: rgba(255, 255, 255, 0.3);
 }
-
-a.button {
-  display: inline-block;
-  padding: 2px 6px;
-  margin: auto;
+button.hide-when-disabled:disabled, a.button.hide-when-disabled:disabled {
+  display: none !important;
 }
 
 h1, h2 {
@@ -100,13 +99,30 @@ div.logo img {
   height: 100%;
 }
 div.logo.business-card {
-  position: absolute;
+  position: fixed;
   bottom: 10px;
   left: 10px;
   margin-left: 0 !important;
   text-align: left;
   width: 222px;
   height: 63px;
+}
+
+div.transfer-data-display {
+  width: 100%;
+  display: inline-grid;
+  justify-content: space-evenly;
+  grid-auto-flow: column;
+}
+div.transfer-data-display div.qr-code {
+  background-color: white;
+  padding: 1vh;
+  height: 256px;
+  width: 256px;
+}
+
+ul.action-list li {
+  height: 60px;
 }
 
 ul.checklist li {
@@ -195,7 +211,7 @@ section.content div.container {
   align-items: center;
   justify-self: center;
   min-height: 700px;
-  grid-template-rows: 100px minmax(120px, 150px) auto 120px 80px;
+  grid-template-rows: 100px minmax(100px, auto) auto 120px 80px;
 }
 section.content div.container div {
   justify-self: center;
@@ -239,16 +255,6 @@ section.content div.container div.action {
   display: inline-grid;
   grid-auto-flow: column;
   justify-content: space-evenly;
-}
-section.content div.container div.action button, section.content div.container div.action a.button {
-  font-size: 18px;
-  line-height: 21px;
-  line-height: 40px;
-  width: 270px;
-  display: inline-grid;
-}
-section.content div.container div.action button.hide-when-disabled:disabled, section.content div.container div.action a.button.hide-when-disabled:disabled {
-  display: none !important;
 }
 section.content div.container div.ack-prompt {
   display: inline-grid;

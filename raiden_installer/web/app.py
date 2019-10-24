@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 import time
 
+from ethtoken.abi import EIP20_ABI
 import tornado.ioloop
 import wtforms
 from tornado.web import Application, HTTPError, RequestHandler, url
@@ -17,8 +18,15 @@ from ..base import Account, RaidenConfigurationFile
 from ..ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from ..network import Network
 from ..raiden import RaidenClient, RaidenClientError
-from ..token_exchange import Exchange, Kyber, RaidenTokenNetwork, TokenNetwork, Uniswap
-from ..tokens import DAIAmount, EthereumAmount, RDNAmount, Wei
+from ..token_exchange import (
+    Exchange,
+    Kyber,
+    RaidenTokenNetwork,
+    TokenNetwork,
+    Uniswap,
+    ExchangeError,
+)
+from ..tokens import DAIAmount, EthereumAmount, RDNAmount, Wei, RDN_ADDRESSES
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
@@ -29,7 +37,7 @@ MINIMUM_ETH_REQUIRED = EthereumAmount(Wei(5 * (10 ** 15)))
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
-DEFAULT_NETWORK = Network.get_by_name("mainnet")
+DEFAULT_NETWORK = Network.get_by_name("ropsten")
 
 
 def get_data_folder_path():
@@ -141,10 +149,6 @@ class AsyncTaskHandler(WebSocketHandler):
             latest.kill()
 
     def _run_swap(self, **kw):
-        DEPOSIT_TIMEOUT = 5
-
-        log.info(str(kw))
-
         try:
             configuration_file_name = kw.get("configuration_file_name")
             exchange = kw["exchange"]
@@ -176,32 +180,37 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 costs = exchange.calculate_transaction_costs(token_amount, account)
                 needed_funds = costs["total"]
+                exchange_rate = costs["exchange_rate"]
                 current_balance = account.get_ethereum_balance(w3)
-                required_deposit_amount = EthereumAmount(
-                    Wei(needed_funds.as_wei - current_balance.as_wei)
-                )
 
                 if needed_funds > current_balance:
-                    self._send_status_update(
-                        f"Please deposit at least {required_deposit_amount.formatted} to "
-                        f"{account.address} in the next {DEPOSIT_TIMEOUT} minutes"
+                    raise ValueError(
+                        (
+                            f"Not enough ETH. {current_balance.formatted} available, but "
+                            f"{needed_funds.formatted} needed"
+                        )
                     )
-                balance = account.wait_for_ethereum_funds(
-                    w3, required_deposit_amount, timeout=DEPOSIT_TIMEOUT * 60
+
+                self._send_status_update(
+                    (
+                        f"Best exchange rate found at {exchange.name}: "
+                        f"{exchange_rate.formatted} / {token_amount.sticker}"
+                    )
                 )
-                self._send_status_update(f"Account balance now is {balance.formatted}")
-                self._send_status_update(f"Acquiring {token_amount.formatted} via {exchange.name}")
+                self._send_status_update(
+                    f"Trying to acquire up to {token_amount.formatted} at this rate"
+                )
                 self._send_status_update(f"Estimated costs: {needed_funds.formatted}")
+
                 exchange.buy_tokens(account, token_amount)
-
                 token_balance = token_network.balance(account)
-                self._send_task_complete(f"Swap complete. {token_balance.formatted} available")
-
+                self._send_status_update(f"Swap complete. {token_balance.formatted} available")
+                self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
             else:
                 for key, error_list in form.errors.items():
                     error_message = f"{key}: {'/'.join(error_list)}"
                     self._send_error_message(error_message)
-        except (json.decoder.JSONDecodeError, KeyError) as exc:
+        except (json.decoder.JSONDecodeError, KeyError, ExchangeError, ValueError) as exc:
             self._send_error_message(str(exc))
 
     def _run_track_transaction(self, **kw):
@@ -234,6 +243,8 @@ class BaseRequestHandler(RequestHandler):
                 "network": DEFAULT_NETWORK,
                 "minimum_eth_required": MINIMUM_ETH_REQUIRED,
                 "minimum_rdn_required": MINIMUM_RDN_REQUIRED,
+                "eip20_abi": json.dumps(EIP20_ABI),
+                "rdn_addresses": json.dumps(RDN_ADDRESSES),
             }
         )
         return super().render(template_name, **context_data)
@@ -397,10 +408,10 @@ class ConfigurationListAPIHandler(APIHandler):
 class ConfigurationItemAPIHandler(APIHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        w3 = make_web3_provider(
-            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
-        )
-        rdn_balance = RaidenTokenNetwork(w3=w3).balance(configuration_file.account)
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        raiden_token_network = RaidenTokenNetwork(w3=w3)
+        rdn_balance = raiden_token_network.balance(configuration_file.account)
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
 
         def serialize_balance(balance_amount):
@@ -426,6 +437,35 @@ class ConfigurationItemAPIHandler(APIHandler):
         )
 
 
+class CostEstimationAPIHandler(APIHandler):
+    def get(self, configuration_file_name):
+        # Returns the highest estimate of ETH needed to get MINIMUM_RDN_REQUIRED
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+
+        kyber = Kyber(w3=w3)
+        uniswap = Uniswap(w3=w3)
+
+        highest_cost = 0
+        for exchange in (kyber, uniswap):
+            exchange_costs = kyber.calculate_transaction_costs(MINIMUM_RDN_REQUIRED, account)
+            if not exchange_costs:
+                continue
+            total_cost = exchange_costs["total"].as_wei
+            highest_cost = max(highest_cost, total_cost)
+
+        estimated_cost = EthereumAmount(Wei(highest_cost))
+        self.render_json(
+            {
+                "dex_swap_RDN": {
+                    "as_wei": estimated_cost.as_wei,
+                    "formatted": estimated_cost.formatted,
+                }
+            }
+        )
+
+
 if __name__ == "__main__":
     app = Application(
         [
@@ -438,6 +478,7 @@ if __name__ == "__main__":
             url(r"/swap/(.*)/options", SwapOptionsHandler, name="swap-options"),
             url(r"/swap/(kyber|uniswap)/(.*)", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),
+            url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail"),
             url(
                 r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
             ),

@@ -49,7 +49,7 @@
 
  }
 
- async function refresh() {
+ async function main() {
    let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name); }}");
    let checklist_elem = document.querySelector("ul.checklist");
    let eth_balance_check_elem = checklist_elem.querySelector("li[data-check=eth-balance]");
@@ -61,8 +61,8 @@
    let eth_balance_display_elem = eth_balance_check_elem.querySelector("span.check-value");
    let rdn_balance_display_elem = rdn_balance_check_elem.querySelector("span.check-value");
 
-   let has_enough_eth = (balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
-   let has_enough_rdn = (balance.RDN.as_wei >= REQUIRED_RDN_AS_WEI);
+   let has_enough_eth = hasEnoughEthToLaunchRaiden(balance);
+   let has_enough_rdn = hasEnoughRdnToLaunchRaiden(balance);
 
 
    eth_balance_display_elem.textContent = balance.ETH.formatted;
@@ -86,12 +86,8 @@
 
  }
 
-
  window.addEventListener("load", async function() {
-
-
-   refresh();
-   setInterval(refresh, 5000);
+   main();
  });
 </script>
 

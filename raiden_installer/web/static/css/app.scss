@@ -28,7 +28,8 @@ $dimensions: (
     border: 2px solid;
     border-radius: 29px;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 18px;
+    text-align: center;
 }
 
 @mixin buttoncolor($background-color, $border-color, $text-color) {
@@ -98,7 +99,7 @@ a {
 }
 
 button, a.button {
-    text-align: center;
+    @include fixedsize(270px, 40px);
     @include button();
     @include buttoncolor(color(button-bg), color(button-border), color(text-standard));
     &:hover {
@@ -107,13 +108,12 @@ button, a.button {
     &:disabled, &[aria-disabled="true"] {
         @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
     }
+
+    &.hide-when-disabled:disabled {
+        display: none !important;
+    }
 }
 
-a.button {
-    display: inline-block;
-    padding: 2px 6px;
-    margin: auto;
-}
 
 h1, h2 {
     text-align: center;
@@ -153,7 +153,7 @@ div.logo {
         height: 100%;
     }
     &.business-card {
-        position: absolute;
+        position: fixed;
         bottom: 10px;
         left: 10px;
         margin-left: 0 !important;
@@ -162,6 +162,26 @@ div.logo {
         // 60% of image size
         width: 222px;
         height: 63px;
+    }
+}
+
+div.transfer-data-display {
+    width: 100%;
+    display: inline-grid;
+    justify-content: space-evenly;
+    grid-auto-flow: column;
+
+    div.qr-code {
+        background-color: white;
+        padding: 1vh;
+        height: 256px;
+        width: 256px;
+    }
+}
+
+ul.action-list {
+    li {
+        height: 60px;
     }
 }
 
@@ -266,7 +286,7 @@ section.content {
         justify-self: center;
         min-height: 700px;
 
-        grid-template-rows: 100px minmax(120px, 150px) auto 120px 80px;
+        grid-template-rows: 100px minmax(100px, auto) auto 120px 80px;
 
         div {
             justify-self: center;
@@ -280,7 +300,6 @@ section.content {
         }
 
         div.info-panel {
-//            max-width: 785px;
             text-align: center;
 
             span.private {
@@ -319,17 +338,6 @@ section.content {
             display: inline-grid;
             grid-auto-flow: column;
             justify-content: space-evenly;
-
-            button, a.button {
-                font-size: 18px;
-                line-height: 21px;
-                @include fixedsize(270px, 40px);
-                display: inline-grid;
-
-                &.hide-when-disabled:disabled {
-                    display: none !important;
-                }
-            }
         }
 
         div.ack-prompt {

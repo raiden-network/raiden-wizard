@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 
 from web3 import HTTPProvider, Web3
 from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
+from web3.gas_strategies.time_based import fast_gas_price_strategy
 
 from .account import Account
 from .network import Network
@@ -9,6 +10,7 @@ from .network import Network
 
 def make_web3_provider(url: str, account: Account) -> Web3:
     w3 = Web3(HTTPProvider(url))
+    w3.eth.setGasPriceStrategy(fast_gas_price_strategy)
     w3.middleware_stack.add(construct_sign_and_send_raw_middleware(account.private_key))
     w3.middleware_stack.inject(geth_poa_middleware, layer=0)
 

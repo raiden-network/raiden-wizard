@@ -33,7 +33,7 @@ PORT = 8080
 
 
 MINIMUM_RDN_REQUIRED = RDNAmount(Wei(6 * (10 ** 18)))
-MINIMUM_ETH_REQUIRED = EthereumAmount(Wei(5 * (10 ** 15)))
+MINIMUM_ETH_REQUIRED = EthereumAmount(Wei(2 * (10 ** 16)))
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]

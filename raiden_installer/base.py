@@ -22,10 +22,9 @@ from typing import Optional
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
+import psutil
 import requests
 import toml
-
-import psutil
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
 from eth_utils import to_checksum_address
 from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
@@ -36,6 +35,7 @@ from raiden_contracts.contract_manager import (
 )
 from web3 import HTTPProvider, Web3
 from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
+
 from xdg import XDG_DATA_HOME
 
 logger = logging.getLogger(__name__)
@@ -687,7 +687,7 @@ class RaidenConfigurationFile:
 
     @property
     def path_finding_service_url(self):
-        return f"https://pfs-{self.network.name}-with-fee.services-dev.raiden.network"
+        return f"https://pfs-{self.network.name}-with-fee.services-test.raiden.network"
 
     @property
     def configuration_data(self):

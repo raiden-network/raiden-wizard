@@ -1,18 +1,18 @@
-import os
 import glob
+import os
 from pathlib import Path
-import toml
 from typing import List
 
+import toml
 from eth_utils import to_checksum_address
-from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
 from xdg import XDG_DATA_HOME
 
-from . import log
-from .account import Account
-from .ethereum_rpc import EthereumRPCProvider, make_web3_provider
-from .network import Network
-from .token_exchange import get_contract_address
+from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
+from raiden_installer import log
+from raiden_installer.account import Account
+from raiden_installer.ethereum_rpc import EthereumRPCProvider, make_web3_provider
+from raiden_installer.network import Network
+from raiden_installer.token_exchange import get_contract_address
 
 
 class PassphraseFile:

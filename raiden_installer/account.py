@@ -1,12 +1,12 @@
-import os
-import glob
 import datetime
+import glob
 import json
-import sys
-import uuid
+import os
 import random
 import string
+import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -14,8 +14,8 @@ from eth_keyfile import create_keyfile_json, decode_keyfile_json
 from eth_utils import to_checksum_address
 from web3 import Web3
 
-from . import log
-from .tokens import EthereumAmount, Wei
+from raiden_installer import log
+from raiden_installer.tokens import EthereumAmount, Wei
 
 
 def make_random_string(length=32):

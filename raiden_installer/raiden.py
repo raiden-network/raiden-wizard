@@ -1,24 +1,23 @@
-import os
-import sys
-import re
-import functools
 import datetime
+import functools
+import os
+import re
 import socket
 import subprocess
-import time
+import sys
 import tarfile
+import time
 import zipfile
 from contextlib import closing
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
+from xml.etree import ElementTree
 
 import psutil
 import requests
-from xml.etree import ElementTree
 
-from . import log
-from .network import Network
+from raiden_installer import log, settings
 
 
 def extract_version_modifier(release_name):
@@ -291,26 +290,29 @@ class RaidenClient:
         return [release for release in cls.get_available_releases() if release.is_installed]
 
     @classmethod
+    def _make_release(cls, release_data):
+        def get_date(timestamp):
+            return datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").date()
+
+        for asset_data in release_data.get("assets", []):
+            version_data = cls.get_version_data(asset_data["name"])
+            release_date = get_date(release_data["published_at"])
+            if version_data:
+                return cls(
+                    year=release_date.year,
+                    month=release_date.month,
+                    day=release_date.day,
+                    browser_download_url=asset_data.get("browser_download_url"),
+                    **version_data,
+                )
+
+    @classmethod
     def _make_releases(cls, index_response):
         def get_date(timestamp):
             return datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").date()
 
-        releases = []
-        for release_data in index_response.json():
-            for asset_data in release_data.get("assets", []):
-                version_data = cls.get_version_data(asset_data["name"])
-                release_date = get_date(release_data["published_at"])
-                if version_data:
-                    releases.append(
-                        cls(
-                            year=release_date.year,
-                            month=release_date.month,
-                            day=release_date.day,
-                            browser_download_url=asset_data.get("browser_download_url"),
-                            **version_data,
-                        )
-                    )
-        return releases
+        releases = [cls._make_release(release_data) for release_data in index_response.json()]
+        return [release for release in releases if release]
 
     @classmethod
     def get_version_data(cls, release_name):
@@ -323,9 +325,21 @@ class RaidenClient:
             extra=groups.get("extra"),
         )
 
+    @classmethod
+    def make_by_tag(cls, release_tag):
+        tag_url = f"{cls.RELEASE_INDEX_URL}/tags/{release_tag}"
+        response = requests.get(tag_url)
+        response.raise_for_status()
+        return cls._make_release(response.json())
+
     @staticmethod
-    def select_client_class(network: Network):
-        return RaidenRelease if network.name == "mainnet" else RaidenTestnetRelease
+    def get_client():
+        raiden_class = {
+            "testing": RaidenTestnetRelease,
+            "mainnet": RaidenRelease,
+            "nightly": RaidenNightly,
+        }[settings.client_release_channel]
+        return raiden_class.make_by_tag(settings.client_release_version)
 
 
 class RaidenRelease(RaidenClient):
@@ -394,6 +408,14 @@ class RaidenNightly(RaidenClient):
             return 0
 
     @classmethod
+    def make_by_tag(cls, release_tag):
+        raise NotImplementedError("Not implemented yet")
+
+    @classmethod
+    def _make_release(cls, **kw):
+        return cls(**kw)
+
+    @classmethod
     def _make_releases(cls, index_response):
         xmlns = "http://s3.amazonaws.com/doc/2006-03-01/"
 
@@ -411,9 +433,9 @@ class RaidenNightly(RaidenClient):
             if v
         }
 
-        for key, value in nightlies.items():
+        for key in nightlies.keys():
             nightlies[key]["year"] = int(nightlies[key]["year"])
             nightlies[key]["month"] = int(nightlies[key]["month"])
             nightlies[key]["day"] = int(nightlies[key]["day"])
 
-        return [cls(**nightly) for nightly in nightlies.values()]
+        return [cls._make_release(**nightly) for nightly in nightlies.values()]

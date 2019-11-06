@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 
-import os
-import unittest
 import hashlib
-import tempfile
+import os
 import platform
+import tempfile
+import unittest
 
-from raiden_installer.base import log
 from raiden_installer.account import Account
+from raiden_installer.common import log
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.token_exchange import Kyber, Uniswap, RaidenTokenNetwork
+from raiden_installer.token_exchange import Kyber, RaidenTokenNetwork, Uniswap
 from raiden_installer.tokens import EthereumAmount, RDNAmount, Wei
-
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 TEST_ACCOUNT_PRIVATE_KEY = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PRIVATE_KEY")

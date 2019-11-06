@@ -10,12 +10,11 @@ from raiden_contracts.contract_manager import (
     contracts_precompiled_path,
     get_contracts_deployment_info,
 )
-
-from . import log
-from .account import Account
-from .kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
-from .network import Network
-from .tokens import (
+from raiden_installer import log
+from raiden_installer.account import Account
+from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
+from raiden_installer.network import Network
+from raiden_installer.tokens import (
     DAI_ADDRESSES,
     RDN_ADDRESSES,
     DAIAmount,
@@ -26,7 +25,7 @@ from .tokens import (
     TokenSticker,
     Wei,
 )
-from .uniswap.web3 import contracts as uniswap_contracts
+from raiden_installer.uniswap.web3 import contracts as uniswap_contracts
 
 
 def get_contract_address(chain_id, contract_name):

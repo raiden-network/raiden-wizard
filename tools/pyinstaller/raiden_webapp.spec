@@ -1,8 +1,8 @@
 # -*- mode: python -*-
 
+import distutils
 import os
 import sys
-import distutils
 
 try:
     if distutils.distutils_path.endswith("__init__.py"):
@@ -14,19 +14,16 @@ except AttributeError:
 block_cipher = None
 
 PWD = os.path.abspath(os.path.join(os.getcwd(), os.path.dirname(sys.argv[-1])))
-WEBAPP_FOLDER = os.path.abspath(
-    os.path.join(PWD, "..", "..", "raiden_installer", "web")
-)
+ROOT_FOLDER = os.path.abspath(os.path.join(PWD, "..", ".."))
+RESOURCE_FOLDER = os.path.abspath(os.path.join(ROOT_FOLDER, "resources"))
+
 HOOKS_FOLDER = os.path.join(PWD, "hooks")
 
 a = Analysis(
-    [os.path.join(WEBAPP_FOLDER, "app.py")],
-    pathex=[],
+    [os.path.join(ROOT_FOLDER, "raiden_installer", "web.py")],
+    pathex=[os.path.join(ROOT_FOLDER, "raiden_installer")],
     binaries=[],
-    datas=[
-        (os.path.join(WEBAPP_FOLDER, "templates"), "templates"),
-        (os.path.join(WEBAPP_FOLDER, "static"), "static"),
-    ],
+    datas=[(RESOURCE_FOLDER, "resources")],
     hiddenimports=[
         "appdirs",
         "cytoolz._signatures",
@@ -72,4 +69,4 @@ if sys.platform == "darwin":
         exe,
         name="Raiden Wizard.app",
         icon="./raiden_installer/web/static/icons/raiden_wizard_macOS_icon.icns",
-        )
+    )

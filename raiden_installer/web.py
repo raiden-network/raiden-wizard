@@ -1,32 +1,31 @@
 import json
 import os
 import sys
-import webbrowser
-from pathlib import Path
-from urllib.parse import urlparse
 import time
+import webbrowser
+from urllib.parse import urlparse
 
-from ethtoken.abi import EIP20_ABI
 import tornado.ioloop
 import wtforms
+from ethtoken.abi import EIP20_ABI
 from tornado.web import Application, HTTPError, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
 
-from .. import log
-from ..base import Account, RaidenConfigurationFile
-from ..ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
-from ..network import Network
-from ..raiden import RaidenClient, RaidenClientError
-from ..token_exchange import (
+from raiden_installer import get_resource_folder_path, log
+from raiden_installer.base import Account, RaidenConfigurationFile
+from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
+from raiden_installer.network import Network
+from raiden_installer.raiden import RaidenClient, RaidenClientError
+from raiden_installer.token_exchange import (
     Exchange,
+    ExchangeError,
     Kyber,
     RaidenTokenNetwork,
     TokenNetwork,
     Uniswap,
-    ExchangeError,
 )
-from ..tokens import DAIAmount, EthereumAmount, RDNAmount, Wei, RDN_ADDRESSES
+from raiden_installer.tokens import RDN_ADDRESSES, DAIAmount, EthereumAmount, RDNAmount, Wei
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
@@ -37,15 +36,10 @@ MINIMUM_ETH_REQUIRED = EthereumAmount(Wei(2 * (10 ** 16)))
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
-DEFAULT_NETWORK = Network.get_by_name("ropsten")
+DEFAULT_NETWORK = Network.get_default()
+RAIDEN_CLIENT = RaidenClient.get_client()
 
-
-def get_data_folder_path():
-    # Find absolute path for non-code resources (static files, templates) When
-    # we are running in development, it will just be the same folder as this
-    # file, but when bundled by pyinstaller, it will be placed on the folder
-    # indicated by sys._MEIPASS
-    return getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
+RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 
 class QuickSetupForm(Form):
@@ -125,28 +119,25 @@ class AsyncTaskHandler(WebSocketHandler):
         configuration_file_name = kw.get("configuration_file_name")
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
 
-        network = configuration_file.network
-        client_class = RaidenClient.select_client_class(network)
-        latest = client_class.get_latest_release()
-        if not latest.is_installed:
-            self._send_status_update(f"Downloading and installing raiden {latest.release}")
-            latest.install()
+        if not RAIDEN_CLIENT.is_installed:
+            self._send_status_update(f"Downloading and installing raiden {RAIDEN_CLIENT.release}")
+            RAIDEN_CLIENT.install()
             self._send_status_update("Installation complete")
 
         self._send_status_update(
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
         )
 
-        if not latest.is_running:
-            latest.launch(configuration_file)
+        if not RAIDEN_CLIENT.is_running:
+            RAIDEN_CLIENT.launch(configuration_file)
 
         try:
-            latest.wait_for_web_ui_ready()
+            RAIDEN_CLIENT.wait_for_web_ui_ready()
             self._send_task_complete("Raiden is ready!")
-            self._send_redirect(latest.WEB_UI_INDEX_URL)
+            self._send_redirect(RAIDEN_CLIENT.WEB_UI_INDEX_URL)
         except (RaidenClientError, RuntimeError) as exc:
             self._send_error_message(f"Raiden process failed to start: {exc}")
-            latest.kill()
+            RAIDEN_CLIENT.kill()
 
     def _run_swap(self, **kw):
         try:
@@ -449,7 +440,7 @@ class CostEstimationAPIHandler(APIHandler):
 
         highest_cost = 0
         for exchange in (kyber, uniswap):
-            exchange_costs = kyber.calculate_transaction_costs(MINIMUM_RDN_REQUIRED, account)
+            exchange_costs = exchange.calculate_transaction_costs(MINIMUM_RDN_REQUIRED, account)
             if not exchange_costs:
                 continue
             total_cost = exchange_costs["total"].as_wei
@@ -489,8 +480,8 @@ if __name__ == "__main__":
             ),
         ],
         debug=DEBUG,
-        static_path=os.path.join(get_data_folder_path(), "static"),
-        template_path=os.path.join(get_data_folder_path(), "templates"),
+        static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
+        template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
     )
     app.listen(PORT)
 

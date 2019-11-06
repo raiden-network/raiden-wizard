@@ -1,11 +1,11 @@
 from urllib.parse import urlparse
 
 from web3 import HTTPProvider, Web3
-from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy
+from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
 
-from .account import Account
-from .network import Network
+from raiden_installer.account import Account
+from raiden_installer.network import Network
 
 
 def make_web3_provider(url: str, account: Account) -> Web3:

@@ -1,23 +1,20 @@
 import os
 import time
 
-from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
-
 from whaaaaat import ValidationError, Validator, prompt
 
-from ..account import Account
-from ..base import RaidenConfigurationFile
-from ..network import Network, FundingError
-from ..raiden import RAIDEN_CLIENT_DEFAULT_CLASS
-from ..ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
-from ..token_exchange import RaidenToken, get_contract_address
-
+from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
+from raiden_installer.account import Account
+from raiden_installer.base import RaidenConfigurationFile
+from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
+from raiden_installer.network import FundingError, Network
+from raiden_installer.raiden import RAIDEN_CLIENT_DEFAULT_CLASS
+from raiden_installer.token_exchange import RaidenToken, get_contract_address
 
 ETHEREUM_RPC_ENDPOINTS = []
-DEFAULT_NETWORK_NAME = os.getenv("RAIDEN_INSTALLER_NETWORK", "ropsten")
 DEFAULT_INFURA_PROJECT_ID = os.getenv("RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 
-DEFAULT_NETWORK = Network.get_by_name(DEFAULT_NETWORK_NAME)
+DEFAULT_NETWORK = Network.get_default()
 
 
 if DEFAULT_INFURA_PROJECT_ID:

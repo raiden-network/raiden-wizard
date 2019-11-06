@@ -12,7 +12,7 @@
     by the
     <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
       Raiden Service Bundle</a>.
-    Please fund the Raiden account (with address below) with at least <strong>{{ minimum_eth_required.formatted }}</strong> and <strong>{{ minimum_rdn_required.formatted }}</strong>.</p>
+    Please fund the Raiden account (with address below) with at least <strong>{{ minimum_eth_required.formatted }}</strong> and approx. <strong>{{ minimum_rdn_required.formatted }}</strong>.</p>
   <p><em>If you don't have RDN tokens, send some extra ETH and we can help you use it to buy RDN at a later step.</em></p>
   <div class="transfer-data-display">
     <div>
@@ -29,12 +29,12 @@
       <ul class="action-list">
         <li>
           <button disabled class="hide-when-disabled" id="btn-web3-eth" onClick="sendEthViaWeb3();">
-            Send ETH via web3
+            Send ETH
           </button>
         </li>
         <li>
           <button disabled class="hide-when-disabled" id="btn-web3-rdn" onClick="sendRdnViaWeb3();">
-            Send RDN via web3
+            Send RDN
           </button>
         </li>
       </ul>
@@ -52,7 +52,7 @@
 <div class="action">
   <button disabled
           id="btn-swap"
-          class="link-button hide-when-disabled"
+          class="link-button"
           data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}">
     Convert ETH into RDN
   </button>
@@ -183,7 +183,7 @@
    updateDisplay(balance);
 
    button_launch.disabled = !(hasEnoughBalanceToLaunchRaiden(balance));
-   button_swap.disabled = !(balance.ETH && balance.ETH.as_wei > 0 && !hasEnoughRdnToLaunchRaiden(balance));
+   button_swap.disabled = !(balance.ETH && balance.ETH.as_wei > 0);
  }
 
  function generateQRCode(display_element) {

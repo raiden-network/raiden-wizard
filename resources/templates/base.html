@@ -62,11 +62,11 @@
          }
 
          function hasEnoughEthToLaunchRaiden(balance) {
-           return (balance && balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
+           return (balance && balance.ETH && balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
          }
 
          function hasEnoughRdnToLaunchRaiden(balance) {
-           return (balance && balance.RDN.as_wei >= (0.9 * REQUIRED_RDN_AS_WEI))
+           return (balance && balance.RDN && balance.RDN.as_wei >= (0.9 * REQUIRED_RDN_AS_WEI))
          }
 
          function hasEnoughBalanceToLaunchRaiden(balance) {

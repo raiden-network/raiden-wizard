@@ -69,7 +69,7 @@
    eth_balance_display_elem.classList.toggle("ok", has_enough_eth);
    eth_balance_display_elem.classList.toggle("nok", !has_enough_eth);
 
-   rdn_balance_display_elem.textContent = balance.RDN.formatted;
+   rdn_balance_display_elem.textContent = (balance.RDN && balance.RDN.formatted) || "N/A";
    rdn_balance_display_elem.classList.toggle("ok", has_enough_rdn);
    rdn_balance_display_elem.classList.toggle("nok", !has_enough_rdn);
 

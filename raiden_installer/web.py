@@ -142,7 +142,7 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_swap(self, **kw):
         try:
             configuration_file_name = kw.get("configuration_file_name")
-            exchange = kw["exchange"]
+            exchange_name = kw["exchange"]
             token_amount = kw["amount"]
             token_sticker = kw["token"]
         except (ValueError, KeyError, TypeError) as exc:
@@ -154,7 +154,7 @@ class AsyncTaskHandler(WebSocketHandler):
             form = TokenExchangeForm(
                 {
                     "network": [configuration_file.network.name],
-                    "exchange": [exchange],
+                    "exchange": [exchange_name],
                     "token_amount": [token_amount],
                     "token_sticker": [token_sticker],
                 }
@@ -168,6 +168,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 token_amount = token_network.TOKEN_AMOUNT_CLASS(Wei(form.data["token_amount"]))
                 exchange = Exchange.get_by_name(form.data["exchange"])(w3=w3)
+                self._send_status_update(f"Starting swap at {exchange.name}")
 
                 costs = exchange.calculate_transaction_costs(token_amount, account)
                 needed_funds = costs["total"]

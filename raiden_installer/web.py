@@ -17,22 +17,20 @@ from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
-from raiden_installer.token_exchange import (
-    Exchange,
-    ExchangeError,
-    Kyber,
-    RaidenTokenNetwork,
-    TokenNetwork,
-    Uniswap,
+from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, TokenNetwork, Uniswap
+from raiden_installer.tokens import (
+    EthereumAmount,
+    TokenAmount,
+    Wei,
+    Erc20Token,
+    ETHEREUM_REQUIRED,
+    SERVICE_TOKEN_REQUIRED,
+    TRANSFER_TOKEN_REQUIRED,
 )
-from raiden_installer.tokens import RDN_ADDRESSES, DAIAmount, EthereumAmount, RDNAmount, Wei
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
 
-
-MINIMUM_RDN_REQUIRED = RDNAmount(Wei(6 * (10 ** 18)))
-MINIMUM_ETH_REQUIRED = EthereumAmount(Wei(2 * (10 ** 16)))
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
@@ -67,8 +65,14 @@ class TokenExchangeForm(Form):
     network = wtforms.SelectField(
         choices=[(n.name, n.capitalized_name) for n in NETWORKS_WITH_TOKEN_SWAP]
     )
+    service_token_sticker = SERVICE_TOKEN_REQUIRED.sticker
+    transfer_token_sticker = TRANSFER_TOKEN_REQUIRED.sticker
+
     token_sticker = wtforms.SelectField(
-        choices=[(RDNAmount.STICKER, RDNAmount.STICKER), (DAIAmount.STICKER, DAIAmount.STICKER)]
+        choices=[
+            (service_token_sticker, service_token_sticker),
+            (transfer_token_sticker, transfer_token_sticker),
+        ]
     )
     token_amount = wtforms.IntegerField()
 
@@ -166,7 +170,7 @@ class AsyncTaskHandler(WebSocketHandler):
                 token_network_class = TokenNetwork.get_by_sticker(form.data["token_sticker"])
                 token_network = token_network_class(w3=w3)
 
-                token_amount = token_network.TOKEN_AMOUNT_CLASS(Wei(form.data["token_amount"]))
+                token_amount = TokenAmount(Wei(form.data["token_amount"]), token_network.TOKEN)
                 exchange = Exchange.get_by_name(form.data["exchange"])(w3=w3)
                 self._send_status_update(f"Starting swap at {exchange.name}")
 
@@ -233,10 +237,10 @@ class BaseRequestHandler(RequestHandler):
         context_data.update(
             {
                 "network": DEFAULT_NETWORK,
-                "minimum_eth_required": MINIMUM_ETH_REQUIRED,
-                "minimum_rdn_required": MINIMUM_RDN_REQUIRED,
+                "ethereum_required": ETHEREUM_REQUIRED,
+                "service_token_required": SERVICE_TOKEN_REQUIRED,
+                "transfer_token_required": TRANSFER_TOKEN_REQUIRED,
                 "eip20_abi": json.dumps(EIP20_ABI),
-                "rdn_addresses": json.dumps(RDN_ADDRESSES),
             }
         )
         return super().render(template_name, **context_data)
@@ -312,37 +316,38 @@ class LaunchHandler(BaseRequestHandler):
 
 
 class SwapOptionsHandler(BaseRequestHandler):
-    def get(self, configuration_file_name):
+    def get(self, configuration_file_name, token_sticker):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
         kyber = Kyber(w3=w3)
         uniswap = Uniswap(w3=w3)
+        token = Erc20Token.find_by_sticker(token_sticker)
 
         self.render(
             "swap_options.html",
             configuration_file=configuration_file,
             kyber=kyber,
             uniswap=uniswap,
+            token=token,
         )
 
 
 class SwapHandler(BaseRequestHandler):
-    def get(self, exchange_name, configuration_file_name):
+    def get(self, exchange_name, configuration_file_name, token_sticker):
         exchange_class = Exchange.get_by_name(exchange_name)
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
 
-        exchange = exchange_class(w3=w3)
-        current_balance = configuration_file.account.get_ethereum_balance(w3)
         self.render(
             "swap.html",
-            exchange=exchange,
+            exchange=exchange_class(w3=w3),
             configuration_file=configuration_file,
-            balance=current_balance,
+            balance=configuration_file.account.get_ethereum_balance(w3),
+            token=Erc20Token.find_by_sticker(token_sticker),
         )
 
 
@@ -402,8 +407,13 @@ class ConfigurationItemAPIHandler(APIHandler):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        raiden_token_network = RaidenTokenNetwork(w3=w3)
-        rdn_balance = raiden_token_network.balance(configuration_file.account)
+        service_token_network = TokenNetwork.get_by_sticker(SERVICE_TOKEN_REQUIRED.sticker)(w3=w3)
+        transfer_token_network = TokenNetwork.get_by_sticker(TRANSFER_TOKEN_REQUIRED.sticker)(
+            w3=w3
+        )
+
+        service_token_balance = service_token_network.balance(configuration_file.account)
+        transfer_token_balance = transfer_token_network.balance(configuration_file.account)
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
 
         def serialize_balance(balance_amount):
@@ -423,7 +433,8 @@ class ConfigurationItemAPIHandler(APIHandler):
                 "network": configuration_file.network.name,
                 "balance": {
                     "ETH": serialize_balance(eth_balance),
-                    "RDN": serialize_balance(rdn_balance),
+                    "service_token": serialize_balance(service_token_balance),
+                    "transfer_token": serialize_balance(transfer_token_balance),
                 },
             }
         )
@@ -431,7 +442,7 @@ class ConfigurationItemAPIHandler(APIHandler):
 
 class CostEstimationAPIHandler(APIHandler):
     def get(self, configuration_file_name):
-        # Returns the highest estimate of ETH needed to get MINIMUM_RDN_REQUIRED
+        # Returns the highest estimate of ETH needed to get required service token amount
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
@@ -441,7 +452,7 @@ class CostEstimationAPIHandler(APIHandler):
 
         highest_cost = 0
         for exchange in (kyber, uniswap):
-            exchange_costs = exchange.calculate_transaction_costs(MINIMUM_RDN_REQUIRED, account)
+            exchange_costs = exchange.calculate_transaction_costs(SERVICE_TOKEN_REQUIRED, account)
             if not exchange_costs:
                 continue
             total_cost = exchange_costs["total"].as_wei
@@ -467,8 +478,8 @@ if __name__ == "__main__":
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
-            url(r"/swap/(.*)/options", SwapOptionsHandler, name="swap-options"),
-            url(r"/swap/(kyber|uniswap)/(.*)", SwapHandler, name="swap"),
+            url(r"/exchanges/(.*)/([A-Z]{3})", SwapOptionsHandler, name="swap-options"),
+            url(r"/swap/(kyber|uniswap)/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),
             url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail"),
             url(

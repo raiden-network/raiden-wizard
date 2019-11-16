@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List, ClassVar
 
 from eth_utils import to_checksum_address
 from ethtoken.abi import EIP20_ABI
@@ -15,23 +15,24 @@ from raiden_installer.account import Account
 from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from raiden_installer.network import Network
 from raiden_installer.tokens import (
-    DAI_ADDRESSES,
-    RDN_ADDRESSES,
-    DAIAmount,
     EthereumAmount,
-    GoerliRaidenAmount,
-    RDNAmount,
     TokenAmount,
     TokenSticker,
     Wei,
+    Erc20Token,
+    LDN,
+    RDN,
+    SAI,
 )
 from raiden_installer.uniswap.web3 import contracts as uniswap_contracts
 
 
 def get_contract_address(chain_id, contract_name):
     try:
-        return get_contracts_deployment_info(chain_id)["contracts"][contract_name]["address"]
-    except TypeError as exc:
+        network_contracts = get_contracts_deployment_info(chain_id)
+        assert network_contracts
+        return network_contracts["contracts"][contract_name]["address"]
+    except (TypeError, AssertionError) as exc:
         log.warn(str(exc))
         return "0x0"
 
@@ -78,10 +79,10 @@ class ExchangeError(Exception):
 
 class Exchange:
     GAS_REQUIRED = 0
-    SUPPORTED_NETWORKS = []
-    TRANSFER_WEBSITE_URL = None
-    MAIN_WEBSITE_URL = None
-    TERMS_OF_SERVICE_URL = None
+    SUPPORTED_NETWORKS: List[str] = []
+    TRANSFER_WEBSITE_URL: Optional[str] = None
+    MAIN_WEBSITE_URL: Optional[str] = None
+    TERMS_OF_SERVICE_URL: Optional[str] = None
 
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -103,7 +104,7 @@ class Exchange:
         return self.__class__.__name__
 
     def _get_token_class(self, token_sticker: TokenSticker):
-        return {"RDN": RaidenTokenNetwork, "DAI": DAITokenNetwork}[token_sticker]
+        return {"RDN": RaidenTokenNetwork, "SAI": SAITokenNetwork}[token_sticker]
 
     def get_token(self, token_sticker: TokenSticker):
         return self._get_token_class(token_sticker)(w3=self.w3)
@@ -209,6 +210,9 @@ class Kyber(Exchange):
             )
 
         transaction_costs = self.calculate_transaction_costs(token_amount, account)
+        if transaction_costs is None:
+            raise ExchangeError("Failed to get transactions costs")
+
         eth_to_sell = transaction_costs["eth_sold"]
         exchange_rate = transaction_costs["exchange_rate"]
         gas_price = transaction_costs["gas_price"]
@@ -234,7 +238,7 @@ class Kyber(Exchange):
 class Uniswap(Exchange):
     GAS_REQUIRED = 75_000
     RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
-    DAI_EXCHANGE_ADDRESSES = {
+    SAI_EXCHANGE_ADDRESSES = {
         "kovan": "0x8779C708e2C3b1067de9Cd63698E4334866c691C",
         "rinkeby": "0x77dB9C915809e7BE439D2AB21032B1b8B58F6891",
     }
@@ -262,7 +266,7 @@ class Uniswap(Exchange):
 
     def _get_exchange_address(self, token_sticker: TokenSticker) -> str:
         try:
-            exchanges = {"RDN": self.RAIDEN_EXCHANGE_ADDRESSES, "DAI": self.DAI_EXCHANGE_ADDRESSES}
+            exchanges = {"RDN": self.RAIDEN_EXCHANGE_ADDRESSES, "SAI": self.SAI_EXCHANGE_ADDRESSES}
             return exchanges[token_sticker][self.network.name]
         except KeyError:
             raise ExchangeError(f"{self.name} does not have a listed exchange for {token_sticker}")
@@ -297,6 +301,10 @@ class Uniswap(Exchange):
 
     def buy_tokens(self, account: Account, token_amount: TokenAmount):
         costs = self.calculate_transaction_costs(token_amount, account)
+
+        if costs is None:
+            raise ExchangeError("Failed to get transaction costs")
+
         exchange_proxy = self._get_exchange_proxy(token_amount.sticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
@@ -328,8 +336,8 @@ class Uniswap(Exchange):
 
 
 class TokenNetwork:
-    NETWORKS_DEPLOYED = []
-    TOKEN_AMOUNT_CLASS = None
+    NETWORKS_DEPLOYED: List[str] = []
+    TOKEN: ClassVar[Optional[Erc20Token]]
 
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -340,11 +348,10 @@ class TokenNetwork:
 
     def balance(self, account: Account) -> Optional[TokenAmount]:
         try:
-            assert self.TOKEN_AMOUNT_CLASS is not None
+            assert self.TOKEN is not None
 
-            return self.TOKEN_AMOUNT_CLASS(
-                Wei(self.token_proxy.functions.balanceOf(account.address).call())
-            )
+            amount = Wei(self.token_proxy.functions.balanceOf(account.address).call())
+            return TokenAmount(amount, self.TOKEN)
         except (AttributeError, AssertionError):
             return None
 
@@ -359,13 +366,13 @@ class TokenNetwork:
 
     @staticmethod
     def get_by_sticker(sticker: str):
-        return {"RDN": RaidenTokenNetwork, "DAI": DAITokenNetwork, "LDN": CustomTokenNetwork}[
+        return {"RDN": RaidenTokenNetwork, "SAI": SAITokenNetwork, "LDN": CustomTokenNetwork}[
             sticker
         ]
 
 
 class CustomTokenNetwork(TokenNetwork):
-    TOKEN_AMOUNT_CLASS = GoerliRaidenAmount
+    TOKEN = LDN
     TOKEN_AMOUNT = 10 ** 21
     GAS_REQUIRED_FOR_MINT = 100_000
     GAS_REQUIRED_FOR_DEPOSIT = 200_000
@@ -423,23 +430,23 @@ class CustomTokenNetwork(TokenNetwork):
         )
 
 
-class DAITokenNetwork(TokenNetwork):
+class SAITokenNetwork(TokenNetwork):
     NETWORKS_DEPLOYED = ["mainnet", "ropsten", "rinkeby", "kovan"]
-    TOKEN_AMOUNT_CLASS = DAIAmount
+    TOKEN = SAI
 
     def _get_token_network_address(self):
         network = Network.get_by_chain_id(int(self.w3.net.version))
-        address = DAI_ADDRESSES[network.name]
+        address = SAI.addresses[network.name]
 
         return to_checksum_address(address)
 
 
 class RaidenTokenNetwork(TokenNetwork):
-    TOKEN_AMOUNT_CLASS = RDNAmount
+    TOKEN = RDN
     NETWORKS_DEPLOYED = ["mainnet", "ropsten", "rinkeby", "kovan"]
 
     def _get_token_network_address(self):
         network = Network.get_by_chain_id(int(self.w3.net.version))
-        address = RDN_ADDRESSES[network.name]
+        address = RDN.addresses[network.name]
 
         return to_checksum_address(address)

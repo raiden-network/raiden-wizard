@@ -4,10 +4,11 @@
         <title>Raiden Installer</title>
         <link rel="stylesheet" type="text/css" href="{{ static_url('css/app.css') }}"/>
         <script src="{{ static_url('js/qrcode.min.js') }}"></script>
-        <script type="text/javascript">         
+        <script type="text/javascript">
          const WEBSOCKET = new WebSocket("ws://{{ request.host }}{{ reverse_url('websocket') }}");
-         const REQUIRED_RDN_AS_WEI = parseInt("{{ minimum_rdn_required.as_wei }}");
-         const REQUIRED_ETH_AS_WEI = parseInt("{{ minimum_eth_required.as_wei }}");
+         const SERVICE_TOKEN_REQUIRED_AMOUNT = parseInt("{{ service_token_required.as_wei }}");
+         const TRANSFER_TOKEN_REQUIRED_AMOUNT = parseInt("{{ transfer_token_required.as_wei }}");
+         const ETHEREUM_REQUIRED_AMOUNT = parseInt("{{ ethereum_required.as_wei }}");
          const CHAIN_ID_MAPPING = {
            1: "Mainnet",
            3: "Ropsten",
@@ -16,11 +17,36 @@
            42: "Kovan",
          };
 
-         const RDN_TOKEN_ADDRESSES = {% raw rdn_addresses %}           
          const EIP20_ABI = {% raw eip20_abi %};
 
          var MAIN_VIEW_INTERVAL;
          var RUNNING_TIMERS = new Array();
+
+         async function connectWeb3() {
+           let has_web3 = Boolean(window.ethereum || window.web3);
+           if (has_web3) {
+             // Modern dapp browsers...
+             if (window.ethereum) {
+               console.log("Using modern dapp browser");
+               window.web3 = new Web3(ethereum);
+               try {
+                 // Request account access if needed
+                 await ethereum.enable();
+               } catch (error) {
+                 console.log(error);
+               }
+             }
+             // Legacy dapp browsers...
+             else if (window.web3) {
+               console.log("Using legacy web3");
+               window.web3 = new Web3(web3.currentProvider);
+             }
+             // Non-dapp browsers...
+             else {
+               console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+             }
+           }
+         };
 
          async function getKyberExchangeRate(token) {
            const url = "https://api.kyber.network/api/tokens/pairs";
@@ -62,15 +88,21 @@
          }
 
          function hasEnoughEthToLaunchRaiden(balance) {
-           return (balance && balance.ETH && balance.ETH.as_wei >= REQUIRED_ETH_AS_WEI);
+           return (balance && balance.ETH && balance.ETH.as_wei >= ETHEREUM_REQUIRED_AMOUNT);
          }
 
-         function hasEnoughRdnToLaunchRaiden(balance) {
-           return (balance && balance.RDN && balance.RDN.as_wei >= (0.9 * REQUIRED_RDN_AS_WEI))
+         function hasEnoughServiceTokenToLaunchRaiden(balance) {
+           return (balance && balance.service_token && balance.service_token.as_wei >= (0.9 * SERVICE_TOKEN_REQUIRED_AMOUNT))
+         }
+
+         function hasEnoughTransferTokenToLaunchRaiden(balance) {
+           return (balance && balance.transfer_token && balance.transfer_token.as_wei >= (0.9 * TRANSFER_TOKEN_REQUIRED_AMOUNT))
          }
 
          function hasEnoughBalanceToLaunchRaiden(balance) {
-           return hasEnoughEthToLaunchRaiden(balance) && hasEnoughRdnToLaunchRaiden(balance)
+           let enough_token = hasEnoughServiceTokenToLaunchRaiden(balance) && hasEnoughTransferTokenToLaunchRaiden(balance);
+           let enough_eth = hasEnoughEthToLaunchRaiden(balance)
+           return enough_token && enough_eth;
          }
 
          function trackTransaction(tx_hash, configuration_file_name) {
@@ -124,7 +156,7 @@
 
          async function getConfigurationFileData(configuration_file_url) {
            let request = await fetch(configuration_file_url);
-           return await request.json();           
+           return await request.json();
          }
 
          async function getBalances(configuration_file_url) {
@@ -132,14 +164,22 @@
            return configuration_file_data && configuration_file_data.balance;
          }
 
-         function updateBalanceDisplay(balance, eth_balance_display_element, rdn_balance_display_element){
+         function updateBalanceDisplay(balance, opts){
 
-           if (balance && balance.ETH && eth_balance_display_element) {
-             eth_balance_display_element.textContent = balance && balance.ETH.formatted;
+           let eth_balance_display = opts.ethereum_element;
+           let service_token_display = opts.service_token_element;
+           let transfer_token_display = opts.transfer_token_element;
+
+           if (balance && balance.ETH && eth_balance_display) {
+             eth_balance_display.textContent = balance && balance.ETH.formatted;
            }
 
-           if (balance && balance.RDN && rdn_balance_display_element) {
-             rdn_balance_display_element.textContent = balance && balance.RDN.formatted;
+           if (balance && balance.service_token && service_token_display) {
+             service_token_display.textContent = balance && balance.service_token.formatted;
+           }
+
+           if (balance && balance.transfer_token && transfer_token_display) {
+             transfer_token_display.textContent = balance && balance.transfer_token.formatted;
            }
          }
 

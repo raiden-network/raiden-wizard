@@ -7,14 +7,17 @@ from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
 from raiden_installer.account import Account
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
+from raiden_installer.raiden import RaidenClient
 from raiden_installer.network import FundingError, Network
-from raiden_installer.raiden import RAIDEN_CLIENT_DEFAULT_CLASS
-from raiden_installer.token_exchange import RaidenToken, get_contract_address
+from raiden_installer.token_exchange import Exchange, get_contract_address
+from raiden_installer.tokens import RDN, Wei, TokenAmount
 
 ETHEREUM_RPC_ENDPOINTS = []
 DEFAULT_INFURA_PROJECT_ID = os.getenv("RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 
 DEFAULT_NETWORK = Network.get_default()
+
+RELEASE_MAP = RaidenClient.get_all_releases()
 
 
 if DEFAULT_INFURA_PROJECT_ID:
@@ -201,7 +204,9 @@ def print_invalid_option():
 
 
 def pretty_print_configuration(config_file: RaidenConfigurationFile):
-    account_description = f"Account {config_file.account.address} (Balance: {config_file.balance})"
+    account_description = (
+        f"Account {config_file.account.address} (Balance: {config_file.ethereum_balance})"
+    )
     network_description = (
         f"{config_file.network.name} via {config_file.ethereum_client_rpc_endpoint}"
     )
@@ -214,10 +219,8 @@ def main_prompt():
     account_choices = [Messages.action_account_create]
     raiden_release_management_choices = [Messages.action_release_manager]
 
-    if RaidenConfigurationFile.get_launchable_configurations():
-        configuration_choices.insert(0, Messages.action_launch_raiden)
-
     if RaidenConfigurationFile.get_available_configurations():
+        configuration_choices.insert(0, Messages.action_launch_raiden)
         configuration_choices.append(Messages.action_configuration_list)
 
     if Account.get_user_accounts():
@@ -243,10 +246,6 @@ def run_action_configuration_list():
 
 def run_action_release_manager():
 
-    all_releases = {
-        raiden.release: raiden for raiden in RAIDEN_CLIENT_DEFAULT_CLASS.get_available_releases()
-    }
-
     release_selection = prompt(
         {
             "name": "releases",
@@ -254,14 +253,14 @@ def run_action_release_manager():
             "message": Messages.input_release_manager,
             "choices": [
                 {"name": raiden.version, "value": raiden, "checked": raiden.is_installed}
-                for raiden in all_releases.values()
+                for raiden in RELEASE_MAP.values()
             ],
         }
     )
 
     to_install = [release for release in release_selection["releases"]]
 
-    for raiden in all_releases.values():
+    for raiden in RELEASE_MAP.values():
         if raiden.is_installed and raiden.version not in to_install:
             print(f"Uninstalling {raiden.version}")
             raiden.uninstall()
@@ -327,16 +326,12 @@ def run_action_account_fund():
 
 def run_action_swap_kyber():
     account = prompt_account_selection()
-    network = prompt_network_selection(
-        network_list=[network for network in Network.all() if network.KYBER_RDN_EXCHANGE]
-    )
     ethereum_rpc_endpoint = prompt_ethereum_rpc_endpoint_selection()
     w3 = make_web3_provider(ethereum_rpc_endpoint.url, account)
 
-    print(f"Attempting SWAP on kyber")
-
-    raiden_token = RaidenToken(w3, account)
-    raiden_token.kyber_ethereum_swap(network.MINIMUM_ETHEREUM_BALANCE_REQUIRED)
+    kyber = Exchange.get_by_name("kyber")(w3=w3)
+    amount = Wei(5 * (10 ** 18))
+    kyber.buy_tokens(account, TokenAmount(amount, RDN))
 
     return main_prompt()
 
@@ -350,7 +345,7 @@ def run_action_launch_raiden():
                 "message": Messages.input_launch_configuration,
                 "choices": [
                     {"name": f"{pretty_print_configuration(cfg)}", "value": cfg}
-                    for cfg in RaidenConfigurationFile.get_launchable_configurations()
+                    for cfg in RaidenConfigurationFile.get_available_configurations()
                 ],
             },
             {
@@ -358,8 +353,7 @@ def run_action_launch_raiden():
                 "type": "list",
                 "message": Messages.input_launch_release,
                 "choices": [
-                    {"name": raiden.release, "value": raiden}
-                    for raiden in RAIDEN_CLIENT_DEFAULT_CLASS.get_installed_releases()
+                    {"name": raiden.release, "value": raiden} for raiden in RELEASE_MAP.values()
                 ],
             },
         ]

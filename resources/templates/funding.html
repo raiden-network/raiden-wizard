@@ -1,19 +1,41 @@
-{% extends "base.html" %}
+b{% extends "base.html" %}
 
 {% block content %}
-<h1>Fund Wallet</h1>
+<h1>Fund Account</h1>
 <div class="hero">
   Raiden needs funds for its operation
 </div>
 
 <div class="info-panel">
   <p>
-    For example, ETH is required to create payment channels while RDN is the currency used
-    by the
-    <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
-      Raiden Service Bundle</a>.
-    Please fund the Raiden account (with address below) with at least <strong>{{ minimum_eth_required.formatted }}</strong> and approx. <strong>{{ minimum_rdn_required.formatted }}</strong>.</p>
-  <p><em>If you don't have RDN tokens, send some extra ETH and we can help you use it to buy RDN at a later step.</em></p>
+    The account that was generated for the operation of Raiden needs
+    to have funds of different kinds:
+  </p>
+  <ul class="funding-requirements">
+    <li>
+      ETH is required to create payment channels. You should have at
+      least <strong>{{ ethereum_required.formatted }}</strong> when first launching
+      raiden.
+    </li>
+    <li>
+      {{ service_token_required.sticker }} is the token used by the
+      <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
+        Raiden Service Bundle</a>. You should have approx. <strong>{{ service_token_required.formatted }}</strong> deposited into this account.
+    </li>
+    <li>
+      {{ transfer_token_required.sticker }} is the token which will be used
+      initially and that you will be able to make transfers through
+      the raiden channels. Please be ready to transfer about <strong>{{ transfer_token_required.formatted }}</strong>.
+    </li>
+  </ul>
+
+  <div class="address-detail">
+    <p>Account Address</p>
+    <div class="action-copy-paste">
+      <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
+    </div>
+  </div>
+  
   <div class="transfer-data-display">
     <div>
       <p>Current balance</p>
@@ -22,40 +44,59 @@
           <span class="account-eth-balance highlighted">N/A ETH</span>
         </li>
         <li>
-          <span class="account-rdn-balance highlighted">N/A RDN</span>
+          <span class="account-service-token-balance highlighted">N/A {{ service_token_required.sticker }}</span>
         </li>
+        <li>
+          <span class="account-transfer-token-balance highlighted">N/A {{ transfer_token_required.sticker }}</span>
+        </li>        
       </ul>
 
       <ul class="action-list">
         <li>
           <button disabled class="hide-when-disabled" id="btn-web3-eth" onClick="sendEthViaWeb3();">
-            Send ETH
+            Send {{ ethereum_required.formatted }}
           </button>
         </li>
         <li>
-          <button disabled class="hide-when-disabled" id="btn-web3-rdn" onClick="sendRdnViaWeb3();">
-            Send RDN
+          <button disabled class="hide-when-disabled" id="btn-web3-service-token" onClick="sendServiceToken();">
+            Send {{ service_token_required.formatted }}
           </button>
         </li>
+        <li>
+          <button disabled class="hide-when-disabled" id="btn-web3-transfer-token" onClick="sendTransferToken();">
+            Send {{ transfer_token_required.formatted }}
+          </button>
+        </li>        
       </ul>
     </div>
     <div>
-      <p>Wallet QR Code</p>
+      <p>QR Code</p>
       <div id="address-qr-code" class="qr-code"></div>
     </div>
   </div>
-  <p>Wallet Address</p>
-  <div class="action-copy-paste">
-    <span class="account-address highlighted">{{ configuration_file.account.address }}</span>
+
+  <div class="exchange-options-display">
+    <p>
+      If you don't have any of the required tokens but have ETH deposited in the account, the Wizard can connect you to exchanges
+    </p>
+    <div class="exchange action">
+      <button disabled
+              id="btn-swap-service-token"
+              class="link-button"
+              data-link-url="{{ reverse_url('swap-options', configuration_file.file_name, service_token_required.sticker) }}">
+        Exchange ETH for {{ service_token_required.sticker }}
+      </button>
+      <button disabled
+              id="btn-swap-transfer-token"
+              class="link-button"
+              data-link-url="{{ reverse_url('swap-options', configuration_file.file_name, transfer_token_required.sticker) }}">
+        Exchange ETH for {{ transfer_token_required.sticker }}
+      </button>
+    </div>
   </div>
+
 </div>
 <div class="action">
-  <button disabled
-          id="btn-swap"
-          class="link-button"
-          data-link-url="{{ reverse_url('swap-options', configuration_file.file_name) }}">
-    Convert ETH into RDN
-  </button>
   <button disabled
           id="btn-launch" class="link-button"
           data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}">
@@ -72,8 +113,9 @@
  const KYBER_EXCHANGE_RATE_ATTRIBUTE = "data-kyber-exchange-rate";
  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
 
- function checkWeb3Network() {
+ async function checkWeb3Network() {
    let required_chain_id = "{{ configuration_file.network.chain_id }}";
+   await connectWeb3();
    web3.version.getNetwork(function(error, chain_id){
      if (error) {
        console.error(error);
@@ -100,90 +142,65 @@
    });
  }
 
- function sendEthViaWeb3(wei_to_send) {
-   checkWeb3Network();
+ async function sendEthViaWeb3(wei_to_send) {
+   await checkWeb3Network();
    let web3 = window.web3;
    let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
 
    let transaction_data = {
      from: sender_address,
      to: TARGET_ADDRESS,
-     value: wei_to_send || REQUIRED_ETH_AS_WEI
+     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT
    }
-
+   
    makeWeb3Transaction(web3, transaction_data);
  };
 
- function sendRdnViaWeb3(rei_to_send) {
-   checkWeb3Network();
-
+ async function sendErc20Token(amount, token_address) {
+   await checkWeb3Network();
+   
    let web3 = window.web3;
-   let rdn_address = RDN_TOKEN_ADDRESSES["{{ configuration_file.network.name }}"];
-   let rdn_amount = rei_to_send || REQUIRED_RDN_AS_WEI;
-   let contract = web3.eth.contract(EIP20_ABI).at(rdn_address);
-   let contract_data = contract.transfer.getData(TARGET_ADDRESS, rdn_amount);
+   let contract = web3.eth.contract(EIP20_ABI).at(token_address);
+   let contract_data = contract.transfer.getData(TARGET_ADDRESS, amount);
    let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
-
+   
    let transaction_data = {
      from: sender_address,
-     to: rdn_address,
+     to: token_address,
      data: contract_data
    }
-
-   makeWeb3Transaction(web3, transaction_data);
+   
+   return makeWeb3Transaction(web3, transaction_data);   
  }
 
- async function calculateNeededFunds(balance) {
-   let kyber_exchange_rate = await getKyberExchangeRate("RDN");
-
-   let eth_balance = balance && balance.ETH.as_wei;
-   let rdn_balance = balance && balance.RDN.as_wei;
-
-   let needed_eth = REQUIRED_ETH_AS_WEI;
-   let needed_rdn = REQUIRED_RDN_AS_WEI;
-
-   // If we already have some RDN, deduct from total needed
-   if (rdn_balance) {
-     needed_rdn -= rdn_balance;
-   }
-
-   // If we already have some ETH, deduct from total needed
-   if (eth_balance) {
-     needed_eth -= eth_balance;
-   }
-
-   // convert needed RDN into needed ETH for calculation via swap
-   if (needed_rdn >= 0 && kyber_exchange_rate){
-     needed_eth += (needed_rdn * kyber_exchange_rate);
-   }
-
-   needed_eth = Math.max(needed_eth, 0);
-   needed_rdn = Math.max(needed_rdn, 0);
-
-   return {
-     eth: needed_eth,
-     rdn: needed_rdn
-   }
+ async function sendServiceToken() {
+   let amount = SERVICE_TOKEN_REQUIRED_AMOUNT;
+   let address = "{{ service_token_required.currency.address }}";
+   return await sendErc20Token(amount, address);
  }
 
- function updateDisplay(balance) {
-   let eth_balance_display_element = document.querySelector("span.account-eth-balance");
-   let rdn_balance_display_element = document.querySelector("span.account-rdn-balance");
-
-   updateBalanceDisplay(balance, eth_balance_display_element, rdn_balance_display_element);
+ async function sendTransferToken() {
+   let amount = TRANSFER_TOKEN_REQUIRED_AMOUNT;
+   let address = "{{ transfer_token_required.currency.address }}";
+   return await sendErc20Token(amount, address);
  }
 
  async function poll() {
    let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
 
    let button_launch = document.getElementById("btn-launch");
-   let button_swap = document.getElementById("btn-swap");
+   let button_swap_service_token = document.getElementById("btn-swap-service-token");
+   let button_swap_transfer_token = document.getElementById("btn-swap-transfer-token");   
    let has_web3 = Boolean(window.ethereum || window.web3);
 
-   updateDisplay(balance);
-
+   updateBalanceDisplay(balance, {
+     ethereum_element: document.querySelector("span.account-eth-balance"),
+     service_token_element: document.querySelector("span.account-service-token-balance"),
+     transfer_token_element: document.querySelector("span.account-transfer-token-balance")
+   });
+   
    button_launch.disabled = !(hasEnoughBalanceToLaunchRaiden(balance));
-   button_swap.disabled = !(balance.ETH && balance.ETH.as_wei > 0);
+   button_swap_service_token.disabled = button_swap_transfer_token.disabled = !(balance.ETH && balance.ETH.as_wei > 0);
  }
 
  function generateQRCode(display_element) {
@@ -204,34 +221,11 @@
  window.addEventListener("load", async function () {
    let has_web3 = Boolean(window.ethereum || window.web3);
    let button_send_eth = document.getElementById("btn-web3-eth");
-   let button_send_rdn = document.getElementById("btn-web3-rdn");
+   let button_send_rdn = document.getElementById("btn-web3-service-token");
+   let button_send_dai = document.getElementById("btn-web3-transfer-token");   
 
-   button_send_eth.disabled = button_send_rdn.disabled = !has_web3;
-
-   if (has_web3) {
-     // Modern dapp browsers...
-     if (window.ethereum) {
-       console.log("Using modern dapp browser");
-       window.web3 = new Web3(ethereum);
-       try {
-         // Request account access if needed
-         await ethereum.enable();
-       } catch (error) {
-         console.log(error);
-       }
-     }
-     // Legacy dapp browsers...
-     else if (window.web3) {
-       console.log("Using legacy web3");
-       window.web3 = new Web3(web3.currentProvider);
-     }
-     // Non-dapp browsers...
-     else {
-       console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
-     }
-   }
+   button_send_eth.disabled = button_send_rdn.disabled = button_send_dai.disabled = !has_web3;
  });
-
 
  window.addEventListener("load", function () {
    let address_div_elem = document.querySelector("div.action-copy-paste");

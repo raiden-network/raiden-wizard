@@ -268,7 +268,9 @@ class RaidenClient:
     def _extract_gzip(self, compressed_data, destination_path):
         with tarfile.open(mode="r:*", fileobj=compressed_data) as tar:
             with destination_path.open("wb") as binary_file:
-                binary_file.write(tar.extractfile(tar.getmembers()[0]).read())
+                compressed_data = tar.extractfile(tar.getmembers()[0])
+                if compressed_data:
+                    binary_file.write(compressed_data.read())
 
     @classmethod
     def get_file_pattern(cls):
@@ -340,6 +342,16 @@ class RaidenClient:
             "nightly": RaidenNightly,
         }[settings.client_release_channel]
         return raiden_class.make_by_tag(settings.client_release_version)
+
+    @staticmethod
+    def get_all_releases():
+        release_channels = [RaidenRelease, RaidenTestnetRelease, RaidenNightly]
+        all_releases = {}
+
+        for channel in release_channels:
+            for raiden in channel.get_available_releases():
+                all_releases[raiden.release] = raiden
+        return all_releases
 
 
 class RaidenRelease(RaidenClient):

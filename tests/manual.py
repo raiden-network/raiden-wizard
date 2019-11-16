@@ -108,18 +108,18 @@ class UniswapExchangeRDNTestCase(TokenSwapTestCase):
         print(costs["gas"])
 
 
-# class UniswapExchangeDAITestCase(TokenSwapTestCase):
+# class UniswapExchangeSAITestCase(TokenSwapTestCase):
 #     NETWORK_NAME = "rinkeby"
 
 #     def test_swap(self):
-#         log.debug(f"Making ETH <-> DAI swap for {self.account.address}")
+#         log.debug(f"Making ETH <-> SAI swap for {self.account.address}")
 #         self._ensure_ethereum_funds()
 #         uniswap = Uniswap(w3=self.w3, account=self.account)
-#         dai = uniswap.get_token("DAI")
-#         log.debug(f"Before swap, balance is {dai.balance} DAI")
-#         dai_exchange_rate = uniswap._get_exchange_rate("DAI", self.ethereum_amount)
-#         uniswap._run_token_swap("DAI", self.ethereum_amount, dai_exchange_rate)
-#         log.debug(f"After swap, balance is {dai.balance} DAI")
+#         dai = uniswap.get_token("SAI")
+#         log.debug(f"Before swap, balance is {dai.balance} SAI")
+#         dai_exchange_rate = uniswap._get_exchange_rate("SAI", self.ethereum_amount)
+#         uniswap._run_token_swap("SAI", self.ethereum_amount, dai_exchange_rate)
+#         log.debug(f"After swap, balance is {dai.balance} SAI")
 
 #     def test_gas_estimate(self):
 #         one_eth = EthereumAmount(Eth(1))
@@ -134,7 +134,7 @@ class UniswapExchangeRDNTestCase(TokenSwapTestCase):
 #             "nonce": self.w3.eth.getTransactionCount(self.w3.eth.defaultAccount),
 #         }
 
-#         exchange_proxy = uniswap.get_exchange_proxy("DAI")
+#         exchange_proxy = uniswap.get_exchange_proxy("SAI")
 #         token_amount = exchange_proxy.functions.getEthToTokenInputPrice(
 #             transaction_params["value"]
 #         ).call()

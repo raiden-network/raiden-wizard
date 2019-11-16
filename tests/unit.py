@@ -7,13 +7,13 @@ from raiden_installer.account import Account
 from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
 from raiden_installer.ethereum_rpc import make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.tokens import EthereumAmount, RDNAmount, Wei
+from raiden_installer.tokens import EthereumAmount, TokenAmount, RDN, Wei
 
 
 class TokenAmountTestCase(unittest.TestCase):
     def setUp(self):
         self.one_eth = EthereumAmount(1)
-        self.one_rdn = RDNAmount(1)
+        self.one_rdn = TokenAmount(1, RDN)
         self.one_gwei = EthereumAmount(Wei(10 ** 9))
         self.almost_one_eth = EthereumAmount("0.875")
         self.some_wei = EthereumAmount(Wei(50_000))

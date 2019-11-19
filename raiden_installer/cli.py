@@ -9,8 +9,9 @@ from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.raiden import RaidenClient
 from raiden_installer.network import FundingError, Network
-from raiden_installer.token_exchange import Exchange, get_contract_address
-from raiden_installer.tokens import RDN, Wei, TokenAmount
+from raiden_installer.token_exchange import Exchange
+from raiden_installer.tokens import Erc20Token, Wei, TokenAmount
+from raiden_installer.utils import get_contract_address
 
 ETHEREUM_RPC_ENDPOINTS = []
 DEFAULT_INFURA_PROJECT_ID = os.getenv("RAIDEN_INSTALLER_INFURA_PROJECT_ID")
@@ -331,7 +332,7 @@ def run_action_swap_kyber():
 
     kyber = Exchange.get_by_name("kyber")(w3=w3)
     amount = Wei(5 * (10 ** 18))
-    kyber.buy_tokens(account, TokenAmount(amount, RDN))
+    kyber.buy_tokens(account, TokenAmount(amount, Erc20Token.find_by_sticker("RDN")))
 
     return main_prompt()
 

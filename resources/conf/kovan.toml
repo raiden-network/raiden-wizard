@@ -1,15 +1,14 @@
-network = "goerli"
+network = "kovan"
 client_release_channel = "testing"
 client_release_version = "v0.200.0-rc1"
-services_version = "test"
+services_version = "dev"
+
 ethereum_amount_required = 2e16
 
 [service_token]
 sticker = "RDN"
 amount_required = 6e18
-mintable = true
 
 [transfer_token]
-sticker = "WIZ"
+sticker = "SAI"
 amount_required = 2e18
-mintable = true

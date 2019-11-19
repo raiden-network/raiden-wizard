@@ -12,12 +12,12 @@ from tornado.web import Application, HTTPError, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
 
-from raiden_installer import get_resource_folder_path, log
+from raiden_installer import get_resource_folder_path, log, settings
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
-from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, TokenNetwork, Uniswap
+from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
 from raiden_installer.tokens import (
     EthereumAmount,
     TokenAmount,
@@ -27,6 +27,14 @@ from raiden_installer.tokens import (
     SERVICE_TOKEN_REQUIRED,
     TRANSFER_TOKEN_REQUIRED,
 )
+from raiden_installer.transactions import (
+    deposit_service_tokens,
+    get_token_balance,
+    get_total_token_owned,
+    get_token_deposit,
+    mint_tokens,
+)
+
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
@@ -110,6 +118,7 @@ class AsyncTaskHandler(WebSocketHandler):
         action = method and {
             "close": self._run_close,
             "launch": self._run_launch,
+            "setup": self._run_setup,
             "swap": self._run_swap,
             "track_transaction": self._run_track_transaction,
         }.get(method)
@@ -119,6 +128,63 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_close(self, **kw):
         sys.exit()
 
+    def _run_funding(self, configuration_file: RaidenConfigurationFile):
+        network = Network.get_by_name(settings.network)
+
+        if not network.FAUCET_AVAILABLE:
+            self._send_error_message(
+                f"Can not run automatic funding for {network.capitalized_name}"
+            )
+            return
+
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        self._send_status_update(f"Obtaining {network.capitalized_name} ETH through faucet")
+        network.fund(account)
+        balance = account.wait_for_ethereum_funds(w3=w3, expected_amount=EthereumAmount(0.01))
+        self._send_status_update(f"Account funded with {balance.formatted}")
+
+        if settings.service_token.mintable:
+            service_token = Erc20Token.find_by_sticker(settings.service_token.sticker)
+            self._send_status_update(f"Minting {service_token.sticker}")
+            mint_tokens(w3, account, service_token)
+
+        if settings.transfer_token.mintable:
+            transfer_token = Erc20Token.find_by_sticker(settings.transfer_token.sticker)
+            self._send_status_update(f"Minting {transfer_token.sticker}")
+            mint_tokens(w3, account, transfer_token)
+
+    def _run_setup(self, **kw):
+        form = QuickSetupForm(endpoint=kw.get("endpoint"))
+        if form.validate():
+            self._send_status_update("Generating new wallet and configuration file for raiden")
+
+            network = Network.get_by_name(form.data["network"])
+            url_or_infura_id = form.data["endpoint"].strip()
+
+            if Infura.is_valid_project_id(url_or_infura_id):
+                ethereum_rpc_provider = Infura.make(network, url_or_infura_id)
+            else:
+                ethereum_rpc_provider = EthereumRPCProvider(url_or_infura_id)
+
+            account = Account.create()
+
+            conf_file = RaidenConfigurationFile(
+                account,
+                network,
+                ethereum_rpc_provider.url,
+                routing_mode="pfs" if form.data["use_rsb"] else "local",
+                enable_monitoring=form.data["use_rsb"],
+            )
+            conf_file.save()
+
+            if network.FAUCET_AVAILABLE:
+                self._run_funding(configuration_file=conf_file)
+
+            self._send_redirect(self.reverse_url("account", conf_file.file_name))
+        else:
+            self._send_error_message(f"Failed to create account. Error: {form.errors}")
+
     def _run_launch(self, **kw):
         configuration_file_name = kw.get("configuration_file_name")
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
@@ -127,6 +193,25 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_status_update(f"Downloading and installing raiden {RAIDEN_CLIENT.release}")
             RAIDEN_CLIENT.install()
             self._send_status_update("Installation complete")
+
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        service_token = Erc20Token.find_by_sticker(settings.service_token.sticker)
+
+        service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
+        if service_token_balance.as_wei:
+            self._send_status_update(
+                f"Making deposit of {service_token_balance.formatted} for Raiden Services"
+            )
+            deposit_service_tokens(
+                w3=w3, account=account, token=service_token, amount=service_token_balance.as_wei
+            )
+            service_token_deposited = get_token_deposit(
+                w3=w3, account=account, token=service_token
+            )
+            self._send_status_update(
+                f"Amount deposited at UDC: {service_token_deposited.formatted}"
+            )
 
         self._send_status_update(
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
@@ -167,10 +252,9 @@ class AsyncTaskHandler(WebSocketHandler):
             if form.validate():
                 account = configuration_file.account
                 w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-                token_network_class = TokenNetwork.get_by_sticker(form.data["token_sticker"])
-                token_network = token_network_class(w3=w3)
+                token = Erc20Token.find_by_sticker(form.data["token_sticker"])
 
-                token_amount = TokenAmount(Wei(form.data["token_amount"]), token_network.TOKEN)
+                token_amount = TokenAmount(Wei(form.data["token_amount"]), token)
                 exchange = Exchange.get_by_name(form.data["exchange"])(w3=w3)
                 self._send_status_update(f"Starting swap at {exchange.name}")
 
@@ -199,7 +283,8 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(f"Estimated costs: {needed_funds.formatted}")
 
                 exchange.buy_tokens(account, token_amount)
-                token_balance = token_network.balance(account)
+                token_balance = get_token_balance(w3, account, token)
+
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
                 self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
             else:
@@ -407,13 +492,15 @@ class ConfigurationItemAPIHandler(APIHandler):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token_network = TokenNetwork.get_by_sticker(SERVICE_TOKEN_REQUIRED.sticker)(w3=w3)
-        transfer_token_network = TokenNetwork.get_by_sticker(TRANSFER_TOKEN_REQUIRED.sticker)(
-            w3=w3
-        )
+        service_token = Erc20Token.find_by_sticker(SERVICE_TOKEN_REQUIRED.sticker)
+        transfer_token = Erc20Token.find_by_sticker(TRANSFER_TOKEN_REQUIRED.sticker)
 
-        service_token_balance = service_token_network.balance(configuration_file.account)
-        transfer_token_balance = transfer_token_network.balance(configuration_file.account)
+        service_token_balance = get_total_token_owned(
+            w3=w3, account=configuration_file.account, token=service_token
+        )
+        transfer_token_balance = get_token_balance(
+            w3=w3, account=configuration_file.account, token=transfer_token
+        )
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
 
         def serialize_balance(balance_amount):

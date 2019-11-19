@@ -23,7 +23,7 @@ def make_random_string(length=32):
 
 
 class Account:
-    DEFAULT_KEYSTORE_FOLDER = None
+    DEFAULT_KEYSTORE_FOLDER: Optional[Path] = None
 
     def __init__(self, keystore_file_path: Path, passphrase: Optional[str] = None):
         self.passphrase = passphrase

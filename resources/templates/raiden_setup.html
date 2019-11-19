@@ -47,7 +47,7 @@
      }
    }
 
-   function submitConfiguration(evt) {
+   function postConfiguration(evt) {
      const data = JSON.stringify({
        endpoint: infura_project_input.value
      });
@@ -76,6 +76,15 @@
      toggleView();
 
      addFeedbackMessage("Generating new wallet and configuration file for raiden");
+   }
+
+   function submitConfiguration(evt) {
+     WEBSOCKET.send(JSON.stringify({
+       method: "setup",
+       endpoint: infura_project_input.value
+     }));
+
+     toggleView();
    }
 
 

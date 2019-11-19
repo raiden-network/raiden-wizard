@@ -4,12 +4,13 @@ import os
 import unittest
 import tempfile
 import time
+from pathlib import Path
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import make_web3_provider, Infura
 from raiden_installer.network import Network
-from raiden_installer.token_exchange import CustomTokenNetwork
-from raiden_installer.tokens import EthereumAmount, Wei
+from raiden_installer.tokens import EthereumAmount, Wei, Erc20Token
+from raiden_installer.transactions import mint_tokens
 
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
@@ -17,10 +18,12 @@ INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 
 @unittest.skipIf(INFURA_PROJECT_ID is None, "missing configuration for infura")
 class IntegrationTestCase(unittest.TestCase):
-    NETWORK_NAME = None
+    NETWORK_NAME = "goerli"
 
     def setUp(self):
-        Account.DEFAULT_KEYSTORE_FOLDER = tempfile.gettempdir()
+        assert INFURA_PROJECT_ID
+
+        Account.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
         self.account = Account.create("test_raiden_integration")
         self.network = Network.get_by_name(self.__class__.NETWORK_NAME)
         self.infura = Infura.make(self.network, INFURA_PROJECT_ID)
@@ -53,15 +56,15 @@ class TokenTestCase(IntegrationTestCase):
 
     def setUp(self):
         super().setUp()
-        self.token_network = CustomTokenNetwork(w3=self.w3)
+        self.ldn_token = Erc20Token.find_by_sticker("LND")
 
     def test_can_not_mint_tokens_without_gas(self):
         with self.assertRaises(ValueError):
-            self.token_network.mint(self.account, self.token_network.TOKEN_AMOUNT)
+            mint_tokens(w3=self.w3, account=self.account, token=self.ldn_token)
 
     def test_can_mint_tokens(self):
         self.network.fund(self.account)
-        self.token_network.mint(self.account, self.token_network.TOKEN_AMOUNT)
+        mint_tokens(w3=self.w3, account=self.account, token=self.ldn_token)
 
 
 if __name__ == "__main__":

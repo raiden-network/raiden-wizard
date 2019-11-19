@@ -1,22 +1,32 @@
 #!/usr/bin/env python
 
+import codecs
 import hashlib
 import os
 import platform
 import tempfile
 import unittest
+from pathlib import Path
 
+from raiden_installer import settings, TokenSettings
+from raiden_installer import log
 from raiden_installer.account import Account
-from raiden_installer.common import log
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.token_exchange import Kyber, RaidenTokenNetwork, Uniswap
-from raiden_installer.tokens import EthereumAmount, RDNAmount, Wei
+from raiden_installer.token_exchange import Kyber, Uniswap
+from raiden_installer.tokens import EthereumAmount, TokenAmount, Erc20Token, Wei
+from raiden_installer.transactions import mint_tokens, deposit_service_tokens, get_token_balance
+
+from tests import override_settings
+
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 TEST_ACCOUNT_PRIVATE_KEY = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PRIVATE_KEY")
 TEST_ACCOUNT_PASSPHRASE = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PASSPHRASE", "manual_testing")
-ETHEREUM_NETWORK_NAME = os.getenv("TEST_RAIDEN_INSTALLER_ETHEREUM_NETWORK", "goerli")
+
+
+GOERLI_SERVICE_TOKEN_SETTINGS = TokenSettings(sticker="RDN", amount_required=int(6e18))
+ROPSTEN_SERVICE_TOKEN_SETTINGS = TokenSettings(sticker="RDN", amount_required=int(6e18))
 
 
 class TestAccount(Account):
@@ -24,7 +34,7 @@ class TestAccount(Account):
     def generate_private_key(cls):
         """ Generates a deterministic private key (or takes the one from env vars) """
         if TEST_ACCOUNT_PRIVATE_KEY:
-            return TEST_ACCOUNT_PRIVATE_KEY
+            return codecs.decode(TEST_ACCOUNT_PRIVATE_KEY.encode(), "hex")
 
         hsh = hashlib.sha256()
         hsh.update(
@@ -43,18 +53,26 @@ class TestAccount(Account):
 
 @unittest.skipIf(INFURA_PROJECT_ID is None, "missing configuration for infura")
 class BaseTestCase(unittest.TestCase):
-    NETWORK_NAME = ETHEREUM_NETWORK_NAME
-
     def setUp(self):
-        TestAccount.DEFAULT_KEYSTORE_FOLDER = tempfile.gettempdir()
+        TestAccount.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
         self.account = TestAccount.create(TEST_ACCOUNT_PASSPHRASE)
-        self.network = Network.get_by_name(self.NETWORK_NAME)
-        self.infura = Infura.make(self.network, INFURA_PROJECT_ID)
-        self.w3 = make_web3_provider(self.infura.url, self.account)
+
+    def _get_network(self):
+        return Network.get_by_name(settings.network)
+
+    def _get_RDN(self):
+        return Erc20Token.find_by_sticker("RDN")
+
+    def _get_web3(self):
+        assert INFURA_PROJECT_ID
+        network = self._get_network()
+        infura = Infura.make(network, INFURA_PROJECT_ID)
+        return make_web3_provider(infura.url, self.account)
 
     def _wait_for_ethereum_funds(self, ethereum_amount: EthereumAmount, timeout=180):
+        w3 = self._get_web3()
         return self.account.wait_for_ethereum_funds(
-            self.w3, ethereum_amount=ethereum_amount, timeout=timeout
+            w3, ethereum_amount=ethereum_amount, timeout=timeout
         )
 
     def tearDown(self):
@@ -64,18 +82,19 @@ class BaseTestCase(unittest.TestCase):
 class TokenSwapTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.rdn = RaidenTokenNetwork(w3=self.w3, account=self.account)
-        self.rdn_amount = RDNAmount(75)
+        self.rdn_amount = TokenAmount(75, self._get_RDN())
 
     def _ensure_ethereum_funds(self, ethereum_amount: EthereumAmount):
-        current_balance = self.account.get_ethereum_balance(self.w3)
+        w3 = self._get_web3()
+        current_balance = self.account.get_ethereum_balance(w3)
         log.debug(f"Current balance: {current_balance.formatted}")
+        network = self._get_network()
 
         if current_balance < ethereum_amount:
             needed_funds = EthereumAmount(Wei(ethereum_amount.as_wei - current_balance.as_wei))
             print(
-                f"Please send at least {needed_funds.formatted} to 0x{self.account.address} on "
-                f"{self.network.capitalized_name}"
+                f"Please send at least {needed_funds.formatted} to {self.account.address} on "
+                f"{network.capitalized_name}"
             )
             return self._wait_for_ethereum_funds(ethereum_amount=needed_funds)
 
@@ -90,22 +109,54 @@ class TokenSwapTestCase(BaseTestCase):
 
 
 class KyberExchangeTestCase(TokenSwapTestCase):
-    NETWORK_NAME = "ropsten"
-
+    @override_settings(network="ropsten")
     def test_swap(self):
-        self._execute_rdn_swap(Kyber(w3=self.w3, account=self.account))
+        self._execute_rdn_swap(Kyber(w3=self.w3))
 
 
 class UniswapExchangeRDNTestCase(TokenSwapTestCase):
-    NETWORK_NAME = "mainnet"
+    def setUp(self):
+        super().setUp()
+        self.uniswap = Uniswap(w3=self.w3)
 
+    @override_settings(network="mainnet")
     def test_swap(self):
-        self._execute_rdn_swap(Uniswap(w3=self.w3, account=self.account))
+        self._execute_rdn_swap(self.uniswap)
 
+    @override_settings(network="mainnet")
     def test_gas_estimate(self):
-        uniswap = Uniswap(w3=self.w3, account=self.account)
-        costs = uniswap.calculate_transaction_costs(self.rdn_amount)
+        costs = self.uniswap.calculate_transaction_costs(self.rdn_amount, self.account)
         print(costs["gas"])
+
+
+class TokenNetworkTestCase(BaseTestCase):
+    def _deposit(self):
+        network = self._get_network()
+        w3 = self._get_web3()
+        ethereum_balance = self.account.get_ethereum_balance(w3=w3)
+
+        log.debug(f"Ethereum Balance: {ethereum_balance.formatted}")
+        if not ethereum_balance.as_wei:
+            network.fund(self.account)
+
+        token = Erc20Token.find_by_sticker(settings.service_token.sticker)
+        token_balance = get_token_balance(w3, self.account, token)
+        log.debug(f"Token Balance: {token_balance.formatted}")
+
+        if not token_balance.as_wei:
+            mint_tokens(w3, self.account, token)
+            token_balance = get_token_balance(w3, self.account, token)
+            log.debug(f"Tokens minted. New Balance: {token_balance.formatted}")
+
+        deposit_service_tokens(w3, self.account, token, token_balance.as_wei)
+
+    @override_settings(network="goerli")
+    def test_goerli_deposit(self):
+        self._deposit()
+
+    @override_settings(network="ropsten")
+    def test_ropsten_deposit(self):
+        self._deposit()
 
 
 # class UniswapExchangeSAITestCase(TokenSwapTestCase):
@@ -148,22 +199,21 @@ class UniswapExchangeRDNTestCase(TokenSwapTestCase):
 
 
 class ExchangeSelectionTestCase(TokenSwapTestCase):
-    NETWORK_NAME = "mainnet"
-
     TOKEN_AMOUNTS = (50, 75, 100, 150, 200, 300, 500, 1000)
 
     def setUp(self):
         super().setUp()
-        self.kyber = Kyber(w3=self.w3, account=self.account)
-        self.uniswap = Uniswap(w3=self.w3, account=self.account)
+        self.kyber = Kyber(w3=self.w3)
+        self.uniswap = Uniswap(w3=self.w3)
 
+    @override_settings(network="mainnet")
     def test_can_get_costs(self):
         print("\t".join([st.rjust(36) for st in ("RDN to buy", "Kyber", "Uniswap")]))
 
         for amount in self.TOKEN_AMOUNTS:
-            rdn_amount = RDNAmount(amount)
-            kyber_costs = self.kyber.calculate_transaction_costs(rdn_amount)
-            uniswap_costs = self.uniswap.calculate_transaction_costs(rdn_amount)
+            rdn_amount = TokenAmount(amount, self._get_RDN())
+            kyber_costs = self.kyber.calculate_transaction_costs(rdn_amount, self.account)
+            uniswap_costs = self.uniswap.calculate_transaction_costs(rdn_amount, self.account)
             print(
                 "\t".join(
                     [

@@ -7,13 +7,13 @@ from raiden_installer.account import Account
 from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
 from raiden_installer.ethereum_rpc import make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.tokens import EthereumAmount, TokenAmount, RDN, Wei
+from raiden_installer.tokens import EthereumAmount, TokenAmount, Erc20Token, Wei
 
 
 class TokenAmountTestCase(unittest.TestCase):
     def setUp(self):
         self.one_eth = EthereumAmount(1)
-        self.one_rdn = TokenAmount(1, RDN)
+        self.one_rdn = TokenAmount(1, Erc20Token.find_by_sticker("RDN"))
         self.one_gwei = EthereumAmount(Wei(10 ** 9))
         self.almost_one_eth = EthereumAmount("0.875")
         self.some_wei = EthereumAmount(Wei(50_000))
@@ -39,7 +39,7 @@ class TokenAmountTestCase(unittest.TestCase):
 
 class AccountTestCase(unittest.TestCase):
     def setUp(self):
-        Account.DEFAULT_KEYSTORE_FOLDER = tempfile.gettempdir()
+        Account.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
 
         self.account = Account.create(passphrase="test_password")
 
@@ -47,7 +47,7 @@ class AccountTestCase(unittest.TestCase):
         self.assertIsNotNone(self.account.address)
 
     def test_can_not_get_private_key_without_passphrase(self):
-        empty_account = Account("/invalid_folder")
+        empty_account = Account(Path("/invalid_folder"))
 
         with self.assertRaises(ValueError):
             empty_account.private_key

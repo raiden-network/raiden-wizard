@@ -8,11 +8,11 @@ from eth_utils import to_checksum_address
 from xdg import XDG_DATA_HOME
 
 from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
-from raiden_installer import log
+from raiden_installer import log, settings
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.token_exchange import get_contract_address
+from raiden_installer.utils import get_contract_address
 
 
 class PassphraseFile:
@@ -56,7 +56,9 @@ class RaidenConfigurationFile:
 
     @property
     def path_finding_service_url(self):
-        return f"https://pfs-{self.network.name}.services-dev.raiden.network"
+        return (
+            f"https://pfs-{self.network.name}.services-{settings.services_version}.raiden.network"
+        )
 
     @property
     def configuration_data(self):

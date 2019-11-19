@@ -1,0 +1,15 @@
+network = "goerli"
+client_release_channel = "testing"
+client_release_version = "v0.200.0-rc1"
+services_version = "test"
+ethereum_amount_required = 2e16
+
+[service_token]
+sticker = "RDN"
+amount_required = 6e18
+mintable = true
+
+[transfer_token]
+sticker = "WIZ"
+amount_required = 2e18
+mintable = true

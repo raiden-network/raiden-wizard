@@ -15,7 +15,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from raiden_installer import log
-from raiden_installer.tokens import EthereumAmount, Wei
+from raiden_installer.tokens import ETH, TokenAmount, Wei
 
 
 def make_random_string(length=32):
@@ -23,7 +23,7 @@ def make_random_string(length=32):
 
 
 class Account:
-    DEFAULT_KEYSTORE_FOLDER = None
+    DEFAULT_KEYSTORE_FOLDER: Optional[Path] = None
 
     def __init__(self, keystore_file_path: Path, passphrase: Optional[str] = None):
         self.passphrase = passphrase
@@ -47,12 +47,12 @@ class Account:
     def address(self):
         return to_checksum_address(self.content.get("address"))
 
-    def get_ethereum_balance(self, w3) -> EthereumAmount:
-        return EthereumAmount(Wei(w3.eth.getBalance(self.address)))
+    def get_ethereum_balance(self, w3) -> TokenAmount:
+        return TokenAmount(Wei(w3.eth.getBalance(self.address)), ETH)
 
     def wait_for_ethereum_funds(
-        self, w3: Web3, expected_amount: EthereumAmount, timeout: int = 300
-    ) -> EthereumAmount:
+        self, w3: Web3, expected_amount: TokenAmount, timeout: int = 300
+    ) -> TokenAmount:
         time_remaining = timeout
         POLLING_INTERVAL = 1
         balance = self.get_ethereum_balance(w3)

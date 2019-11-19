@@ -1,4 +1,1 @@
-network = "ropsten"
-client_release_channel = "testing"
-client_release_version = "v0.200.0-rc1"
-services_version = "dev"
+mainnet.toml

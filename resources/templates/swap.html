@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Swap with {{ exchange.name }}</h1>
 <div class="hero">
-  Use a decentralized exchange to buy RDN
+  Use a decentralized exchange to buy {{ token.sticker }}
 </div>
 <div class="info-panel">
   <p>Available funds</p>
@@ -12,10 +12,10 @@
       <span class="account-eth-balance highlighted">N/A ETH</span>
     </li>
     <li>
-      <span class="account-rdn-balance highlighted">N/A RDN</span>
+      <span class="account-token-balance highlighted">N/A {{ token.sticker }}</span>
     </li>
   </ul>
-  <input type="number" name="token_amount" placeholder="RDN Amount desired" disabled />
+  <input type="number" name="token_amount" placeholder="{{ token.sticker }} Amount desired" disabled />
 </div>
 <div class="action">
   <button disabled>Execute Swap</button>
@@ -36,11 +36,22 @@
 <script>
  async function checkBalances() {
    let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
-   updateBalanceDisplay(
-     balance,
-     document.querySelector("span.account-eth-balance"),
-     document.querySelector("span.account-rdn-balance")
-   );
+
+   
+   let display_elements = {
+     ethereum_element: document.querySelector("span.account-eth-balance")
+   }
+
+   {% if token.sticker == service_token_required.sticker %}
+   display_elements.service_token_element = document.querySelector("span.account-token-balance");
+   {% end %}
+
+   {% if token.sticker == transfer_token_required.sticker %}
+   display_elements.transfer_token_element = document.querySelector("span.account-token-balance");
+   {% end %}
+   
+   updateBalanceDisplay(balance, display_elements);
+   
  }
 
  function validateForm(checkboxes, input_field, submit_button) {
@@ -61,17 +72,17 @@
 
  window.addEventListener("load", async function() {
    let checkboxes = document.querySelectorAll("input[type=checkbox]");
-   let rdn_amount_input = document.querySelector("input[name=token_amount]");
+   let service_token_amount_input = document.querySelector("input[name=token_amount]");
    let swap_button = document.querySelector("div.action button");
 
    function runValidation(evt) {
-     validateForm(checkboxes, rdn_amount_input, swap_button);
+     validateForm(checkboxes, service_token_amount_input, swap_button);
    }
 
    document.addEventListener("keypress", runValidation);
-   rdn_amount_input.addEventListener("blur", runValidation);
-   rdn_amount_input.addEventListener("change", runValidation);
-   rdn_amount_input.addEventListener("click", runValidation);
+   service_token_amount_input.addEventListener("blur", runValidation);
+   service_token_amount_input.addEventListener("change", runValidation);
+   service_token_amount_input.addEventListener("click", runValidation);
 
    checkboxes.forEach(function(checkbox) {
      checkbox.addEventListener("click", runValidation);
@@ -81,9 +92,9 @@
      const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
      const FILE_NAME = "{{ configuration_file.file_name }}";
      const NETWORK_NAME = "{{ configuration_file.network.name }}";
-     const TOKEN_STICKER = "RDN";
+     const TOKEN_STICKER = "{{ token.sticker }}";
 
-     let amount = rdn_amount_input.value;
+     let amount = service_token_amount_input.value;
 
      WEBSOCKET.send(JSON.stringify({
        method: "swap",
@@ -96,7 +107,7 @@
      toggleView();
    }
 
-   checkAcknowledgements(checkboxes, rdn_amount_input);
+   checkAcknowledgements(checkboxes, service_token_amount_input);
    window.MAIN_VIEW_INTERVAL = 6000;
    window.runMainView();
  });

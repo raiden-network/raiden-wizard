@@ -185,6 +185,19 @@ ul.action-list {
     }
 }
 
+ul.funding-requirements {
+    width: 75%;
+    margin: auto;
+    font-size: 75%;
+    text-align: start;
+    li {
+        line-height: 1.5em;
+        list-style-type: disc;
+    }
+}
+
+
+
 ul.checklist {
     li {
         display: block;

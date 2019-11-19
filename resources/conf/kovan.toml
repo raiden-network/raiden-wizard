@@ -1,0 +1,14 @@
+network = "kovan"
+client_release_channel = "testing"
+client_release_version = "v0.200.0-rc1"
+services_version = "dev"
+
+ethereum_amount_required = 2e16
+
+[service_token]
+sticker = "RDN"
+amount_required = 6e18
+
+[transfer_token]
+sticker = "SAI"
+amount_required = 2e18

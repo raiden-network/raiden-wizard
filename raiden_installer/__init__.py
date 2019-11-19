@@ -13,11 +13,21 @@ ROOT_FOLDER = Path(__file__).resolve().parent.parent
 
 
 @dataclass
+class TokenSettings:
+    sticker: str
+    amount_required: int
+    mintable: bool = False
+
+
+@dataclass
 class Settings:
     network: str
     client_release_channel: str
     client_release_version: str
     services_version: str
+    ethereum_amount_required: int
+    service_token: TokenSettings
+    transfer_token: TokenSettings
 
 
 def get_resource_folder_path():
@@ -32,4 +42,13 @@ def get_resource_folder_path():
 
 _CONFIGURATION_FILE_NAME = os.path.join(get_resource_folder_path(), "conf", "settings.toml")
 
-settings = Settings(**toml.load(_CONFIGURATION_FILE_NAME))
+configuration_data = toml.load(_CONFIGURATION_FILE_NAME)
+
+service_token_settings = TokenSettings(**configuration_data["service_token"])
+transfer_token_settings = TokenSettings(**configuration_data["transfer_token"])
+
+configuration_data.update(
+    dict(service_token=service_token_settings, transfer_token=transfer_token_settings)
+)
+
+settings = Settings(**configuration_data)

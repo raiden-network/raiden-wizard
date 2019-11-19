@@ -40,19 +40,6 @@ class RaidenConfigurationFile:
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", True)
         self.routing_mode = kw.get("routing_mode", "pfs")
-        self.environment_type = kw.get("environment_type", "development")
-
-    def save(self):
-        if not self.account.check_passphrase(self.account.passphrase):
-            raise ValueError("no valid passphrase for account collected")
-
-        self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
-
-        passphrase_file = PassphraseFile(self.passphrase_file_path)
-        passphrase_file.store(self.account.passphrase)
-
-        with open(self.path, "w") as config_file:
-            toml.dump(self.configuration_data, config_file)
 
     @property
     def path_finding_service_url(self):
@@ -84,6 +71,10 @@ class RaidenConfigurationFile:
         return base_config
 
     @property
+    def environment_type(self):
+        return "production" if self.network.name == "mainnet" else "development"
+
+    @property
     def file_name(self):
         return f"config-{self.account.address}-{self.network.name}.toml"
 
@@ -99,6 +90,18 @@ class RaidenConfigurationFile:
     def ethereum_balance(self):
         w3 = make_web3_provider(self.ethereum_client_rpc_endpoint, self.account)
         return self.account.get_ethereum_balance(w3)
+
+    def save(self):
+        if not self.account.check_passphrase(self.account.passphrase):
+            raise ValueError("no valid passphrase for account collected")
+
+        self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
+
+        passphrase_file = PassphraseFile(self.passphrase_file_path)
+        passphrase_file.store(self.account.passphrase)
+
+        with open(self.path, "w") as config_file:
+            toml.dump(self.configuration_data, config_file)
 
     @classmethod
     def list_existing_files(cls) -> List[Path]:

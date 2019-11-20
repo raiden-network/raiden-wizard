@@ -11,6 +11,10 @@ Token_T = TypeVar("Token_T")
 TokenSticker = NewType("TokenSticker", str)
 
 
+class TokenError(Exception):
+    pass
+
+
 class Wei(int):
     pass
 
@@ -54,8 +58,11 @@ class Erc20Token(Currency):
     addresses: Dict[str, str] = field(default_factory=dict)
 
     @property
-    def address(self):
-        return self.addresses.get(settings.network.lower())
+    def address(self) -> str:
+        try:
+            return self.addresses[settings.network.lower()]
+        except KeyError:
+            raise TokenError(f"{self.sticker} is not deployed on {settings.network}")
 
     @staticmethod
     def find_by_sticker(sticker):

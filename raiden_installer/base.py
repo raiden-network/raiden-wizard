@@ -38,7 +38,7 @@ class RaidenConfigurationFile:
         self.network = network
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
-        self.enable_monitoring = kw.get("enable_monitoring", True)
+        self.enable_monitoring = kw.get("enable_monitoring", settings.monitoring_enabled)
         self.routing_mode = kw.get("routing_mode", settings.routing_mode)
 
     @property

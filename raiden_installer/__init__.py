@@ -29,6 +29,7 @@ class Settings:
     service_token: TokenSettings
     transfer_token: TokenSettings
     routing_mode: str = "pfs"
+    monitoring_enabled: bool = True
 
 
 def get_resource_folder_path():

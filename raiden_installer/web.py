@@ -50,7 +50,7 @@ RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 class QuickSetupForm(Form):
     network = wtforms.HiddenField("Network", default=DEFAULT_NETWORK.name)
-    use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=True)
+    use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=settings.monitoring_enabled)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -455,37 +455,6 @@ class ConfigurationListAPIHandler(APIHandler):
                 for f in RaidenConfigurationFile.list_existing_files()
             ]
         )
-
-    def post(self):
-        json_data = json.loads(self.request.body)
-        form_data = {k: [str(v)] for k, v in json_data.items()}
-        form = QuickSetupForm(form_data)
-        if form.validate():
-            network = Network.get_by_name(form.data["network"])
-            url_or_infura_id = form.data["endpoint"].strip()
-
-            if Infura.is_valid_project_id(url_or_infura_id):
-                ethereum_rpc_provider = Infura.make(network, url_or_infura_id)
-            else:
-                ethereum_rpc_provider = EthereumRPCProvider(url_or_infura_id)
-
-            account = Account.create()
-
-            conf_file = RaidenConfigurationFile(
-                account,
-                network,
-                ethereum_rpc_provider.url,
-                routing_mode="pfs" if form.data["use_rsb"] else "local",
-                enable_monitoring=form.data["use_rsb"],
-            )
-            conf_file.save()
-            self.set_status(201)
-            self.set_header(
-                "Location", self.reverse_url("api-configuration-detail", conf_file.file_name)
-            )
-        else:
-            self.set_status(400)
-            self.render_json({"errors": form.errors})
 
 
 class ConfigurationItemAPIHandler(APIHandler):

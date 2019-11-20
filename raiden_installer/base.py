@@ -39,7 +39,7 @@ class RaidenConfigurationFile:
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", True)
-        self.routing_mode = kw.get("routing_mode", "pfs")
+        self.routing_mode = kw.get("routing_mode", settings.routing_mode)
 
     @property
     def path_finding_service_url(self):

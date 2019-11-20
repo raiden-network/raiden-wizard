@@ -1,6 +1,6 @@
 network = "mainnet"
-client_release_channel = "testing"
-client_release_version = "v0.200.0-rc1"
+client_release_channel = "nightly"
+client_release_version = "0.100.5a1-20191120"
 services_version = "test"
 ethereum_amount_required = 2e16
 routing_mode = "local"

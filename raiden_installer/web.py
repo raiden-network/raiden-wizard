@@ -199,7 +199,8 @@ class AsyncTaskHandler(WebSocketHandler):
         service_token = Erc20Token.find_by_sticker(settings.service_token.sticker)
 
         service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
-        if service_token_balance.as_wei:
+        service_token_in_deposit = get_token_deposit(w3=w3, account=account, token=service_token)
+        if service_token_balance.as_wei and service_token_in_deposit < SERVICE_TOKEN_REQUIRED:
             self._send_status_update(
                 f"Making deposit of {service_token_balance.formatted} for Raiden Services"
             )
@@ -557,6 +558,7 @@ class CostEstimationAPIHandler(APIHandler):
 
 
 if __name__ == "__main__":
+    log.info("Starting web server")
     app = Application(
         [
             url(r"/", IndexHandler, name="index"),

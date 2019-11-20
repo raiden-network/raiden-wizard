@@ -379,7 +379,7 @@ class RaidenNightly(RaidenClient):
     FILE_NAME_PATTERN = (
         r"raiden-nightly-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)"
         r"T(?P<hour>\d+)-(?P<minute>\d+)-(?P<second>\d+)-"
-        r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)\.(?P<extra>.+)"
+        r"v(?P<major>\d+)[.](?P<minor>\d+)[.](?P<revision>\w+)[.](?P<extra>.+)"
     )
 
     @property
@@ -388,13 +388,13 @@ class RaidenNightly(RaidenClient):
 
     @property
     def release(self):
-        formatted_date = self.release_date.strftime("%Y%M%d")
+        formatted_date = self.release_date.strftime("%Y%m%d")
         return f"{self.major}.{self.minor}.{self.revision}-{formatted_date}"
 
     @property
     def download_url(self):
         return (
-            f"{self.RELEASE_INDEX_URL}/"
+            f"{self.RELEASE_INDEX_URL}/NIGHTLY/"
             f"raiden-nightly-"
             f"{self.year:04}-{self.month:02}-{self.day:02}"
             f"T{self.hour}-{self.minute}-{self.second}-"
@@ -421,7 +421,8 @@ class RaidenNightly(RaidenClient):
 
     @classmethod
     def make_by_tag(cls, release_tag):
-        raise NotImplementedError("Not implemented yet")
+        log.info("Getting list of all nightly releases")
+        return {r.release: r for r in cls.get_available_releases()}.get(release_tag)
 
     @classmethod
     def _make_release(cls, **kw):
@@ -439,15 +440,15 @@ class RaidenNightly(RaidenClient):
         content_nodes = get_children_by_tag(tree, "Contents")
         all_keys = [get_children_by_tag(node, "Key")[0].text for node in content_nodes]
 
-        nightlies = {
-            k: v.groupdict()
-            for k, v in {key: re.match(cls.get_file_pattern(), key) for key in all_keys}.items()
-            if v
-        }
+        releases = []
 
-        for key in nightlies.keys():
-            nightlies[key]["year"] = int(nightlies[key]["year"])
-            nightlies[key]["month"] = int(nightlies[key]["month"])
-            nightlies[key]["day"] = int(nightlies[key]["day"])
+        for file_key in all_keys:
+            result = re.search(cls.get_file_pattern(), file_key)
+            if result:
+                params = result.groupdict()
+                params["year"] = int(params["year"])
+                params["month"] = int(params["month"])
+                params["day"] = int(params["day"])
+                releases.append(cls._make_release(**params))
 
-        return [cls._make_release(**nightly) for nightly in nightlies.values()]
+        return releases

@@ -28,6 +28,7 @@ class Settings:
     ethereum_amount_required: int
     service_token: TokenSettings
     transfer_token: TokenSettings
+    routing_mode: str = "pfs"
 
 
 def get_resource_folder_path():

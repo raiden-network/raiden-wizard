@@ -180,8 +180,9 @@ class AsyncTaskHandler(WebSocketHandler):
 
             if network.FAUCET_AVAILABLE:
                 self._run_funding(configuration_file=conf_file)
-
-            self._send_redirect(self.reverse_url("account", conf_file.file_name))
+                self._send_redirect(self.reverse_url("launch", conf_file.file_name))
+            else:
+                self._send_redirect(self.reverse_url("account", conf_file.file_name))
         else:
             self._send_error_message(f"Failed to create account. Error: {form.errors}")
 

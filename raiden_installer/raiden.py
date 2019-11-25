@@ -25,7 +25,7 @@ def extract_version_modifier(release_name):
     if not release_name:
         return None
 
-    pattern = r".*(?P<release>(a|alpha|b|beta))-?(?P<number>\d+)"
+    pattern = r".*(?P<release>(a|alpha|b|beta|rc))-?(?P<number>\d+)"
     match = re.match(pattern, release_name)
 
     if not match:

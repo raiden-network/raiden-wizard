@@ -25,8 +25,8 @@ TEST_ACCOUNT_PRIVATE_KEY = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PRIVATE_KEY"
 TEST_ACCOUNT_PASSPHRASE = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PASSPHRASE", "manual_testing")
 
 
-GOERLI_SERVICE_TOKEN_SETTINGS = TokenSettings(sticker="RDN", amount_required=int(6e18))
-ROPSTEN_SERVICE_TOKEN_SETTINGS = TokenSettings(sticker="RDN", amount_required=int(6e18))
+GOERLI_SERVICE_TOKEN_SETTINGS = TokenSettings(ticker="RDN", amount_required=int(6e18))
+ROPSTEN_SERVICE_TOKEN_SETTINGS = TokenSettings(ticker="RDN", amount_required=int(6e18))
 
 
 class TestAccount(Account):
@@ -61,7 +61,7 @@ class BaseTestCase(unittest.TestCase):
         return Network.get_by_name(settings.network)
 
     def _get_RDN(self):
-        return Erc20Token.find_by_sticker("RDN")
+        return Erc20Token.find_by_ticker("RDN")
 
     def _get_web3(self):
         assert INFURA_PROJECT_ID
@@ -139,7 +139,7 @@ class TokenNetworkTestCase(BaseTestCase):
         if not ethereum_balance.as_wei:
             network.fund(self.account)
 
-        token = Erc20Token.find_by_sticker(settings.service_token.sticker)
+        token = Erc20Token.find_by_ticker(settings.service_token.ticker)
         token_balance = get_token_balance(w3, self.account, token)
         log.debug(f"Token Balance: {token_balance.formatted}")
 

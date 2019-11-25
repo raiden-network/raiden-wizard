@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Swap ETH for {{ token.sticker }}</h1>
+<h1>Swap ETH for {{ token.ticker }}</h1>
 <div class="hero">
-  Choose between Kyber and Uniswap decentralized exchanges to get {{ token.sticker }}
+  Choose between Kyber and Uniswap decentralized exchanges to get {{ token.ticker }}
 </div>
 <div class="info-panel">
   <p>Available funds</p>
@@ -12,17 +12,17 @@
       <span class="account-eth-balance highlighted">N/A ETH</span>
     </li>
     <li>
-      <span class="account-token-balance highlighted">N/A {{ token.sticker }}</span>
+      <span class="account-token-balance highlighted">N/A {{ token.ticker }}</span>
     </li>
   </ul>
 </div>
 <div class="action">
-  <button class="link-button" data-link-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name, token.sticker)}}"
-          {% if not kyber.is_listing_token(token.sticker) %}disabled{% end %}>
+  <button class="link-button" data-link-url="{{ reverse_url('swap', 'kyber', configuration_file.file_name, token.ticker)}}"
+          {% if not kyber.is_listing_token(token.ticker) %}disabled{% end %}>
     KyberNetwork
   </button>
-  <button class="link-button" data-link-url="{{ reverse_url('swap', 'uniswap', configuration_file.file_name, token.sticker)}}"
-          {% if not uniswap.is_listing_token(token.sticker) %}disabled{% end %}>
+  <button class="link-button" data-link-url="{{ reverse_url('swap', 'uniswap', configuration_file.file_name, token.ticker)}}"
+          {% if not uniswap.is_listing_token(token.ticker) %}disabled{% end %}>
     Uniswap
   </button>
 </div>
@@ -37,11 +37,11 @@
      ethereum_element: document.querySelector("span.account-eth-balance")     
    }
 
-   {% if token.sticker == service_token_required.sticker %}
+   {% if token.ticker == service_token_required.ticker %}
    display_elements.service_token_element = document.querySelector("span.account-token-balance")
    {% end %}
 
-   {% if token.sticker == transfer_token_required.sticker %}
+   {% if token.ticker == transfer_token_required.ticker %}
    display_elements.transfer_token_element = document.querySelector("span.account-token-balance")
    {% end %}
    

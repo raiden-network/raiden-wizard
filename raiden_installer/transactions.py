@@ -25,9 +25,7 @@ def _make_deposit_proxy(w3: Web3, token: Erc20Token):
     service_token_address = to_checksum_address(proxy.functions.token().call())
 
     if service_token_address != to_checksum_address(token.address):
-        raise ValueError(
-            f"{token.sticker} is at {token.address}, expected {service_token_address}"
-        )
+        raise ValueError(f"{token.ticker} is at {token.address}, expected {service_token_address}")
     return proxy
 
 

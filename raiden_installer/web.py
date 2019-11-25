@@ -73,13 +73,13 @@ class TokenExchangeForm(Form):
     network = wtforms.SelectField(
         choices=[(n.name, n.capitalized_name) for n in NETWORKS_WITH_TOKEN_SWAP]
     )
-    service_token_sticker = SERVICE_TOKEN_REQUIRED.sticker
-    transfer_token_sticker = TRANSFER_TOKEN_REQUIRED.sticker
+    service_token_ticker = SERVICE_TOKEN_REQUIRED.ticker
+    transfer_token_ticker = TRANSFER_TOKEN_REQUIRED.ticker
 
-    token_sticker = wtforms.SelectField(
+    token_ticker = wtforms.SelectField(
         choices=[
-            (service_token_sticker, service_token_sticker),
-            (transfer_token_sticker, transfer_token_sticker),
+            (service_token_ticker, service_token_ticker),
+            (transfer_token_ticker, transfer_token_ticker),
         ]
     )
     token_amount = wtforms.IntegerField()
@@ -145,13 +145,13 @@ class AsyncTaskHandler(WebSocketHandler):
         self._send_status_update(f"Account funded with {balance.formatted}")
 
         if settings.service_token.mintable:
-            service_token = Erc20Token.find_by_sticker(settings.service_token.sticker)
-            self._send_status_update(f"Minting {service_token.sticker}")
+            service_token = Erc20Token.find_by_ticker(settings.service_token.ticker)
+            self._send_status_update(f"Minting {service_token.ticker}")
             mint_tokens(w3, account, service_token)
 
         if settings.transfer_token.mintable:
-            transfer_token = Erc20Token.find_by_sticker(settings.transfer_token.sticker)
-            self._send_status_update(f"Minting {transfer_token.sticker}")
+            transfer_token = Erc20Token.find_by_ticker(settings.transfer_token.ticker)
+            self._send_status_update(f"Minting {transfer_token.ticker}")
             mint_tokens(w3, account, transfer_token)
 
     def _run_setup(self, **kw):
@@ -196,7 +196,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token = Erc20Token.find_by_sticker(settings.service_token.sticker)
+        service_token = Erc20Token.find_by_ticker(settings.service_token.ticker)
 
         service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
         service_token_in_deposit = get_token_deposit(w3=w3, account=account, token=service_token)
@@ -234,7 +234,7 @@ class AsyncTaskHandler(WebSocketHandler):
             configuration_file_name = kw.get("configuration_file_name")
             exchange_name = kw["exchange"]
             token_amount = kw["amount"]
-            token_sticker = kw["token"]
+            token_ticker = kw["token"]
         except (ValueError, KeyError, TypeError) as exc:
             self._send_error_message(f"Invalid request: {exc}")
             return
@@ -246,14 +246,14 @@ class AsyncTaskHandler(WebSocketHandler):
                     "network": [configuration_file.network.name],
                     "exchange": [exchange_name],
                     "token_amount": [token_amount],
-                    "token_sticker": [token_sticker],
+                    "token_ticker": [token_ticker],
                 }
             )
 
             if form.validate():
                 account = configuration_file.account
                 w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-                token = Erc20Token.find_by_sticker(form.data["token_sticker"])
+                token = Erc20Token.find_by_ticker(form.data["token_ticker"])
 
                 token_amount = TokenAmount(Wei(form.data["token_amount"]), token)
                 exchange = Exchange.get_by_name(form.data["exchange"])(w3=w3)
@@ -275,7 +275,7 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(
                     (
                         f"Best exchange rate found at {exchange.name}: "
-                        f"{exchange_rate.formatted} / {token_amount.sticker}"
+                        f"{exchange_rate.formatted} / {token_amount.ticker}"
                     )
                 )
                 self._send_status_update(
@@ -402,14 +402,14 @@ class LaunchHandler(BaseRequestHandler):
 
 
 class SwapOptionsHandler(BaseRequestHandler):
-    def get(self, configuration_file_name, token_sticker):
+    def get(self, configuration_file_name, token_ticker):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
         kyber = Kyber(w3=w3)
         uniswap = Uniswap(w3=w3)
-        token = Erc20Token.find_by_sticker(token_sticker)
+        token = Erc20Token.find_by_ticker(token_ticker)
 
         self.render(
             "swap_options.html",
@@ -421,7 +421,7 @@ class SwapOptionsHandler(BaseRequestHandler):
 
 
 class SwapHandler(BaseRequestHandler):
-    def get(self, exchange_name, configuration_file_name, token_sticker):
+    def get(self, exchange_name, configuration_file_name, token_ticker):
         exchange_class = Exchange.get_by_name(exchange_name)
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
@@ -433,7 +433,7 @@ class SwapHandler(BaseRequestHandler):
             exchange=exchange_class(w3=w3),
             configuration_file=configuration_file,
             balance=configuration_file.account.get_ethereum_balance(w3),
-            token=Erc20Token.find_by_sticker(token_sticker),
+            token=Erc20Token.find_by_ticker(token_ticker),
         )
 
 
@@ -462,8 +462,8 @@ class ConfigurationItemAPIHandler(APIHandler):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token = Erc20Token.find_by_sticker(SERVICE_TOKEN_REQUIRED.sticker)
-        transfer_token = Erc20Token.find_by_sticker(TRANSFER_TOKEN_REQUIRED.sticker)
+        service_token = Erc20Token.find_by_ticker(SERVICE_TOKEN_REQUIRED.ticker)
+        transfer_token = Erc20Token.find_by_ticker(TRANSFER_TOKEN_REQUIRED.ticker)
 
         service_token_balance = get_total_token_owned(
             w3=w3, account=configuration_file.account, token=service_token

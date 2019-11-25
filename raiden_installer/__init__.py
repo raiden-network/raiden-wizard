@@ -14,7 +14,7 @@ ROOT_FOLDER = Path(__file__).resolve().parent.parent
 
 @dataclass
 class TokenSettings:
-    sticker: str
+    ticker: str
     amount_required: int
     mintable: bool = False
 

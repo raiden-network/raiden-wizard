@@ -8,7 +8,7 @@ from raiden_installer import settings
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
-TokenSticker = NewType("TokenSticker", str)
+TokenTicker = NewType("TokenTicker", str)
 
 
 class TokenError(Exception):
@@ -21,35 +21,35 @@ class Wei(int):
 
 @dataclass
 class Currency:
-    sticker: str
-    wei_sticker: str
+    ticker: str
+    wei_ticker: str
     decimals: int = 18
 
     def format_value(self, wei_amount: Decimal):
         if wei_amount == 0:
-            sticker = self.sticker
+            ticker = self.ticker
             value = wei_amount
         elif wei_amount >= 10 ** 15:
-            sticker = self.sticker
+            ticker = self.ticker
             value = wei_amount / 10 ** self.decimals
         elif 10 ** 12 <= wei_amount < 10 ** 15:
-            sticker = "T" + self.wei_sticker
+            ticker = "T" + self.wei_ticker
             value = wei_amount / 10 ** 12
         elif 10 ** 9 <= wei_amount < 10 ** 12:
-            sticker = "G" + self.wei_sticker
+            ticker = "G" + self.wei_ticker
             value = wei_amount / 10 ** 9
         elif 10 ** 6 <= wei_amount < 10 ** 9:
-            sticker = "M" + self.wei_sticker
+            ticker = "M" + self.wei_ticker
             value = wei_amount / 10 ** 6
         else:
-            sticker = self.wei_sticker
+            ticker = self.wei_ticker
             value = wei_amount
 
         integral = int(value)
         frac = value % 1
         frac_string = f"{frac:.3g}"[1:] if frac else ""
 
-        return f"{integral}{frac_string} {sticker}"
+        return f"{integral}{frac_string} {ticker}"
 
 
 @dataclass
@@ -62,17 +62,17 @@ class Erc20Token(Currency):
         try:
             return self.addresses[settings.network.lower()]
         except KeyError:
-            raise TokenError(f"{self.sticker} is not deployed on {settings.network}")
+            raise TokenError(f"{self.ticker} is not deployed on {settings.network}")
 
     @staticmethod
-    def find_by_sticker(sticker):
+    def find_by_ticker(ticker):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
         token_list_version = {"0.25": TokensV25, "0.33": TokensV33}.get(version_string, Tokens)
-        return token_list_version[sticker].value
+        return token_list_version[ticker].value
 
 
-ETH = Currency(sticker="ETH", wei_sticker="WEI")
+ETH = Currency(ticker="ETH", wei_ticker="WEI")
 
 
 class TokenAmount(Generic[Eth_T]):
@@ -86,11 +86,11 @@ class TokenAmount(Generic[Eth_T]):
         self.currency = currency
 
     @property
-    def sticker(self) -> TokenSticker:
-        sticker = self.currency.sticker
-        if sticker is None:
-            raise ValueError(f"No sticker defined for {self.currency.__class__.__name__}")
-        return TokenSticker(sticker)
+    def ticker(self) -> TokenTicker:
+        ticker = self.currency.ticker
+        if ticker is None:
+            raise ValueError(f"No ticker defined for {self.currency.__class__.__name__}")
+        return TokenTicker(ticker)
 
     @property
     def formatted(self):
@@ -101,7 +101,7 @@ class TokenAmount(Generic[Eth_T]):
         return Wei(self.value * (10 ** self.currency.decimals))
 
     def __repr__(self):
-        return f"{self.value} {self.sticker}"
+        return f"{self.value} {self.ticker}"
 
     def __add__(self, other):
         if not self.__class__ == other.__class__:
@@ -141,8 +141,8 @@ class EthereumAmount(TokenAmount):
 
 
 _RDN = Erc20Token(
-    sticker="RDN",
-    wei_sticker="REI",
+    ticker="RDN",
+    wei_ticker="REI",
     addresses={
         "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
         "ropsten": "0x5422Ef695ED0B1213e2B953CFA877029637D9D26",
@@ -152,8 +152,8 @@ _RDN = Erc20Token(
 )
 
 _SAI = Erc20Token(
-    sticker="SAI",
-    wei_sticker="SEI",
+    ticker="SAI",
+    wei_ticker="SEI",
     addresses={
         "mainnet": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
         "ropsten": "0xaD6D458402F60fD3Bd25163575031ACDce07538D",
@@ -163,14 +163,14 @@ _SAI = Erc20Token(
 )
 
 _LondonRDN = Erc20Token(
-    sticker="LDN",
-    wei_sticker="REI",
+    ticker="LDN",
+    wei_ticker="REI",
     addresses={"goerli": "0x06b05eb77f6d7c4e7449105d36c7e04fa9cff3ca"},
 )
 
 _WizardToken = Erc20Token(
-    sticker="WIZ",
-    wei_sticker="WEI",
+    ticker="WIZ",
+    wei_ticker="WEI",
     addresses={"goerli": "0x95b2d84de40a0121061b105e6b54016a49621b44"},
 )
 
@@ -184,8 +184,8 @@ class Tokens(Enum):
 
 class TokensV25(Enum):
     RDN = Erc20Token(
-        sticker="RDN",
-        wei_sticker="REI",
+        ticker="RDN",
+        wei_ticker="REI",
         addresses={
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
             "goerli": "0x3a989d97388a39a0b5796306c615d10b7416be77",
@@ -195,8 +195,8 @@ class TokensV25(Enum):
 
 class TokensV33(Enum):
     RDN = Erc20Token(
-        sticker="RDN",
-        wei_sticker="REI",
+        ticker="RDN",
+        wei_ticker="REI",
         addresses={
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
             "goerli": "0x709118121A1ccA0f32FC2C0c59752E8FEE3c2834",
@@ -211,10 +211,10 @@ ETHEREUM_REQUIRED = EthereumAmount(Wei(settings.ethereum_amount_required))
 
 SERVICE_TOKEN_REQUIRED = TokenAmount(
     Wei(settings.service_token.amount_required),
-    Erc20Token.find_by_sticker(settings.service_token.sticker),
+    Erc20Token.find_by_ticker(settings.service_token.ticker),
 )
 
 TRANSFER_TOKEN_REQUIRED = TokenAmount(
     Wei(settings.transfer_token.amount_required),
-    Erc20Token.find_by_sticker(settings.transfer_token.sticker),
+    Erc20Token.find_by_ticker(settings.transfer_token.ticker),
 )

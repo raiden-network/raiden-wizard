@@ -7,9 +7,9 @@ routing_mode = "local"
 monitoring_enabled = false
 
 [service_token]
-sticker = "RDN"
+ticker = "RDN"
 amount_required = 6e18
 
 [transfer_token]
-sticker = "SAI"
+ticker = "SAI"
 amount_required = 2e18

@@ -1,4 +1,4 @@
-b{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block content %}
 <h1>Fund Account</h1>
@@ -18,12 +18,12 @@ b{% extends "base.html" %}
       raiden.
     </li>
     <li>
-      {{ service_token_required.sticker }} is the token used by the
+      {{ service_token_required.ticker }} is the token used by the
       <a href="https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d" target="_blank">
         Raiden Service Bundle</a>. You should have approx. <strong>{{ service_token_required.formatted }}</strong> deposited into this account.
     </li>
     <li>
-      {{ transfer_token_required.sticker }} is the token which will be used
+      {{ transfer_token_required.ticker }} is the token which will be used
       initially and that you will be able to make transfers through
       the raiden channels. Please be ready to transfer about <strong>{{ transfer_token_required.formatted }}</strong>.
     </li>
@@ -44,10 +44,10 @@ b{% extends "base.html" %}
           <span class="account-eth-balance highlighted">N/A ETH</span>
         </li>
         <li>
-          <span class="account-service-token-balance highlighted">N/A {{ service_token_required.sticker }}</span>
+          <span class="account-service-token-balance highlighted">N/A {{ service_token_required.ticker }}</span>
         </li>
         <li>
-          <span class="account-transfer-token-balance highlighted">N/A {{ transfer_token_required.sticker }}</span>
+          <span class="account-transfer-token-balance highlighted">N/A {{ transfer_token_required.ticker }}</span>
         </li>        
       </ul>
 
@@ -83,14 +83,14 @@ b{% extends "base.html" %}
       <button disabled
               id="btn-swap-service-token"
               class="link-button"
-              data-link-url="{{ reverse_url('swap-options', configuration_file.file_name, service_token_required.sticker) }}">
-        Exchange ETH for {{ service_token_required.sticker }}
+              data-link-url="{{ reverse_url('swap-options', configuration_file.file_name, service_token_required.ticker) }}">
+        Exchange ETH for {{ service_token_required.ticker }}
       </button>
       <button disabled
               id="btn-swap-transfer-token"
               class="link-button"
-              data-link-url="{{ reverse_url('swap-options', configuration_file.file_name, transfer_token_required.sticker) }}">
-        Exchange ETH for {{ transfer_token_required.sticker }}
+              data-link-url="{{ reverse_url('swap-options', configuration_file.file_name, transfer_token_required.ticker) }}">
+        Exchange ETH for {{ transfer_token_required.ticker }}
       </button>
     </div>
   </div>

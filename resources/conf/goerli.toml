@@ -5,11 +5,11 @@ services_version = "test"
 ethereum_amount_required = 2e16
 
 [service_token]
-sticker = "RDN"
+ticker = "RDN"
 amount_required = 6e18
 mintable = true
 
 [transfer_token]
-sticker = "WIZ"
+ticker = "WIZ"
 amount_required = 2e18
 mintable = true

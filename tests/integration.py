@@ -56,7 +56,7 @@ class TokenTestCase(IntegrationTestCase):
 
     def setUp(self):
         super().setUp()
-        self.ldn_token = Erc20Token.find_by_sticker("LND")
+        self.ldn_token = Erc20Token.find_by_ticker("LND")
 
     def test_can_not_mint_tokens_without_gas(self):
         with self.assertRaises(ValueError):

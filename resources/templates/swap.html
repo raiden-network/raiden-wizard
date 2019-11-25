@@ -3,7 +3,7 @@
 {% block content %}
 <h1>Swap with {{ exchange.name }}</h1>
 <div class="hero">
-  Use a decentralized exchange to buy {{ token.sticker }}
+  Use a decentralized exchange to buy {{ token.ticker }}
 </div>
 <div class="info-panel">
   <p>Available funds</p>
@@ -12,10 +12,10 @@
       <span class="account-eth-balance highlighted">N/A ETH</span>
     </li>
     <li>
-      <span class="account-token-balance highlighted">N/A {{ token.sticker }}</span>
+      <span class="account-token-balance highlighted">N/A {{ token.ticker }}</span>
     </li>
   </ul>
-  <input type="number" name="token_amount" placeholder="{{ token.sticker }} Amount desired" disabled />
+  <input type="number" name="token_amount" placeholder="{{ token.ticker }} Amount desired" disabled />
 </div>
 <div class="action">
   <button disabled>Execute Swap</button>
@@ -42,11 +42,11 @@
      ethereum_element: document.querySelector("span.account-eth-balance")
    }
 
-   {% if token.sticker == service_token_required.sticker %}
+   {% if token.ticker == service_token_required.ticker %}
    display_elements.service_token_element = document.querySelector("span.account-token-balance");
    {% end %}
 
-   {% if token.sticker == transfer_token_required.sticker %}
+   {% if token.ticker == transfer_token_required.ticker %}
    display_elements.transfer_token_element = document.querySelector("span.account-token-balance");
    {% end %}
    
@@ -92,7 +92,7 @@
      const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
      const FILE_NAME = "{{ configuration_file.file_name }}";
      const NETWORK_NAME = "{{ configuration_file.network.name }}";
-     const TOKEN_STICKER = "{{ token.sticker }}";
+     const TOKEN_TICKER = "{{ token.ticker }}";
 
      let amount = service_token_amount_input.value;
 
@@ -100,7 +100,7 @@
        method: "swap",
        configuration_file_name: FILE_NAME,
        amount: parseInt(amount * (10 ** 18)).toString(),
-       token: TOKEN_STICKER,
+       token: TOKEN_TICKER,
        exchange: EXCHANGE_NAME
      }));
 

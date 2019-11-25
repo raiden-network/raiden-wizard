@@ -13,7 +13,7 @@ from raiden_installer.tokens import EthereumAmount, TokenAmount, Erc20Token, Wei
 class TokenAmountTestCase(unittest.TestCase):
     def setUp(self):
         self.one_eth = EthereumAmount(1)
-        self.one_rdn = TokenAmount(1, Erc20Token.find_by_sticker("RDN"))
+        self.one_rdn = TokenAmount(1, Erc20Token.find_by_ticker("RDN"))
         self.one_gwei = EthereumAmount(Wei(10 ** 9))
         self.almost_one_eth = EthereumAmount("0.875")
         self.some_wei = EthereumAmount(Wei(50_000))
@@ -26,8 +26,8 @@ class TokenAmountTestCase(unittest.TestCase):
 
         self.assertEqual(two_eth_in_wei, Wei(2 * 10 ** 18))
 
-    def test_can_get_token_sticker(self):
-        self.assertEqual(self.one_rdn.sticker, "RDN")
+    def test_can_get_token_ticker(self):
+        self.assertEqual(self.one_rdn.ticker, "RDN")
 
     def test_can_get_formatted_amount(self):
         self.assertEqual(self.one_eth.formatted, "1 ETH")

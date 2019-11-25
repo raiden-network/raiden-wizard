@@ -332,7 +332,7 @@ def run_action_swap_kyber():
 
     kyber = Exchange.get_by_name("kyber")(w3=w3)
     amount = Wei(5 * (10 ** 18))
-    kyber.buy_tokens(account, TokenAmount(amount, Erc20Token.find_by_sticker("RDN")))
+    kyber.buy_tokens(account, TokenAmount(amount, Erc20Token.find_by_ticker("RDN")))
 
     return main_prompt()
 

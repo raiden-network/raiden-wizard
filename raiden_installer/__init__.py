@@ -42,7 +42,7 @@ def get_resource_folder_path():
     return os.path.join(root_folder, "resources")
 
 
-_CONFIGURATION_FILE_NAME = os.path.join(get_resource_folder_path(), "conf", "settings.toml")
+_CONFIGURATION_FILE_NAME = os.path.join(get_resource_folder_path(), "conf", "goerli.toml")
 
 configuration_data = toml.load(_CONFIGURATION_FILE_NAME)
 

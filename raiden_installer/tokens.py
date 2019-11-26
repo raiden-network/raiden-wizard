@@ -145,6 +145,7 @@ _RDN = Erc20Token(
     wei_ticker="REI",
     addresses={
         "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
+        "goerli": "0x709118121A1ccA0f32FC2C0c59752E8FEE3c2834",
         "ropsten": "0x5422Ef695ED0B1213e2B953CFA877029637D9D26",
         "rinkeby": "0x51892e7e4085df269de688b273209f3969f547e0",
         "kovan": "0x3a03155696708f517c53ffc4f696dfbfa7743795",

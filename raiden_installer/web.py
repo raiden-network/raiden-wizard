@@ -560,6 +560,12 @@ if __name__ == "__main__":
     server = HTTPServer(app)
     server.add_sockets(sockets)
 
+    _, port = sockets[0].getsockname()
+    local_url = f"http://localhost:{port}"
+    log.info(f"Installer page ready on {local_url}")
+
     if not DEBUG:
-        webbrowser.open_new(f"http://localhost:{PORT}")
+        log.info("Should open automatically in browser...")
+        webbrowser.open_new(local_url)
+
     tornado.ioloop.IOLoop.current().start()

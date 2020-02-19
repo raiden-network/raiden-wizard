@@ -8,7 +8,8 @@ from urllib.parse import urlparse
 import tornado.ioloop
 import wtforms
 from ethtoken.abi import EIP20_ABI
-from tornado.web import Application, HTTPError, RequestHandler, url
+from tornado.netutil import bind_sockets
+from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
 
@@ -554,7 +555,10 @@ if __name__ == "__main__":
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
         template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
     )
-    app.listen(PORT)
+
+    sockets = bind_sockets(0)
+    server = HTTPServer(app)
+    server.add_sockets(sockets)
 
     if not DEBUG:
         webbrowser.open_new(f"http://localhost:{PORT}")

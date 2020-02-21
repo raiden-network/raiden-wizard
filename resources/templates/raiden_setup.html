@@ -86,8 +86,7 @@
 
 
    // Attaching event handlers
-   infura_project_input.addEventListener("blur", checkIdNotEmpty);
-   infura_project_input.addEventListener("change", checkIdNotEmpty);
+   infura_project_input.addEventListener("input", checkIdNotEmpty);
    submit_button.addEventListener("click", submitConfiguration);
 
  });

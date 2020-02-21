@@ -9,7 +9,7 @@
 
 <div class="info-panel">
   <div>
-    <input type="text" name="endpoint" placeholder="Your Infura ID" />
+    <input type="text" name="endpoint" placeholder="Your Infura ID (or Infura endpoint URL)" />
   </div>
   <span class="error" hidden>You need to provide a valid Infura Project ID</span>
 </div>
@@ -30,16 +30,13 @@
    const error_display = document.querySelector("span.error");
    const submit_button = document.querySelector("button");
 
-   function validateInfuraId(evt) {
-     const infura_id = evt.target.value;
-     const error_message = "Infura IDs must be exactly 32 characters long";
+   function checkIdNotEmpty(evt) {
+     const error_message = "Please enter your Infura ID.";
 
-     if (infura_id && infura_id.length != 32) {
+     if (!evt.target.value) {
        error_display.textContent = error_message;
        error_display.hidden = false;
-       if (!submit_button.disabled) {
-         submit_button.disabled = true;
-       }
+       submit_button.disabled = true;
      }
      else {
        error_display.hidden = true;
@@ -89,8 +86,8 @@
 
 
    // Attaching event handlers
-   infura_project_input.addEventListener("blur", validateInfuraId);
-   infura_project_input.addEventListener("change", validateInfuraId);
+   infura_project_input.addEventListener("blur", checkIdNotEmpty);
+   infura_project_input.addEventListener("change", checkIdNotEmpty);
    submit_button.addEventListener("click", submitConfiguration);
 
  });

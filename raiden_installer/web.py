@@ -63,9 +63,8 @@ class QuickSetupForm(Form):
         data = field.data.strip()
         parsed_url = urlparse(data)
         is_valid_url = bool(parsed_url.scheme) and bool(parsed_url.netloc)
-        is_valid_project_id = Infura.is_valid_project_id(data)
 
-        if not (is_valid_project_id or is_valid_url):
+        if not (Infura.is_valid_project_id_or_endpoint(data) or is_valid_url):
             raise wtforms.ValidationError("Not a valid URL nor Infura Project ID")
 
 
@@ -163,7 +162,7 @@ class AsyncTaskHandler(WebSocketHandler):
             network = Network.get_by_name(form.data["network"])
             url_or_infura_id = form.data["endpoint"].strip()
 
-            if Infura.is_valid_project_id(url_or_infura_id):
+            if Infura.is_valid_project_id_or_endpoint(url_or_infura_id):
                 ethereum_rpc_provider = Infura.make(network, url_or_infura_id)
             else:
                 ethereum_rpc_provider = EthereumRPCProvider(url_or_infura_id)

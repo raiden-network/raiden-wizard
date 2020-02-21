@@ -35,6 +35,7 @@ from raiden_installer.transactions import (
     get_token_deposit,
     mint_tokens,
 )
+from raiden_installer.utils import check_eth_node_responsivity
 
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
@@ -168,6 +169,12 @@ class AsyncTaskHandler(WebSocketHandler):
                 ethereum_rpc_provider = EthereumRPCProvider(url_or_infura_id)
 
             account = Account.create()
+
+            try:
+                check_eth_node_responsivity(ethereum_rpc_provider.url)
+            except ValueError as e:
+                self._send_error_message(f"Ethereum node unavailable: {e}.")
+                return
 
             conf_file = RaidenConfigurationFile(
                 account,

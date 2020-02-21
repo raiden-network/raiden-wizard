@@ -1,3 +1,4 @@
+from re import search
 from urllib.parse import urlparse
 
 from web3 import HTTPProvider, Web3
@@ -31,6 +32,7 @@ class EthereumRPCProvider:
 
 class Infura(EthereumRPCProvider):
     URL_PATTERN = "https://{network_name}.infura.io:443/v3/{project_id}"
+    ID_REGEX = "(^|(?<=(infura\.io\/v[\d]\/)))[\da-fA-F]{32}$"
 
     def __init__(self, url):
         super().__init__(url)
@@ -51,13 +53,13 @@ class Infura(EthereumRPCProvider):
 
     @classmethod
     def make(cls, network: Network, project_id: str):
+        project_id = project_id[-32:]
         return cls(cls.URL_PATTERN.format(network_name=network.name, project_id=project_id))
 
     @staticmethod
+    def is_valid_project_id_or_endpoint(id_string: str) -> bool:
+        return bool(search(Infura.ID_REGEX, id_string))
+
+    @staticmethod
     def is_valid_project_id(id_string: str) -> bool:
-        try:
-            # It should an hex string
-            int(id_string, 16)
-            return len(id_string) == 32
-        except ValueError:
-            return False
+        return len(id_string) == 32 and Infura.is_valid_project_id_or_endpoint(id_string)

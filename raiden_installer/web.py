@@ -363,9 +363,10 @@ class ConfigurationListHandler(BaseRequestHandler):
 
 
 class SetupHandler(BaseRequestHandler):
-    def get(self):
+    def get(self, network_name):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
-        self.render("raiden_setup.html", configuration_file_names=file_names)
+        network = Network.get_by_name(network_name)
+        self.render("raiden_setup.html", configuration_file_names=file_names, network=network)
 
 
 class AccountDetailHandler(BaseRequestHandler):
@@ -540,7 +541,7 @@ if __name__ == "__main__":
         [
             url(r"/", IndexHandler, name="index"),
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
-            url(r"/setup", SetupHandler, name="setup"),
+            url(r"/setup/(mainnet|goerli)", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
             url(r"/funding/(.*)", AccountFundingHandler, name="funding"),

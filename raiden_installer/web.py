@@ -156,7 +156,7 @@ class AsyncTaskHandler(WebSocketHandler):
             mint_tokens(w3, account, transfer_token)
 
     def _run_setup(self, **kw):
-        form = QuickSetupForm(endpoint=kw.get("endpoint"))
+        form = QuickSetupForm(endpoint=kw.get("endpoint"), network=kw.get("network"))
         if form.validate():
             self._send_status_update("Generating new wallet and configuration file for raiden")
 
@@ -365,8 +365,9 @@ class ConfigurationListHandler(BaseRequestHandler):
 class SetupHandler(BaseRequestHandler):
     def get(self, network_name):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
-        network = Network.get_by_name(network_name)
-        self.render("raiden_setup.html", configuration_file_names=file_names, network=network)
+        self.render(
+            "raiden_setup.html", configuration_file_names=file_names, network_name=network_name
+        )
 
 
 class AccountDetailHandler(BaseRequestHandler):

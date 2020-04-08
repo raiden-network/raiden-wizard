@@ -343,11 +343,7 @@ class BaseRequestHandler(RequestHandler):
 class IndexHandler(BaseRequestHandler):
     def get(self):
         try:
-            configuration_file = [
-                rc
-                for rc in RaidenConfigurationFile.get_available_configurations()
-                if rc.network.name == DEFAULT_NETWORK.name
-            ].pop()
+            configuration_file = RaidenConfigurationFile.get_available_configurations().pop()
         except IndexError:
             configuration_file = None
 

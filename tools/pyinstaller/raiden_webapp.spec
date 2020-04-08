@@ -35,6 +35,7 @@ a = Analysis(
         "packaging.version",
         "packaging.specifiers",
         "packaging.requirements",
+        "pkg_resources.py2_warn",
         "web3",
     ],
     hookspath=[HOOKS_FOLDER],

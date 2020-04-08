@@ -467,9 +467,10 @@ class ConfigurationItemAPIHandler(APIHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
+        network = configuration_file.network.name
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token = Erc20Token.find_by_ticker(SERVICE_TOKEN_REQUIRED.ticker)
-        transfer_token = Erc20Token.find_by_ticker(TRANSFER_TOKEN_REQUIRED.ticker)
+        service_token = Erc20Token.find_by_ticker(SERVICE_TOKEN_REQUIRED.ticker, network)
+        transfer_token = Erc20Token.find_by_ticker(TRANSFER_TOKEN_REQUIRED.ticker, network)
 
         service_token_balance = get_total_token_owned(
             w3=w3, account=configuration_file.account, token=service_token

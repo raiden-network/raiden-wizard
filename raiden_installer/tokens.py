@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
-from typing import NewType, TypeVar, Generic, Dict
+from typing import NewType, TypeVar, Generic, Dict, Optional
 from decimal import Decimal, getcontext
 
 from raiden_contracts.constants import CONTRACTS_VERSION
@@ -56,16 +56,18 @@ class Currency:
 class Erc20Token(Currency):
     supply: int = 10 ** 21
     addresses: Dict[str, str] = field(default_factory=dict)
+    network: Optional[str] = None
 
     @property
     def address(self) -> str:
+        network = self.network or settings.network.lower()
         try:
-            return self.addresses[settings.network.lower()]
+            return self.addresses[network]
         except KeyError:
-            raise TokenError(f"{self.ticker} is not deployed on {settings.network}")
+            raise TokenError(f"{self.ticker} is not deployed on {network}")
 
     @staticmethod
-    def find_by_ticker(ticker):
+    def find_by_ticker(ticker, network = None):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
         token_list_version = {"0.25": TokensV25,
@@ -73,7 +75,7 @@ class Erc20Token(Currency):
                               "0.36": TokensV36,
                               "0.37": TokensV37}\
             .get(version_string, Tokens)
-        return token_list_version[ticker].value
+        return replace(token_list_version[ticker].value, network=network)
 
 
 ETH = Currency(ticker="ETH", wei_ticker="WEI")

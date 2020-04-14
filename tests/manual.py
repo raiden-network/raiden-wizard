@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from raiden_installer import settings, TokenSettings
+from raiden_installer import default_settings, TokenSettings
 from raiden_installer import log
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
@@ -58,7 +58,7 @@ class BaseTestCase(unittest.TestCase):
         self.account = TestAccount.create(TEST_ACCOUNT_PASSPHRASE)
 
     def _get_network(self):
-        return Network.get_by_name(settings.network)
+        return Network.get_by_name(default_settings.network)
 
     def _get_RDN(self):
         return Erc20Token.find_by_ticker("RDN")
@@ -139,7 +139,7 @@ class TokenNetworkTestCase(BaseTestCase):
         if not ethereum_balance.as_wei:
             network.fund(self.account)
 
-        token = Erc20Token.find_by_ticker(settings.service_token.ticker)
+        token = Erc20Token.find_by_ticker(default_settings.service_token.ticker)
         token_balance = get_token_balance(w3, self.account, token)
         log.debug(f"Token Balance: {token_balance.formatted}")
 

@@ -4,7 +4,7 @@ from typing import NewType, TypeVar, Generic, Dict, Optional
 from decimal import Decimal, getcontext
 
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import settings
+from raiden_installer import network_settings, default_settings
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -60,7 +60,7 @@ class Erc20Token(Currency):
 
     @property
     def address(self) -> str:
-        network = self.network or settings.network.lower()
+        network = self.network or default_settings.network.lower()
         try:
             return self.addresses[network]
         except KeyError:
@@ -238,14 +238,26 @@ class TokensV37(Enum):
     WIZ = _WizardToken
 
 
-ETHEREUM_REQUIRED = EthereumAmount(Wei(settings.ethereum_amount_required))
+@dataclass
+class RequiredAmounts:
+    eth: EthereumAmount
+    service_token: TokenAmount
+    transfer_token: TokenAmount
 
-SERVICE_TOKEN_REQUIRED = TokenAmount(
-    Wei(settings.service_token.amount_required),
-    Erc20Token.find_by_ticker(settings.service_token.ticker),
-)
+    @staticmethod
+    def from_settings(settings):
+        return RequiredAmounts(
+            eth=EthereumAmount(Wei(settings.ethereum_amount_required)),
+            service_token=TokenAmount(
+                Wei(settings.service_token.amount_required),
+                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
+            ),
+            transfer_token=TokenAmount(
+                Wei(settings.transfer_token.amount_required),
+                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
+            ),
+        )
 
-TRANSFER_TOKEN_REQUIRED = TokenAmount(
-    Wei(settings.transfer_token.amount_required),
-    Erc20Token.find_by_ticker(settings.transfer_token.ticker),
-)
+    @staticmethod
+    def for_network(network_name):
+        return RequiredAmounts.from_settings(network_settings[network_name])

@@ -61,4 +61,4 @@ def _get_settings(network):
 
 _NETWORKS = ["goerli", "mainnet"]
 network_settings = {network: _get_settings(network) for network in _NETWORKS}
-settings = network_settings["goerli"]
+default_settings = network_settings["goerli"]

@@ -13,7 +13,7 @@ from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
 
-from raiden_installer import get_resource_folder_path, log, settings
+from raiden_installer import get_resource_folder_path, log, network_settings, default_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
@@ -21,12 +21,10 @@ from raiden_installer.raiden import RaidenClient, RaidenClientError
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
 from raiden_installer.tokens import (
     EthereumAmount,
+    RequiredAmounts,
     TokenAmount,
     Wei,
     Erc20Token,
-    ETHEREUM_REQUIRED,
-    SERVICE_TOKEN_REQUIRED,
-    TRANSFER_TOKEN_REQUIRED,
 )
 from raiden_installer.transactions import (
     deposit_service_tokens,
@@ -43,16 +41,15 @@ PORT = 8080
 
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
-NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten"]]
+NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 DEFAULT_NETWORK = Network.get_default()
-RAIDEN_CLIENT = RaidenClient.get_client()
 
 RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 
 class QuickSetupForm(Form):
     network = wtforms.HiddenField("Network", default=DEFAULT_NETWORK.name)
-    use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=settings.monitoring_enabled)
+    use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=default_settings.monitoring_enabled)
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -74,15 +71,7 @@ class TokenExchangeForm(Form):
     network = wtforms.SelectField(
         choices=[(n.name, n.capitalized_name) for n in NETWORKS_WITH_TOKEN_SWAP]
     )
-    service_token_ticker = SERVICE_TOKEN_REQUIRED.ticker
-    transfer_token_ticker = TRANSFER_TOKEN_REQUIRED.ticker
-
-    token_ticker = wtforms.SelectField(
-        choices=[
-            (service_token_ticker, service_token_ticker),
-            (transfer_token_ticker, transfer_token_ticker),
-        ]
-    )
+    token_ticker = wtforms.StringField()
     token_amount = wtforms.IntegerField()
 
 
@@ -130,7 +119,8 @@ class AsyncTaskHandler(WebSocketHandler):
         sys.exit()
 
     def _run_funding(self, configuration_file: RaidenConfigurationFile):
-        network = Network.get_by_name(settings.network)
+        network = configuration_file.network
+        settings = network_settings[network.name]
 
         if not network.FAUCET_AVAILABLE:
             self._send_error_message(
@@ -146,12 +136,12 @@ class AsyncTaskHandler(WebSocketHandler):
         self._send_status_update(f"Account funded with {balance.formatted}")
 
         if settings.service_token.mintable:
-            service_token = Erc20Token.find_by_ticker(settings.service_token.ticker)
+            service_token = Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network)
             self._send_status_update(f"Minting {service_token.ticker}")
             mint_tokens(w3, account, service_token)
 
         if settings.transfer_token.mintable:
-            transfer_token = Erc20Token.find_by_ticker(settings.transfer_token.ticker)
+            transfer_token = Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network)
             self._send_status_update(f"Minting {transfer_token.ticker}")
             mint_tokens(w3, account, transfer_token)
 
@@ -196,19 +186,22 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_launch(self, **kw):
         configuration_file_name = kw.get("configuration_file_name")
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        network_name = configuration_file.network.name
+        raiden_client = RaidenClient.get_client(network_name)
+        required = RequiredAmounts.for_network(network_name)
 
-        if not RAIDEN_CLIENT.is_installed:
-            self._send_status_update(f"Downloading and installing raiden {RAIDEN_CLIENT.release}")
-            RAIDEN_CLIENT.install()
+        if not raiden_client.is_installed:
+            self._send_status_update(f"Downloading and installing raiden {raiden_client.release}")
+            raiden_client.install()
             self._send_status_update("Installation complete")
 
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token = Erc20Token.find_by_ticker(settings.service_token.ticker)
+        service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
 
         service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
         service_token_in_deposit = get_token_deposit(w3=w3, account=account, token=service_token)
-        if service_token_balance.as_wei and service_token_in_deposit < SERVICE_TOKEN_REQUIRED:
+        if service_token_balance.as_wei and service_token_in_deposit < required.service_token:
             self._send_status_update(
                 f"Making deposit of {service_token_balance.formatted} for Raiden Services"
             )
@@ -226,16 +219,16 @@ class AsyncTaskHandler(WebSocketHandler):
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
         )
 
-        if not RAIDEN_CLIENT.is_running:
-            RAIDEN_CLIENT.launch(configuration_file)
+        if not raiden_client.is_running:
+            raiden_client.launch(configuration_file)
 
         try:
-            RAIDEN_CLIENT.wait_for_web_ui_ready()
+            raiden_client.wait_for_web_ui_ready()
             self._send_task_complete("Raiden is ready!")
-            self._send_redirect(RAIDEN_CLIENT.WEB_UI_INDEX_URL)
+            self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
         except (RaidenClientError, RuntimeError) as exc:
             self._send_error_message(f"Raiden process failed to start: {exc}")
-            RAIDEN_CLIENT.kill()
+            raiden_client.kill()
 
     def _run_swap(self, **kw):
         try:
@@ -249,9 +242,10 @@ class AsyncTaskHandler(WebSocketHandler):
 
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+            network_name = configuration_file.network.name
             form = TokenExchangeForm(
                 {
-                    "network": [configuration_file.network.name],
+                    "network": [network_name],
                     "exchange": [exchange_name],
                     "token_amount": [token_amount],
                     "token_ticker": [token_ticker],
@@ -261,7 +255,7 @@ class AsyncTaskHandler(WebSocketHandler):
             if form.validate():
                 account = configuration_file.account
                 w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-                token = Erc20Token.find_by_ticker(form.data["token_ticker"])
+                token = Erc20Token.find_by_ticker(form.data["token_ticker"], network_name)
 
                 token_amount = TokenAmount(Wei(form.data["token_amount"]), token)
                 exchange = Exchange.get_by_name(form.data["exchange"])(w3=w3)
@@ -328,12 +322,18 @@ class AsyncTaskHandler(WebSocketHandler):
 
 class BaseRequestHandler(RequestHandler):
     def render(self, template_name, **context_data):
+        configuration_file = context_data.get('configuration_file')
+        if configuration_file:
+            network = configuration_file.network
+        else:
+            network = Network.get_by_name(default_settings.network)
+        required = RequiredAmounts.for_network(network.name)
         context_data.update(
             {
-                "network": DEFAULT_NETWORK,
-                "ethereum_required": ETHEREUM_REQUIRED,
-                "service_token_required": SERVICE_TOKEN_REQUIRED,
-                "transfer_token_required": TRANSFER_TOKEN_REQUIRED,
+                "network": network,
+                "ethereum_required": required.eth,
+                "service_token_required": required.service_token,
+                "transfer_token_required": required.transfer_token,
                 "eip20_abi": json.dumps(EIP20_ABI),
             }
         )
@@ -415,7 +415,7 @@ class SwapOptionsHandler(BaseRequestHandler):
         )
         kyber = Kyber(w3=w3)
         uniswap = Uniswap(w3=w3)
-        token = Erc20Token.find_by_ticker(token_ticker)
+        token = Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name)
 
         self.render(
             "swap_options.html",
@@ -439,7 +439,7 @@ class SwapHandler(BaseRequestHandler):
             exchange=exchange_class(w3=w3),
             configuration_file=configuration_file,
             balance=configuration_file.account.get_ethereum_balance(w3),
-            token=Erc20Token.find_by_ticker(token_ticker),
+            token=Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name),
         )
 
 
@@ -469,8 +469,10 @@ class ConfigurationItemAPIHandler(APIHandler):
         account = configuration_file.account
         network = configuration_file.network.name
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token = Erc20Token.find_by_ticker(SERVICE_TOKEN_REQUIRED.ticker, network)
-        transfer_token = Erc20Token.find_by_ticker(TRANSFER_TOKEN_REQUIRED.ticker, network)
+
+        required = RequiredAmounts.for_network(network)
+        service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network)
+        transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network)
 
         service_token_balance = get_total_token_owned(
             w3=w3, account=configuration_file.account, token=service_token
@@ -510,13 +512,14 @@ class CostEstimationAPIHandler(APIHandler):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        required = RequiredAmounts.for_network(configuration_file.network.name)
 
         kyber = Kyber(w3=w3)
         uniswap = Uniswap(w3=w3)
 
         highest_cost = 0
         for exchange in (kyber, uniswap):
-            exchange_costs = exchange.calculate_transaction_costs(SERVICE_TOKEN_REQUIRED, account)
+            exchange_costs = exchange.calculate_transaction_costs(required.service_token, account)
             if not exchange_costs:
                 continue
             total_cost = exchange_costs["total"].as_wei

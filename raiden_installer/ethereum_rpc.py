@@ -12,8 +12,8 @@ from raiden_installer.network import Network
 def make_web3_provider(url: str, account: Account) -> Web3:
     w3 = Web3(HTTPProvider(url))
     w3.eth.setGasPriceStrategy(fast_gas_price_strategy)
-    w3.middleware_stack.add(construct_sign_and_send_raw_middleware(account.private_key))
-    w3.middleware_stack.inject(geth_poa_middleware, layer=0)
+    w3.middleware_onion.add(construct_sign_and_send_raw_middleware(account.private_key))
+    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
     return w3
 

@@ -43,9 +43,7 @@ class RaidenConfigurationFile:
 
     @property
     def path_finding_service_url(self):
-        return (
-            f"https://pfs-{self.network.name}.services-{settings.services_version}.raiden.network"
-        )
+            return f"https://pfs-{self.network.name}.services-{settings.services_version}.raiden.network"
 
     @property
     def configuration_data(self):
@@ -67,6 +65,12 @@ class RaidenConfigurationFile:
 
         if self.routing_mode == "pfs":
             base_config.update({"pathfinding-service-address": self.path_finding_service_url})
+
+        # If the config is for a demo-env we'll need to add/overwrite some settings
+        if settings.client_release_channel == "demo_env":
+            base_config.update({"matrix-server": settings.matrix_server})
+            base_config["routing-mode"] = "pfs"
+            base_config["pathfinding-service-address"] = settings.pathfinding_service_address
 
         return base_config
 

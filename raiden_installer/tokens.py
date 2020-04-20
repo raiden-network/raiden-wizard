@@ -68,7 +68,11 @@ class Erc20Token(Currency):
     def find_by_ticker(ticker):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
-        token_list_version = {"0.25": TokensV25, "0.33": TokensV33}.get(version_string, Tokens)
+        token_list_version = {"0.25": TokensV25,
+                              "0.33": TokensV33,
+                              "0.36": TokensV36,
+                              "0.37": TokensV37}\
+            .get(version_string, Tokens)
         return token_list_version[ticker].value
 
 
@@ -204,6 +208,30 @@ class TokensV33(Enum):
         },
     )
     LDN = _LondonRDN
+    SAI = _SAI
+    WIZ = _WizardToken
+
+
+class TokensV36(Enum):
+    RDN = Erc20Token(
+        ticker="RDN",
+        wei_ticker="REI",
+        addresses={
+            "goerli": "0x4074fD4d460d0c31cbEdC3f59B2D98626D063952",
+        },
+    )
+    SAI = _SAI
+    WIZ = _WizardToken
+
+
+class TokensV37(Enum):
+    RDN = Erc20Token(
+        ticker="RDN",
+        wei_ticker="REI",
+        addresses={
+            "goerli": "0xc116edAD88cda44E703ef1fc59766268E4aa187B",
+        },
+    )
     SAI = _SAI
     WIZ = _WizardToken
 

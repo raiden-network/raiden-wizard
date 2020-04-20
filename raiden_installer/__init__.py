@@ -30,6 +30,10 @@ class Settings:
     transfer_token: TokenSettings
     routing_mode: str = "pfs"
     monitoring_enabled: bool = True
+    # matrix_server and pfs address are only used if client_release_channel = "demo_env"
+    matrix_server: str = ""
+    pathfinding_service_address: str = ""
+
 
 
 def get_resource_folder_path():
@@ -42,7 +46,7 @@ def get_resource_folder_path():
     return os.path.join(root_folder, "resources")
 
 
-_CONFIGURATION_FILE_NAME = os.path.join(get_resource_folder_path(), "conf", "goerli.toml")
+_CONFIGURATION_FILE_NAME = os.path.join(get_resource_folder_path(), "conf", "demo_env.toml")
 
 configuration_data = toml.load(_CONFIGURATION_FILE_NAME)
 

@@ -180,8 +180,17 @@ class RaidenClient:
             self.install_path.unlink()
 
     def launch(self, configuration_file):
+        import toml
+        flags = toml.load(configuration_file.path)
+        all_flags = []
+        for key, value in flags.items():
+            all_flags += ['--' + key]
+            if not isinstance(value, bool):
+                all_flags += [value]
+
+        print(*all_flags)
         proc = subprocess.Popen(
-            [str(self.install_path), "--config-file", str(configuration_file.path)]
+            [str(self.install_path)] + all_flags  #, "--config-file", str(configuration_file.path)]
         )
         self._process_id = proc.pid
 

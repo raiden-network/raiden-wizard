@@ -17,7 +17,7 @@ from xml.etree import ElementTree
 import psutil
 import requests
 
-from raiden_installer import log, settings
+from raiden_installer import default_settings, log, network_settings
 
 
 def extract_version_modifier(release_name):
@@ -334,7 +334,8 @@ class RaidenClient:
         return cls._make_release(response.json())
 
     @staticmethod
-    def get_client():
+    def get_client(network_name=None):
+        settings = network_settings[network_name] if network_name else default_settings
         raiden_class = {
             "testing": RaidenTestnetRelease,
             "mainnet": RaidenRelease,

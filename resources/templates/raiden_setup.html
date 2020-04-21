@@ -78,7 +78,8 @@
    function submitConfiguration(evt) {
      WEBSOCKET.send(JSON.stringify({
        method: "setup",
-       endpoint: infura_project_input.value
+       endpoint: infura_project_input.value,
+       network: "{{ network_name }}"
      }));
 
      toggleView();

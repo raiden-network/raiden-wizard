@@ -232,6 +232,7 @@ class TokensV37(Enum):
         wei_ticker="REI",
         addresses={
             "goerli": "0xc116edAD88cda44E703ef1fc59766268E4aa187B",
+            "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
         },
     )
     SAI = _SAI

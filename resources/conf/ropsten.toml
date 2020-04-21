@@ -10,5 +10,5 @@ ticker = "RDN"
 amount_required = 6e18
 
 [transfer_token]
-ticker = "SAI"
+ticker = "DAI"
 amount_required = 2e18

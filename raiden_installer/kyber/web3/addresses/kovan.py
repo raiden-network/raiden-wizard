@@ -16,7 +16,6 @@ class ContractAddresses(Enum):
 class TokenAddress(Enum):
     ETH = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
     KNC = "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2"
-    SAI = "0xC4375B7De8af5a38a93548eb8453a498222C4fF2"
     DAI = "0xC4375B7De8af5a38a93548eb8453a498222C4fF2"
     MANA = "0xcb78b457c1F79a06091EAe744aA81dc75Ecb1183"
     MKR = "0xAaF64BFCC32d0F15873a02163e7E500671a4ffcD"

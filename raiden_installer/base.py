@@ -36,12 +36,12 @@ class RaidenConfigurationFile:
     ):
         self.account = account
         self.network = network
-        settings = network_settings[network.name]
+        self.settings = network_settings[network.name]
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
-        self.enable_monitoring = kw.get("enable_monitoring", settings.monitoring_enabled)
-        self.routing_mode = kw.get("routing_mode", settings.routing_mode)
-        self.services_version = settings.services_version
+        self.enable_monitoring = kw.get("enable_monitoring", self.settings.monitoring_enabled)
+        self.routing_mode = kw.get("routing_mode", self.settings.routing_mode)
+        self.services_version = self.settings.services_version
 
     @property
     def path_finding_service_url(self):
@@ -69,10 +69,10 @@ class RaidenConfigurationFile:
             base_config.update({"pathfinding-service-address": self.path_finding_service_url})
 
         # If the config is for a demo-env we'll need to add/overwrite some settings
-        if settings.client_release_channel == "demo_env":
-            base_config.update({"matrix-server": settings.matrix_server})
+        if self.settings.client_release_channel == "demo_env":
+            base_config.update({"matrix-server": self.settings.matrix_server})
             base_config["routing-mode"] = "pfs"
-            base_config["pathfinding-service-address"] = settings.pathfinding_service_address
+            base_config["pathfinding-service-address"] = self.settings.pathfinding_service_address
 
         return base_config
 

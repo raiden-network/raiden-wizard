@@ -8,7 +8,7 @@ from eth_utils import to_checksum_address
 from xdg import XDG_DATA_HOME
 
 from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
-from raiden_installer import log, settings
+from raiden_installer import log, network_settings
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, make_web3_provider
 from raiden_installer.network import Network
@@ -36,16 +36,16 @@ class RaidenConfigurationFile:
     ):
         self.account = account
         self.network = network
+        settings = network_settings[network.name]
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", settings.monitoring_enabled)
         self.routing_mode = kw.get("routing_mode", settings.routing_mode)
+        self.services_version = settings.services_version
 
     @property
     def path_finding_service_url(self):
-        return (
-            f"https://pfs-{self.network.name}.services-{settings.services_version}.raiden.network"
-        )
+        return f"https://pfs-{self.network.name}.services-{self.services_version}.raiden.network"
 
     @property
     def configuration_data(self):
@@ -67,6 +67,12 @@ class RaidenConfigurationFile:
 
         if self.routing_mode == "pfs":
             base_config.update({"pathfinding-service-address": self.path_finding_service_url})
+
+        # If the config is for a demo-env we'll need to add/overwrite some settings
+        if settings.client_release_channel == "demo_env":
+            base_config.update({"matrix-server": settings.matrix_server})
+            base_config["routing-mode"] = "pfs"
+            base_config["pathfinding-service-address"] = settings.pathfinding_service_address
 
         return base_config
 

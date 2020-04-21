@@ -30,6 +30,9 @@ class Settings:
     transfer_token: TokenSettings
     routing_mode: str = "pfs"
     monitoring_enabled: bool = True
+    # matrix_server and pfs address are only used if client_release_channel = "demo_env"
+    matrix_server: str = ""
+    pathfinding_service_address: str = ""
 
 
 def get_resource_folder_path():
@@ -42,15 +45,20 @@ def get_resource_folder_path():
     return os.path.join(root_folder, "resources")
 
 
-_CONFIGURATION_FILE_NAME = os.path.join(get_resource_folder_path(), "conf", "goerli.toml")
+def _get_settings(network):
+    configuration_file = os.path.join(get_resource_folder_path(), "conf", f"{network}.toml")
+    configuration_data = toml.load(configuration_file)
 
-configuration_data = toml.load(_CONFIGURATION_FILE_NAME)
+    service_token_settings = TokenSettings(**configuration_data["service_token"])
+    transfer_token_settings = TokenSettings(**configuration_data["transfer_token"])
 
-service_token_settings = TokenSettings(**configuration_data["service_token"])
-transfer_token_settings = TokenSettings(**configuration_data["transfer_token"])
+    configuration_data.update(
+        dict(service_token=service_token_settings, transfer_token=transfer_token_settings)
+    )
 
-configuration_data.update(
-    dict(service_token=service_token_settings, transfer_token=transfer_token_settings)
-)
+    return Settings(**configuration_data)
 
-settings = Settings(**configuration_data)
+
+_NETWORKS = ["goerli", "mainnet"]
+network_settings = {network: _get_settings(network) for network in _NETWORKS}
+default_settings = network_settings["goerli"]

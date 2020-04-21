@@ -1,0 +1,20 @@
+network = "goerli"
+client_release_channel = "demo_env"
+client_release_version = "v0.200.0-rc7"
+services_version = "test"
+ethereum_amount_required = 2e16
+# Special networking for Demoenvs
+routing_mode = "pfs"
+matrix_server = "https://t02.testtransport.raiden.network"
+pathfinding_service_address = "https://pfs.t02.testtransport.raiden.network"
+
+
+[service_token]
+ticker = "RDN"
+amount_required = 6e18
+mintable = true
+
+[transfer_token]
+ticker = "WIZ"
+amount_required = 2e18
+mintable = true

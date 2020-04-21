@@ -1,10 +1,10 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
-from typing import NewType, TypeVar, Generic, Dict
+from typing import NewType, TypeVar, Generic, Dict, Optional
 from decimal import Decimal, getcontext
 
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import settings
+from raiden_installer import network_settings, default_settings
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -56,20 +56,26 @@ class Currency:
 class Erc20Token(Currency):
     supply: int = 10 ** 21
     addresses: Dict[str, str] = field(default_factory=dict)
+    network: Optional[str] = None
 
     @property
     def address(self) -> str:
+        network = self.network or default_settings.network.lower()
         try:
-            return self.addresses[settings.network.lower()]
+            return self.addresses[network]
         except KeyError:
-            raise TokenError(f"{self.ticker} is not deployed on {settings.network}")
+            raise TokenError(f"{self.ticker} is not deployed on {network}")
 
     @staticmethod
-    def find_by_ticker(ticker):
+    def find_by_ticker(ticker, network = None):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
-        token_list_version = {"0.25": TokensV25, "0.33": TokensV33}.get(version_string, Tokens)
-        return token_list_version[ticker].value
+        token_list_version = {"0.25": TokensV25,
+                              "0.33": TokensV33,
+                              "0.36": TokensV36,
+                              "0.37": TokensV37}\
+            .get(version_string, Tokens)
+        return replace(token_list_version[ticker].value, network=network)
 
 
 ETH = Currency(ticker="ETH", wei_ticker="WEI")
@@ -208,14 +214,50 @@ class TokensV33(Enum):
     WIZ = _WizardToken
 
 
-ETHEREUM_REQUIRED = EthereumAmount(Wei(settings.ethereum_amount_required))
+class TokensV36(Enum):
+    RDN = Erc20Token(
+        ticker="RDN",
+        wei_ticker="REI",
+        addresses={
+            "goerli": "0x4074fD4d460d0c31cbEdC3f59B2D98626D063952",
+        },
+    )
+    SAI = _SAI
+    WIZ = _WizardToken
 
-SERVICE_TOKEN_REQUIRED = TokenAmount(
-    Wei(settings.service_token.amount_required),
-    Erc20Token.find_by_ticker(settings.service_token.ticker),
-)
 
-TRANSFER_TOKEN_REQUIRED = TokenAmount(
-    Wei(settings.transfer_token.amount_required),
-    Erc20Token.find_by_ticker(settings.transfer_token.ticker),
-)
+class TokensV37(Enum):
+    RDN = Erc20Token(
+        ticker="RDN",
+        wei_ticker="REI",
+        addresses={
+            "goerli": "0xc116edAD88cda44E703ef1fc59766268E4aa187B",
+        },
+    )
+    SAI = _SAI
+    WIZ = _WizardToken
+
+
+@dataclass
+class RequiredAmounts:
+    eth: EthereumAmount
+    service_token: TokenAmount
+    transfer_token: TokenAmount
+
+    @staticmethod
+    def from_settings(settings):
+        return RequiredAmounts(
+            eth=EthereumAmount(Wei(settings.ethereum_amount_required)),
+            service_token=TokenAmount(
+                Wei(settings.service_token.amount_required),
+                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
+            ),
+            transfer_token=TokenAmount(
+                Wei(settings.transfer_token.amount_required),
+                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
+            ),
+        )
+
+    @staticmethod
+    def for_network(network_name):
+        return RequiredAmounts.from_settings(network_settings[network_name])

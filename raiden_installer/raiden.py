@@ -17,11 +17,10 @@ from xml.etree import ElementTree
 import psutil
 import requests
 
-from raiden_installer import log, settings
+from raiden_installer import default_settings, log, network_settings
 
 
 def extract_version_modifier(release_name):
-
     if not release_name:
         return None
 
@@ -142,9 +141,9 @@ class RaidenClient:
     @property
     def release_modifier(self):
         return (
-            self.version_modifier
-            and self.version_modifier_number
-            and f"{self.version_modifier}{self.version_modifier_number}"
+                self.version_modifier
+                and self.version_modifier_number
+                and f"{self.version_modifier}{self.version_modifier_number}"
         )
 
     @property
@@ -335,11 +334,13 @@ class RaidenClient:
         return cls._make_release(response.json())
 
     @staticmethod
-    def get_client():
+    def get_client(network_name=None):
+        settings = network_settings[network_name] if network_name else default_settings
         raiden_class = {
             "testing": RaidenTestnetRelease,
             "mainnet": RaidenRelease,
             "nightly": RaidenNightly,
+            "demo_env": RaidenDemoEnv,
         }[settings.client_release_channel]
         return raiden_class.make_by_tag(settings.client_release_version)
 
@@ -452,3 +453,17 @@ class RaidenNightly(RaidenClient):
                 releases.append(cls._make_release(**params))
 
         return releases
+
+
+class RaidenDemoEnv(RaidenTestnetRelease):
+    @property
+    def routing_mode(self):
+        return settings.routing_mode
+
+    @property
+    def matrix_server(self):
+        return settings.matrix_server
+
+    @property
+    def pathfinding_service_address(self):
+        return settings.pathfinding_service_address

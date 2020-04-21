@@ -158,11 +158,11 @@ _RDN = Erc20Token(
     },
 )
 
-_SAI = Erc20Token(
-    ticker="SAI",
+_DAI = Erc20Token(
+    ticker="DAI",
     wei_ticker="SEI",
     addresses={
-        "mainnet": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
+        "mainnet": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "ropsten": "0xaD6D458402F60fD3Bd25163575031ACDce07538D",
         "rinkeby": "0x2448eE2641d78CC42D7AD76498917359D961A783",
         "kovan": "0xc4375b7de8af5a38a93548eb8453a498222c4ff2",
@@ -184,7 +184,7 @@ _WizardToken = Erc20Token(
 
 class Tokens(Enum):
     RDN = _RDN
-    SAI = _SAI
+    DAI = _DAI
     LDN = _LondonRDN
     WIZ = _WizardToken
 
@@ -210,7 +210,7 @@ class TokensV33(Enum):
         },
     )
     LDN = _LondonRDN
-    SAI = _SAI
+    DAI = _DAI
     WIZ = _WizardToken
 
 
@@ -222,7 +222,7 @@ class TokensV36(Enum):
             "goerli": "0x4074fD4d460d0c31cbEdC3f59B2D98626D063952",
         },
     )
-    SAI = _SAI
+    DAI = _DAI
     WIZ = _WizardToken
 
 
@@ -235,7 +235,7 @@ class TokensV37(Enum):
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
         },
     )
-    SAI = _SAI
+    DAI = _DAI
     WIZ = _WizardToken
 
 

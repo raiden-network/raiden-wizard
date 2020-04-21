@@ -13,28 +13,21 @@ from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
 
-from raiden_installer import get_resource_folder_path, log, network_settings, default_settings
+from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
-from raiden_installer.tokens import (
-    EthereumAmount,
-    RequiredAmounts,
-    TokenAmount,
-    Wei,
-    Erc20Token,
-)
+from raiden_installer.tokens import Erc20Token, EthereumAmount, RequiredAmounts, TokenAmount, Wei
 from raiden_installer.transactions import (
     deposit_service_tokens,
     get_token_balance,
-    get_total_token_owned,
     get_token_deposit,
+    get_total_token_owned,
     mint_tokens,
 )
 from raiden_installer.utils import check_eth_node_responsivity
-
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
@@ -49,7 +42,9 @@ RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 class QuickSetupForm(Form):
     network = wtforms.HiddenField("Network", default=DEFAULT_NETWORK.name)
-    use_rsb = wtforms.HiddenField("Use Raiden Service Bundle", default=default_settings.monitoring_enabled)
+    use_rsb = wtforms.HiddenField(
+        "Use Raiden Service Bundle", default=default_settings.monitoring_enabled
+    )
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -136,12 +131,16 @@ class AsyncTaskHandler(WebSocketHandler):
         self._send_status_update(f"Account funded with {balance.formatted}")
 
         if settings.service_token.mintable:
-            service_token = Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network)
+            service_token = Erc20Token.find_by_ticker(
+                settings.service_token.ticker, settings.network
+            )
             self._send_status_update(f"Minting {service_token.ticker}")
             mint_tokens(w3, account, service_token)
 
         if settings.transfer_token.mintable:
-            transfer_token = Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network)
+            transfer_token = Erc20Token.find_by_ticker(
+                settings.transfer_token.ticker, settings.network
+            )
             self._send_status_update(f"Minting {transfer_token.ticker}")
             mint_tokens(w3, account, transfer_token)
 
@@ -201,7 +200,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
         service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
         service_token_in_deposit = get_token_deposit(w3=w3, account=account, token=service_token)
-        if service_token_balance.as_wei and service_token_in_deposit < required.service_token:
+        if False and service_token_balance.as_wei and service_token_in_deposit < required.service_token:
             self._send_status_update(
                 f"Making deposit of {service_token_balance.formatted} for Raiden Services"
             )
@@ -322,7 +321,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
 class BaseRequestHandler(RequestHandler):
     def render(self, template_name, **context_data):
-        configuration_file = context_data.get('configuration_file')
+        configuration_file = context_data.get("configuration_file")
         if configuration_file:
             network = configuration_file.network
         else:

@@ -34,12 +34,12 @@ class RaidenConfigurationFile:
     ):
         self.account = account
         self.network = network
-        settings = network_settings[network.name]
+        self.settings = network_settings[network.name]
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
-        self.enable_monitoring = kw.get("enable_monitoring", settings.monitoring_enabled)
-        self.routing_mode = kw.get("routing_mode", settings.routing_mode)
-        self.services_version = settings.services_version
+        self.enable_monitoring = kw.get("enable_monitoring", self.settings.monitoring_enabled)
+        self.routing_mode = kw.get("routing_mode", self.settings.routing_mode)
+        self.services_version = self.settings.services_version
 
     @property
     def path_finding_service_url(self):
@@ -50,6 +50,7 @@ class RaidenConfigurationFile:
         base_config = {
             "environment-type": self.environment_type,
             "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
+            "keystore-file-path": str(self.account.keystore_file_path),
             "address": to_checksum_address(self.account.address),
             "password-file": str(self.passphrase_file_path),
             "network-id": self.network.name,
@@ -60,12 +61,12 @@ class RaidenConfigurationFile:
         }
 
         # If the config is for a demo-env we'll need to add/overwrite some settings
-        if settings.client_release_channel == "demo_env":  # noqa
-            base_config.update({"matrix-server": settings.matrix_server})  # noqa
+        if self.settings.client_release_channel == "demo_env":  # noqa
+            base_config.update({"matrix-server": self.settings.matrix_server})  # noqa
             base_config["routing-mode"] = "pfs"
             base_config[
                 "pathfinding-service-address"
-            ] = settings.pathfinding_service_address  # noqa
+            ] = self.settings.pathfinding_service_address  # noqa
 
         return base_config
 

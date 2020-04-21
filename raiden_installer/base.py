@@ -7,12 +7,10 @@ import toml
 from eth_utils import to_checksum_address
 from xdg import XDG_DATA_HOME
 
-from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
 from raiden_installer import log, network_settings
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.utils import get_contract_address
 
 
 class PassphraseFile:
@@ -52,12 +50,8 @@ class RaidenConfigurationFile:
         base_config = {
             "environment-type": self.environment_type,
             "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
-            "keystore-file-path": str(self.account.keystore_file_path),
             "address": to_checksum_address(self.account.address),
             "password-file": str(self.passphrase_file_path),
-            "user-deposit-contract-address": get_contract_address(
-                self.network.chain_id, CONTRACT_USER_DEPOSIT
-            ),
             "network-id": self.network.name,
             "accept-disclaimer": self.accept_disclaimer,
             "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,
@@ -65,14 +59,13 @@ class RaidenConfigurationFile:
             "enable-monitoring": self.enable_monitoring,
         }
 
-        if self.routing_mode == "pfs":
-            base_config.update({"pathfinding-service-address": self.path_finding_service_url})
-
         # If the config is for a demo-env we'll need to add/overwrite some settings
-        if settings.client_release_channel == "demo_env":
-            base_config.update({"matrix-server": settings.matrix_server})
+        if settings.client_release_channel == "demo_env":  # noqa
+            base_config.update({"matrix-server": settings.matrix_server})  # noqa
             base_config["routing-mode"] = "pfs"
-            base_config["pathfinding-service-address"] = settings.pathfinding_service_address
+            base_config[
+                "pathfinding-service-address"
+            ] = settings.pathfinding_service_address  # noqa
 
         return base_config
 

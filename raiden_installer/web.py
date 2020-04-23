@@ -564,7 +564,7 @@ if __name__ == "__main__":
         template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
     )
 
-    sockets = bind_sockets(0)
+    sockets = bind_sockets((sum(ord(c) for c in "RAIDEN_WIZARD") + 1000) % 2 ** 16 - 1)
     server = HTTPServer(app)
     server.add_sockets(sockets)
 

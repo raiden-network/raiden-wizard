@@ -141,9 +141,9 @@ class RaidenClient:
     @property
     def release_modifier(self):
         return (
-                self.version_modifier
-                and self.version_modifier_number
-                and f"{self.version_modifier}{self.version_modifier_number}"
+            self.version_modifier
+            and self.version_modifier_number
+            and f"{self.version_modifier}{self.version_modifier_number}"
         )
 
     @property
@@ -284,6 +284,7 @@ class RaidenClient:
     def get_available_releases(cls):
         response = requests.get(cls.RELEASE_INDEX_URL)
         response.raise_for_status()
+
         return sorted(cls._make_releases(response), reverse=True)
 
     @classmethod
@@ -348,7 +349,6 @@ class RaidenClient:
     def get_all_releases():
         release_channels = [RaidenRelease, RaidenTestnetRelease, RaidenNightly]
         all_releases = {}
-
         for channel in release_channels:
             for raiden in channel.get_available_releases():
                 all_releases[raiden.release] = raiden
@@ -458,12 +458,12 @@ class RaidenNightly(RaidenClient):
 class RaidenDemoEnv(RaidenTestnetRelease):
     @property
     def routing_mode(self):
-        return settings.routing_mode
+        return settings.routing_mode  # noqa
 
     @property
     def matrix_server(self):
-        return settings.matrix_server
+        return settings.matrix_server  # noqa
 
     @property
     def pathfinding_service_address(self):
-        return settings.pathfinding_service_address
+        return settings.pathfinding_service_address  # noqa

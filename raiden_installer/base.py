@@ -1,10 +1,12 @@
 import glob
+import json
 import os
 from pathlib import Path
 from typing import List
 
 import toml
 from eth_utils import to_checksum_address
+from raiden.accounts import AccountManager
 from xdg import XDG_DATA_HOME
 
 from raiden_installer import log, network_settings
@@ -50,7 +52,6 @@ class RaidenConfigurationFile:
         base_config = {
             "environment-type": self.environment_type,
             "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
-            "keystore-file-path": str(self.account.keystore_file_path),
             "address": to_checksum_address(self.account.address),
             "password-file": str(self.passphrase_file_path),
             "network-id": self.network.name,
@@ -128,7 +129,10 @@ class RaidenConfigurationFile:
         with file_path.open() as config_file:
             data = toml.load(config_file)
             passphrase = PassphraseFile(Path(data["password-file"])).retrieve()
-            account = Account(data["keystore-file-path"], passphrase=passphrase)
+            keystore_file_path = Account.find_keystore_file_path(
+                data["address"], Path(data["keystore-path"])
+            )
+            account = Account(keystore_file_path, passphrase)
             return cls(
                 account=account,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],

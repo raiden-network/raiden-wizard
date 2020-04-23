@@ -181,16 +181,18 @@ class RaidenClient:
 
     def launch(self, configuration_file):
         import toml
+
         flags = toml.load(configuration_file.path)
         all_flags = []
         for key, value in flags.items():
-            all_flags += ['--' + key]
+            all_flags += ["--" + key]
             if not isinstance(value, bool):
                 all_flags += [value]
 
         print(*all_flags)
         proc = subprocess.Popen(
-            [str(self.install_path)] + all_flags  #, "--config-file", str(configuration_file.path)]
+            [str(self.install_path)]
+            + all_flags  # , "--config-file", str(configuration_file.path)]
         )
         self._process_id = proc.pid
 
@@ -293,6 +295,7 @@ class RaidenClient:
     def get_available_releases(cls):
         response = requests.get(cls.RELEASE_INDEX_URL)
         response.raise_for_status()
+
         return sorted(cls._make_releases(response), reverse=True)
 
     @classmethod
@@ -357,7 +360,6 @@ class RaidenClient:
     def get_all_releases():
         release_channels = [RaidenRelease, RaidenTestnetRelease, RaidenNightly]
         all_releases = {}
-
         for channel in release_channels:
             for raiden in channel.get_available_releases():
                 all_releases[raiden.release] = raiden

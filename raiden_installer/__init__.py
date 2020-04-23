@@ -55,6 +55,8 @@ def _get_settings(network):
     configuration_data.update(
         dict(service_token=service_token_settings, transfer_token=transfer_token_settings)
     )
+    print(configuration_file)
+    print(configuration_data)
 
     return Settings(**configuration_data)
 

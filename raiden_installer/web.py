@@ -200,7 +200,11 @@ class AsyncTaskHandler(WebSocketHandler):
 
         service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
         service_token_in_deposit = get_token_deposit(w3=w3, account=account, token=service_token)
-        if False and service_token_balance.as_wei and service_token_in_deposit < required.service_token:
+        if (
+            False
+            and service_token_balance.as_wei
+            and service_token_in_deposit < required.service_token
+        ):
             self._send_status_update(
                 f"Making deposit of {service_token_balance.formatted} for Raiden Services"
             )

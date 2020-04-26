@@ -483,7 +483,11 @@ class ConfigurationItemAPIHandler(APIHandler):
 
         def serialize_balance(balance_amount):
             return (
-                {"as_wei": balance_amount.as_wei, "formatted": balance_amount.formatted}
+                {
+                    "as_wei": balance_amount.as_wei,
+                    "formatted": balance_amount.formatted,
+                    "as_fiat": balance_amount.as_fiat
+                }
                 if balance_amount
                 else None
             )

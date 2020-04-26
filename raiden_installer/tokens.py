@@ -5,6 +5,7 @@ from decimal import Decimal, getcontext
 
 from raiden_contracts.constants import CONTRACTS_VERSION
 from raiden_installer import network_settings, default_settings
+import requests
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -106,6 +107,21 @@ class TokenAmount(Generic[Eth_T]):
     @property
     def as_wei(self) -> Wei:
         return Wei(self.value * (10 ** self.currency.decimals))
+
+    @property
+    def as_fiat(self):
+        if not self.value:
+            return 0
+        response = requests.get(
+            'https://pro-api.coinmarketcap.com/v1/tools/price-conversion',
+            params={'symbol': self.ticker, 'amount': self.value, 'convert': 'USD'},
+            headers={
+    	        'Accept': 'application/json',
+    	        'X-CMC_PRO_API_KEY': '30eeec47-754b-4fd1-85c5-a35edf88ff5b'
+            },
+        )
+        result = response.json()
+        return f"{result['data']['quote']['USD']['price']:.3f}"
 
     def __repr__(self):
         return f"{self.value} {self.ticker}"

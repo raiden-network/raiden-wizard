@@ -12,7 +12,6 @@ from typing import Optional
 
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
 from eth_utils import to_canonical_address, to_checksum_address
-from raiden.accounts import InvalidAccountFile
 from web3 import Web3
 
 from raiden_installer import log
@@ -144,19 +143,14 @@ class Account:
                     if not isinstance(data, dict) or "address" not in data:
                         # we expect a dict in specific format.
                         # Anything else is not a keyfile
-                        raise InvalidAccountFile(f"Invalid keystore file {full_path}")
+                        raise KeyError(f"Invalid keystore file {full_path}")
                     address_from_file = to_checksum_address(to_canonical_address(data["address"]))
                     if address_from_file == address:
                         return Path(full_path)
                 except OSError as ex:
                     msg = "Can not read account file (errno=%s)" % ex.errno
                     log.warning(msg, path=full_path, ex=ex)
-                except (
-                    json.JSONDecodeError,
-                    KeyError,
-                    UnicodeDecodeError,
-                    InvalidAccountFile,
-                ) as ex:
+                except (json.JSONDecodeError, KeyError, UnicodeDecodeError) as ex:
                     # Invalid file - skip
                     if f.startswith("UTC--"):
                         # Should be a valid account file - warn user

@@ -146,15 +146,29 @@
    await checkWeb3Network();
    let web3 = window.web3;
    let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
+   
+   try {
+
+    eth_station_response = await fetch("https://ethgasstation.info/api/ethgasAPI.json").then(response => response.json())
+    gas_price = eth_station_response["fast"] * 10e7
+
+
+   }
+   catch{
+     console.err("Could not fetch gas price. Falling back to web3 gas price.")
+   }
 
    let transaction_data = {
      from: sender_address,
      to: TARGET_ADDRESS,
-     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT
+     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT,
    }
-   
+   if(gas_price){
+     transaction_data["gasPrice"] = gas_price
+   }
+
    makeWeb3Transaction(web3, transaction_data);
- };
+   }
 
  async function sendErc20Token(amount, token_address) {
    await checkWeb3Network();

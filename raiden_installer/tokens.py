@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field, replace
-from enum import Enum
-from typing import NewType, TypeVar, Generic, Dict, Optional
 from decimal import Decimal, getcontext
+from enum import Enum
+from typing import Dict, Generic, NewType, Optional, TypeVar
 
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import network_settings, default_settings
+from raiden_installer import default_settings, network_settings
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -159,14 +159,23 @@ _RDN = Erc20Token(
     },
 )
 
-_DAI = Erc20Token(
-    ticker="DAI",
+_SAI = Erc20Token(
+    ticker="SAI",
     wei_ticker="SEI",
     addresses={
-        "mainnet": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "mainnet": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
         "ropsten": "0xaD6D458402F60fD3Bd25163575031ACDce07538D",
         "rinkeby": "0x2448eE2641d78CC42D7AD76498917359D961A783",
         "kovan": "0xc4375b7de8af5a38a93548eb8453a498222c4ff2",
+    },
+)
+
+_DAI = Erc20Token(
+    ticker="DAI",
+    wei_ticker="DEI",
+    addresses={
+        "mainnet": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "kovan": "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa",
     },
 )
 

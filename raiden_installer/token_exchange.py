@@ -1,7 +1,7 @@
-from typing import Optional, List
+from decimal import Decimal
+from typing import List, Optional
 
 from eth_utils import to_checksum_address
-
 from web3 import Web3
 
 from raiden_installer.account import Account
@@ -73,6 +73,7 @@ class Kyber(Exchange):
     MAIN_WEBSITE_URL = "https://kyber.network"
     TRANSFER_WEBSITE_URL = "https://kyberswap.com/transfer/eth"
     TERMS_OF_SERVICE_URL = "https://kyber.network/terms-and-conditions"
+    GAS_PRICE_MARGIN = 1.25
 
     def __init__(self, w3: Web3):
         super().__init__(w3=w3)
@@ -109,20 +110,28 @@ class Kyber(Exchange):
 
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
-        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
-        max_gas_price = min(
-            self.w3.eth.gasPrice, self.network_contract_proxy.functions.maxGasPrice().call()
-        )
+        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value * Decimal(1.2))
+        web3_gas_price = Kyber.GAS_PRICE_MARGIN * self.w3.eth.gasPrice
+        kyber_max_gas_price = self.network_contract_proxy.functions.maxGasPrice().call()
+        max_gas_price = min(web3_gas_price, kyber_max_gas_price)
         gas_price = EthereumAmount(Wei(max_gas_price))
         token_network_address = self.get_token_network_address(token_amount.ticker)
         transaction_params = {"from": account.address, "value": eth_sold.as_wei}
+        eth_address = to_checksum_address(
+            kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
+        )
 
         gas = estimate_gas(
             self.w3,
             account,
-            self.network_contract_proxy.functions.swapEtherToToken,
+            self.network_contract_proxy.functions.trade,
+            eth_address,
+            eth_sold.as_wei,
             token_network_address,
+            account.address,
+            token_amount.as_wei,
             exchange_rate.as_wei,
+            account.address,
             **transaction_params,
         )
 
@@ -151,6 +160,10 @@ class Kyber(Exchange):
         gas_price = transaction_costs["gas_price"]
         gas = transaction_costs["gas"]
 
+        eth_address = to_checksum_address(
+            kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
+        )
+
         transaction_params = {
             "from": account.address,
             "gas_price": gas_price.as_wei,
@@ -161,9 +174,14 @@ class Kyber(Exchange):
         return send_raw_transaction(
             self.w3,
             account,
-            self.network_contract_proxy.functions.swapEtherToToken,
+            self.network_contract_proxy.functions.trade,
+            eth_address,
+            eth_to_sell.as_wei,
             self.get_token_network_address(token_amount.ticker),
+            account.address,
+            token_amount.as_wei,
             exchange_rate.as_wei,
+            account.address,
             **transaction_params,
         )
 

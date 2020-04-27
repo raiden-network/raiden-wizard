@@ -1,8 +1,7 @@
 import requests
 
-from raiden_installer import log
 from raiden_contracts.contract_manager import get_contracts_deployment_info
-
+from raiden_installer import log
 from raiden_installer.tokens import EthereumAmount, Wei
 
 
@@ -52,14 +51,14 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     signed = w3.eth.account.signTransaction(transaction_data, account.private_key)
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
 
-    return w3.eth.waitForTransactionReceipt(tx_hash)
+    return w3.eth.waitForTransactionReceipt(tx_hash, timeout=600)
 
 
 def check_eth_node_responsivity(url):
     try:
         body = dict(jsonrpc="2.0", method="web3_clientVersion", params=[], id=1)
         response = requests.post(url, json=body)
-        if(response.status_code == 401):
+        if response.status_code == 401:
             raise ValueError(
                 "Unauthorized to make requests to ethereum node."
                 "Maybe the Infura project ID is wrong?"

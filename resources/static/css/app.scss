@@ -19,9 +19,7 @@ $colors: (
 );
 
 $dimensions: (
-    full-column-width: 960px,
-    padded-block-width: 900px,
-    padded-text-width: 840px,
+    full-column-width: 60vw,
 );
 
 @mixin button() {
@@ -136,6 +134,10 @@ input[type=text],input[type=number] {
     @include input(color(element-input-bg), color(text-blue));
 }
 
+.error-box {
+    height: 28px;
+}
+
 span.error {
     color: color(text-error);
     justify-self: center;
@@ -145,11 +147,11 @@ span.error {
 div.logo {
     width: 370px;
     height: 105px;
+    display: inline-block;
 
-    margin: 33px auto 0;
     text-align: center;
     img {
-        width: 100%;
+        width: auto;
         height: 100%;
     }
     &.business-card {
@@ -162,6 +164,9 @@ div.logo {
         // 60% of image size
         width: 222px;
         height: 63px;
+    }
+    &.home {
+        display: none;
     }
 }
 
@@ -286,6 +291,39 @@ ul.account-info {
     }
 }
 
+span.private {
+    display: inline-block;
+    width: 75%;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.action-copy-paste {
+    cursor: pointer;
+}
+
+.action-copy-paste::after {
+    font-size: 12px;
+    background-repeat: no-repeat;
+    display: inline-block;
+    content: '';
+    background-image: url("../images/copy-icon.svg");
+    min-width: 20%;
+    height: 27px;
+    line-height: 27px;
+    background-size: auto 27px;
+
+}
+
+.action-copy-paste.clipboard::after {
+    vertical-align: top;
+    content: 'copied!' !important;
+    background-image: none !important;
+}
+
+.tx-received::after {
+    content: 'Received transaction!';
+}
 
 section.content {
     width: dimension(full-column-width);
@@ -297,52 +335,73 @@ section.content {
         justify-content: center;
         align-items: center;
         justify-self: center;
-        min-height: 700px;
+        min-height: 500px;
 
-        grid-template-rows: 100px minmax(100px, auto) auto 120px 80px;
+        grid-template-rows: 150px minmax(40px, auto) 120px 80px;
 
         div {
             justify-self: center;
         }
 
+        h1 {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+
+            img {
+                width: auto;
+                height: 105px;
+            }
+        }
+
         div.hero {
-            font-size: 50px;
-            line-height: 60px;
             text-align: center;
-            align-self: start;
         }
 
         div.info-panel {
             text-align: center;
+        }
 
-            span.private {
-                display: inline-block;
-                max-width: 12em;
-                overflow-x: hidden;
-                text-overflow: ellipsis;
+        div.description {
+            display: flex;
+            flex-direction: column;
+            height: 520px;
+            width: 100%;
+            justify-content: space-evenly;
+
+            &.big {
+                min-width: 920px;
             }
 
-            .action-copy-paste {
-                cursor: pointer;
+            .items {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+
+                div {
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    align-items: center;
+                    &:not(:last-child) {
+                        margin-right: 26px;
+                    }
+
+                    img {
+                        height: 105px;
+                        width: auto;
+                        margin-bottom: 52px;
+                    }
+                    span {
+                        max-width: 290px;
+                    }
+                }
             }
 
-            .action-copy-paste::after {
-                font-size: 12px;
-                background-repeat: no-repeat;
-                display: inline-block;
-                content: '';
-                background-image: url("../images/copy-icon.svg");
-                min-width: 24px;
-                height: 35px;
-                line-height: 35px;
-                background-size: 24px 35px;
-
-            }
-
-            .action-copy-paste.clipboard::after {
-                vertical-align: top;
-                content: 'copied!' !important;
-                background-image: none !important;
+            .text-end {
+                align-self: flex-end;
             }
         }
 
@@ -392,5 +451,128 @@ section.content {
         margin: 0;
         padding: 30px 0px 100px 0px;
         text-align: center;
+    }
+}
+
+.body-blackout {
+    display: none;
+    position: fixed;
+    z-index: 1010;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.65);
+
+    &.is-blacked-out {
+        display: block;
+    }
+}
+
+.modal {
+    min-height: 400px;
+    max-height: 565px;
+    width: 480px;
+    background-color: #282828;
+    border-radius: 10px 10px 10px 10px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 45px;
+    transition: all 300ms ease-in-out;
+    z-index: 1011;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+
+    &.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .modal__close {
+        position: absolute;
+        right: 24px;
+        top: 24px;
+        cursor: pointer;
+    }
+
+    .overflow-box {
+        width: 100%;
+        height: 490px;
+        padding: 0 10px;
+        overflow-y: scroll;
+        
+        p {
+            font-weight: 400;
+            font-size: 50%;
+            text-align: left;
+        }
+    }
+}
+
+.tooltip-item {
+    position: relative;
+    display: inline-block;
+    color: color(text-blue);
+
+    &:hover .tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+  
+.tooltip {
+    font-size: 18px;
+    text-align: center;
+    width: 400px;
+    background-color: #3c3c3c;
+    color: color(text-standard);
+    padding: 15px;
+    border-radius: 10px;
+    position: absolute;
+    z-index: 50;
+    top: 100%;
+    left: 50%;
+    margin-left: -200px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+
+    ul {
+        list-style-type: disc;
+        text-align: left;
+        padding-inline-start: 20px;
+    }
+
+    &.is-visible {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+.stepper {
+    width: 405px;
+    position: fixed;
+    bottom: 30px;
+    right: 45px;
+
+    .coins {
+        margin-bottom: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+
+        img {
+            display: inline-block;
+            height: 105px;
+            width: auto;
+
+            &.transparent {
+                opacity: 0.1;
+            }
+        }
     }
 }

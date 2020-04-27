@@ -1,23 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Connect Infura</h1>
+<h2>Connecting to the Ethereum Blockchain</h2>
+
 <div class="hero">
-  Provide your existing Infura Project ID or
-  <a href="https://medium.com/@raiden_network/6c7c61c5b695" target="_blank">click here</a> for instructions on how to get one.
+  Provide your 
+  <span class="tooltip-item">
+    Infura ID
+    <div class="tooltip">
+      <ul>
+        <li>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+        eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.</li>
+        <li>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+        eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.</li>
+        <li>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+        eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.</li>
+        <li>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+        eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.</li>
+      </ul>
+    </div>
+  </span>
 </div>
 
 <div class="info-panel">
   <div>
     <input type="text" name="endpoint" placeholder="Your Infura ID (or Infura endpoint URL)" />
   </div>
-  <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+  <div class="error-box">
+    <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+  </div>
 </div>
 
 <div class="action">
   <button type="submit" disabled>Confirm</button>
 </div>
+{% end %}
+
+{% block stepper %}
+<div class="coins">
+    <img class="transparent" src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
+    <img class="transparent" src="{{ static_url('images/rdn.png') }}" alt="Raiden Network" />
+    <img class="transparent" src="{{ static_url('images/dai.png') }}" alt="Raiden Network" />
 </div>
+Step 1 of 5: Connecting to Ethereum...
 {% end %}
 
 {% block page_header_scripts %}

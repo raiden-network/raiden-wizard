@@ -11,11 +11,13 @@ import zipfile
 from contextlib import closing
 from io import BytesIO
 from pathlib import Path
+from typing import Callable
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
 import psutil
 import requests
+from requests.exceptions import ConnectionError
 
 from raiden_installer import default_settings, log, network_settings
 
@@ -58,6 +60,7 @@ class RaidenClient:
     BINARY_FOLDER_PATH = Path.home().joinpath(".local", "bin")
     BINARY_NAME_FORMAT = "raiden-{release}"
     WEB_UI_INDEX_URL = "http://127.0.0.1:5001"
+    RAIDEN_API_STATUS_ENDPOINT = "/api/v1/status"
 
     RELEASE_INDEX_URL = "https://api.github.com/repos/raiden-network/raiden/releases"
     DOWNLOAD_INDEX_URL = "https://github.com/raiden-network/raiden/releases/download"
@@ -194,7 +197,34 @@ class RaidenClient:
             self._process_id = self.get_process_id()
             assert self._process_id is None
 
-    def wait_for_web_ui_ready(self):
+    def check_status_api(self, status_callback: Callable = None):
+        """
+        Params:
+            status_callback:  A function, that will receive the /status API responses before the
+                              status is `ready`.
+        """
+        log.info("Checking /status endpoint")
+        try:
+            response = requests.get(
+                RaidenClient.WEB_UI_INDEX_URL + RaidenClient.RAIDEN_API_STATUS_ENDPOINT
+            )
+            if response and response.status_code == 200:
+                result = response.json()
+                if result.get("status") == "ready":
+                    return True
+                else:
+                    if status_callback is not None:
+                        status_callback(result)
+        except ConnectionError:
+            pass
+        return False
+
+    def wait_for_web_ui_ready(self, status_callback: Callable = None):
+        """
+        Params:
+            status_callback:  A function, that will receive the /status API responses before the
+                              status is `ready`.
+        """
         if not self.is_running:
             raise RuntimeError("Raiden is not running")
 
@@ -205,8 +235,12 @@ class RaidenClient:
             if not self.is_running or self.is_zombie:
                 raise RaidenClientError("client process terminated while waiting for web ui")
 
+            log.info("Waiting for raiden to start...")
+
+            while not self.check_status_api(status_callback=status_callback):
+                time.sleep(1)
+
             with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as sock:
-                log.info("Waiting for raiden to start...")
                 try:
                     connected = sock.connect_ex((uri.hostname, uri.port)) == 0
                     if connected:

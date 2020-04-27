@@ -222,7 +222,9 @@ class AsyncTaskHandler(WebSocketHandler):
             raiden_client.launch(configuration_file)
 
         try:
-            raiden_client.wait_for_web_ui_ready()
+            raiden_client.wait_for_web_ui_ready(
+                status_callback=lambda stat: log.info(str(stat))
+            )
             self._send_task_complete("Raiden is ready!")
             self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
         except (RaidenClientError, RuntimeError) as exc:

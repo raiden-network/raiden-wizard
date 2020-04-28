@@ -581,7 +581,7 @@ section.content div.container div.ack-prompt {
 
 .tooltip, .popover {
   font-size: 18px;
-  text-align: center;
+  text-align: left;
   color: #fff;
   position: absolute;
   z-index: 50;
@@ -595,7 +595,6 @@ section.content div.container div.ack-prompt {
 
 .tooltip ul, .popover ul {
   list-style-type: disc;
-  text-align: left;
   -webkit-padding-start: 20px;
           padding-inline-start: 20px;
 }

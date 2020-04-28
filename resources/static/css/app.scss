@@ -553,7 +553,7 @@ section.content {
   
 .tooltip, .popover {
     font-size: 18px;
-    text-align: center;
+    text-align: left;
     color: color(text-standard);
     position: absolute;
     z-index: 50;
@@ -565,7 +565,6 @@ section.content {
 
     ul {
         list-style-type: disc;
-        text-align: left;
         padding-inline-start: 20px;
     }
 

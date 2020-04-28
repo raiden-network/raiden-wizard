@@ -95,6 +95,12 @@ body {
 a {
     color: color(text-blue);
     text-decoration: none;
+
+    .icon-link {
+        height: 24px;
+        width: auto;
+        vertical-align: middle;
+    }
 }
 
 button, a.button {
@@ -338,7 +344,7 @@ section.content {
         justify-self: center;
         min-height: 500px;
 
-        grid-template-rows: 120px 120px minmax(120px, auto) 80px;
+        grid-template-rows: 80px 120px minmax(120px, auto) 80px;
 
         div {
             justify-self: center;

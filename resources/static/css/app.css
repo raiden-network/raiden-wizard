@@ -29,6 +29,12 @@ a {
   text-decoration: none;
 }
 
+a .icon-link {
+  height: 24px;
+  width: auto;
+  vertical-align: middle;
+}
+
 button, a.button {
   line-height: 40px;
   width: 270px;
@@ -304,8 +310,8 @@ section.content div.container {
   -ms-grid-column-align: center;
       justify-self: center;
   min-height: 500px;
-  -ms-grid-rows: 120px 120px minmax(120px, auto) 80px;
-      grid-template-rows: 120px 120px minmax(120px, auto) 80px;
+  -ms-grid-rows: 80px 120px minmax(120px, auto) 80px;
+      grid-template-rows: 80px 120px minmax(120px, auto) 80px;
 }
 
 section.content div.container div {

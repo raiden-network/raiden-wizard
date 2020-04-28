@@ -29,6 +29,7 @@ class Settings:
     service_token: TokenSettings
     transfer_token: TokenSettings
     routing_mode: str = "pfs"
+    cmc_api_key: str = ""
     monitoring_enabled: bool = True
     # matrix_server and pfs address are only used if client_release_channel = "demo_env"
     matrix_server: str = ""

@@ -335,14 +335,14 @@ span.private {
 section.content {
     width: dimension(full-column-width);
     margin: 0 auto;
-    padding-top: 33px;
+    padding: 50px 0;
 
     div.container {
         display: grid;
         justify-content: center;
         align-items: center;
         justify-self: center;
-        min-height: 500px;
+        min-height: 400px;
 
         grid-template-rows: 80px 120px minmax(120px, auto) 80px;
 

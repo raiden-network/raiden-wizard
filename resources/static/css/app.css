@@ -42,7 +42,7 @@ button, a.button {
   color: #fff;
 }
 
-button:hover, a.button:hover {
+button:hover, button.selected, a.button:hover, a.button.selected {
   background-color: #28a5c8;
   border-color: #28a5c8;
   color: #fff;
@@ -304,8 +304,8 @@ section.content div.container {
   -ms-grid-column-align: center;
       justify-self: center;
   min-height: 500px;
-  -ms-grid-rows: 150px minmax(40px, auto) 120px 80px;
-      grid-template-rows: 150px minmax(40px, auto) 120px 80px;
+  -ms-grid-rows: 120px 120px minmax(120px, auto) 80px;
+      grid-template-rows: 120px 120px minmax(120px, auto) 80px;
 }
 
 section.content div.container div {
@@ -418,6 +418,38 @@ section.content div.container div.action {
   -webkit-box-pack: space-evenly;
       -ms-flex-pack: space-evenly;
           justify-content: space-evenly;
+}
+
+section.content div.container div.action.big {
+  height: 576px;
+}
+
+section.content div.container div.action .exchange-button {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+section.content div.container div.action .exchange-button .dex-icon {
+  height: 200px;
+  font-size: 120px;
+  line-height: 200px;
+  width: auto;
+}
+
+section.content div.container div.action .exchange-button .expand {
+  width: 36px;
+  height: 36px;
 }
 
 section.content div.container div.ack-prompt {
@@ -533,73 +565,80 @@ section.content div.container div.ack-prompt {
   text-align: left;
 }
 
-.tooltip-item {
-  position: relative;
-  display: inline-block;
+.tooltip-item:not(button) {
   color: #28a5c8;
 }
 
-.tooltip-item:hover .tooltip {
+.tooltip-item, .popover-item {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-item:hover > .tooltip, .popover-item:hover > .tooltip {
   visibility: visible;
   opacity: 1;
 }
 
-.tooltip {
+.tooltip, .popover {
   font-size: 18px;
   text-align: center;
-  width: 400px;
-  background-color: #3c3c3c;
   color: #fff;
-  padding: 15px;
-  border-radius: 10px;
   position: absolute;
   z-index: 50;
   top: 100%;
   left: 50%;
-  margin-left: -200px;
   visibility: hidden;
   opacity: 0;
   -webkit-transition: opacity 0.3s;
   transition: opacity 0.3s;
 }
 
-.tooltip ul {
+.tooltip ul, .popover ul {
   list-style-type: disc;
   text-align: left;
   -webkit-padding-start: 20px;
           padding-inline-start: 20px;
 }
 
-.tooltip.is-visible {
+.tooltip.is-visible, .popover.is-visible {
   visibility: visible;
   opacity: 1;
 }
 
-.stepper {
-  width: 405px;
-  position: fixed;
-  bottom: 30px;
-  right: 45px;
+.tooltip:not(.menu), .popover:not(.menu) {
+  width: 400px;
+  margin-left: -200px;
+  top: 100%;
+  padding: 15px;
+  background-color: #3c3c3c;
+  border-radius: 10px;
 }
 
-.stepper .coins {
-  margin-bottom: 20px;
-  width: 100%;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
+.tooltip.menu, .popover.menu {
+  width: 270px;
+  margin-left: -135px;
+  top: 52%;
+  border: 2px solid;
+  border-color: #28a5c8;
+  border-radius: 29px;
 }
 
-.stepper .coins img {
-  display: inline-block;
-  height: 105px;
-  width: auto;
+.tooltip.menu button, .popover.menu button {
+  border-left: none;
+  border-right: none;
+  border-width: 1px;
+  border-radius: 0;
 }
 
-.stepper .coins img.transparent {
-  opacity: 0.1;
+.tooltip.menu button:first-of-type, .popover.menu button:first-of-type {
+  border-top: none;
+  border-top-right-radius: 24px;
+  border-top-left-radius: 24px;
+}
+
+.tooltip.menu button:last-of-type, .popover.menu button:last-of-type {
+  border-bottom: none;
+  border-bottom-right-radius: 24px;
+  border-bottom-left-radius: 24px;
 }
 /*# sourceMappingURL=app.css.map */

@@ -1,7 +1,56 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Fund Account</h1>
+<h2>Swap ETH to RDN</h2>
+
+<div class="hero">
+  Choose a decentralized exchange to swap ETH to RDN
+</div>
+
+<div class="action big">
+  <div class="popover-item">
+    <button class="exchange-button" value="kyber">
+      <img class="dex-icon" src="{{ static_url('images/kyber.svg') }}" alt="KyberNetwork" />
+      <span>KyberNetwork</span>
+      <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
+    </button>
+
+    <div class="popover menu" id="amount-menu">
+      <button class="amount-button" value="10">
+        10 RDN<br>
+        Costs 0.1 ETH
+      </button>
+      <button class="amount-button" value="20">
+        20 RDN<br>
+        Costs 0.2 ETH
+      </button>
+      <button class="amount-button" value="50">
+        50 RDN<br>
+        Costs 0.5 ETH
+      </button>
+    </div>
+  </div>
+
+  <div class="popover-item">
+    <button class="exchange-button" value="uniswap">
+      <span class="dex-icon">🦄</span>
+      <span>Uniswap</span>
+      <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
+    </button>
+  </div>
+</div>
+
+<div class="action">
+  <button type="submit" disabled>Confirm</button>
+</div>
+
+<!-- 
+todos:
+"RDN"/"DAI" should depend on route
+move everything to swap.html / swap route
+-->
+
+<!--h1>Fund Account</h1>
 <div class="hero">
   Raiden needs funds for its operation
 </div>
@@ -102,7 +151,7 @@
           data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}">
     Launch
   </button>
-</div>
+</div-->
 {% end %}
 
 
@@ -217,39 +266,66 @@
    button_swap_service_token.disabled = button_swap_transfer_token.disabled = !(balance.ETH && balance.ETH.as_wei > 0);
  }
 
- function generateQRCode(display_element) {
-   let address = "{{ configuration_file.account.address }}";
+ function setupPopovers() {
+    const exchangeButtons = document.querySelectorAll('.exchange-button');
+    const amountMenu = document.querySelector('#amount-menu');
+    const amountButtons = document.querySelectorAll('.amount-button');
+    let selectedExchange = '';
+    let selectedAmount = 0;
 
-   return new QRCode(display_element, {
-     text: `ethereum:${address}`,
-     colorDark : "#000000",
-     colorLight : "#ffffff",
-     correctLevel : QRCode.CorrectLevel.H
-   });
- }
+    const selectExchange = (button) => {
+      const currentButton = amountMenu.closest('.popover-item').querySelector('button');
+      currentButton.classList.remove('selected');
+      selectedAmount = 0;
+      amountButtons.forEach((button) => button.classList.remove('selected'));
+
+      if (selectedExchange === button.value) {
+        selectedExchange = '';
+        amountMenu.classList.remove('is-visible');
+      } else {
+        selectedExchange = button.value;
+        button.classList.add('selected');
+        const newPopoverItem = button.closest('.popover-item');
+        amountMenu.remove();
+        newPopoverItem.appendChild(amountMenu);
+        amountMenu.classList.add('is-visible');
+      }
+    };
+
+    const selectAmount = (button) => {
+      amountButtons.forEach((button) => button.classList.remove('selected'));
+      if (selectedAmount === button.value) {
+        selectedAmount = 0;
+      } else {
+        selectedAmount = button.value;
+        button.classList.add('selected');
+      }
+    };
+
+    exchangeButtons.forEach((button) => {
+      button.addEventListener('click', () => selectExchange(button));
+    });
+
+    amountButtons.forEach((button) => {
+      button.addEventListener('click', () => selectAmount(button));
+    });
+  }
 
  function main() {
-   poll();
+   //poll();
  }
 
  window.addEventListener("load", async function () {
-   let has_web3 = Boolean(window.ethereum || window.web3);
-   let button_send_eth = document.getElementById("btn-web3-eth");
-   let button_send_rdn = document.getElementById("btn-web3-service-token");
-   let button_send_dai = document.getElementById("btn-web3-transfer-token");   
+   //let has_web3 = Boolean(window.ethereum || window.web3);
+   //let button_send_eth = document.getElementById("btn-web3-eth");
+   //let button_send_rdn = document.getElementById("btn-web3-service-token");
+   //let button_send_dai = document.getElementById("btn-web3-transfer-token");   
 
-   button_send_eth.disabled = button_send_rdn.disabled = button_send_dai.disabled = !has_web3;
+   //button_send_eth.disabled = button_send_rdn.disabled = button_send_dai.disabled = !has_web3;
  });
 
  window.addEventListener("load", function () {
-   let address_div_elem = document.querySelector("div.action-copy-paste");
-   let account_address_elem = address_div_elem.querySelector("span.account-address");
-   let qr_code = generateQRCode(document.getElementById("address-qr-code"));
-
-
-   address_div_elem.addEventListener("click", function(evt) {
-     copyToClipboard(address_div_elem, account_address_elem);
-   });
+   setupPopovers();
 
    window.MAIN_VIEW_INTERVAL = 10000;
    window.runMainView();

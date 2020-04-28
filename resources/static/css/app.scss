@@ -16,6 +16,7 @@ $colors: (
     button-hover-bg: #28a5c8,
     button-border: #28a5c8,
     button-inactive-border: rgba(40, 165, 200, .3),
+    tooltip-bg: #3c3c3c,
 );
 
 $dimensions: (
@@ -100,7 +101,7 @@ button, a.button {
     @include fixedsize(270px, 40px);
     @include button();
     @include buttoncolor(color(button-bg), color(button-border), color(text-standard));
-    &:hover {
+    &:hover, &.selected {
         @include buttoncolor(color(button-hover-bg), color(button-border), color(text-standard));
     }
     &:disabled, &[aria-disabled="true"] {
@@ -337,7 +338,7 @@ section.content {
         justify-self: center;
         min-height: 500px;
 
-        grid-template-rows: 150px minmax(40px, auto) 120px 80px;
+        grid-template-rows: 120px 120px minmax(120px, auto) 80px;
 
         div {
             justify-self: center;
@@ -410,6 +411,29 @@ section.content {
             display: inline-grid;
             grid-auto-flow: column;
             justify-content: space-evenly;
+
+            &.big {
+                height: 576px;
+            }
+
+            .exchange-button {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+
+                .dex-icon {
+                    height: 200px;
+                    font-size: 120px;
+                    line-height: 200px;
+                    width: auto;
+                }
+
+                .expand {
+                    width: 36px;
+                    height: 36px;
+                }
+            }
         }
 
         div.ack-prompt {
@@ -513,30 +537,28 @@ section.content {
     }
 }
 
-.tooltip-item {
+.tooltip-item:not(button) {
+    color: color(text-blue);
+}
+
+.tooltip-item, .popover-item {
     position: relative;
     display: inline-block;
-    color: color(text-blue);
 
-    &:hover .tooltip {
+    &:hover>.tooltip {
         visibility: visible;
         opacity: 1;
     }
 }
   
-.tooltip {
+.tooltip, .popover {
     font-size: 18px;
     text-align: center;
-    width: 400px;
-    background-color: #3c3c3c;
     color: color(text-standard);
-    padding: 15px;
-    border-radius: 10px;
     position: absolute;
     z-index: 50;
     top: 100%;
     left: 50%;
-    margin-left: -200px;
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.3s;
@@ -551,28 +573,41 @@ section.content {
         visibility: visible;
         opacity: 1;
     }
-}
 
-.stepper {
-    width: 405px;
-    position: fixed;
-    bottom: 30px;
-    right: 45px;
+    &:not(.menu) {
+        width: 400px;
+        margin-left: -200px;
+        top: 100%;
+        padding: 15px;
+        background-color: color(tooltip-bg);
+        border-radius: 10px;
+    }
 
-    .coins {
-        margin-bottom: 20px;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-
-        img {
-            display: inline-block;
-            height: 105px;
-            width: auto;
-
-            &.transparent {
-                opacity: 0.1;
-            }
+    &.menu {
+        width: 270px;
+        margin-left: -135px;
+        top: 52%;
+        border: 2px solid;
+        border-color: color(button-border);
+        border-radius: 29px;
+    
+        button {
+            border-left: none;
+            border-right: none;
+            border-width: 1px;
+            border-radius: 0;
+        }
+    
+        button:first-of-type {
+            border-top: none;
+            border-top-right-radius: 24px;
+            border-top-left-radius: 24px;
+        }
+    
+        button:last-of-type {
+            border-bottom: none;
+            border-bottom-right-radius: 24px;
+            border-bottom-left-radius: 24px;
         }
     }
 }

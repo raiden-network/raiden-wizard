@@ -12,15 +12,15 @@
   <span>Raiden needs three different coins to work...</span>
   <div class="items">
     <div>
-      <img src="{{ static_url('images/eth.png') }}" alt="Ether" />
+      <img src="{{ static_url('images/eth.png') }}" alt="ETH" title="ETH" />
       <span>...to talk to the Ethereum Blockchain</span>
     </div>
     <div>
-      <img src="{{ static_url('images/rdn.png') }}" alt="RDN token" />
+      <img src="{{ static_url('images/rdn.png') }}" alt="RDN token" title="RDN token" />
       <span>...to get pathfinding and monitoring services</span>
     </div>
     <div>
-      <img src="{{ static_url('images/dai.png') }}" alt="DAI token" />
+      <img src="{{ static_url('images/dai.png') }}" alt="DAI token" title="DAI token" />
       <span>...to transfer in the Raiden Network</span>
     </div>
   </div>
@@ -42,7 +42,9 @@
     Launch
   </button>
   {% else %}
-  <button class="link-button" id="setup-button" disabled>Start</button>
+  <button class="link-button" data-link-url="{{ reverse_url('setup', 'mainnet') }}" id="setup-button" disabled>
+    Start
+  </button>
   {% end %}
 </div>
 
@@ -102,19 +104,9 @@
 {% block page_header_scripts %}
 <script type="text/javascript">
  window.addEventListener("load", function() {
-
    let checkboxes = document.querySelectorAll("input[type=checkbox]");
    let button = document.querySelector("button.link-button");
    checkAcknowledgements(checkboxes, button);
-
-   let setupButton = document.getElementById("setup-button");
-   if(setupButton) {
-     let setupUrlFormat = decodeURI("{{ reverse_url('setup', '§') }}");
-     setupUrl = setupUrlFormat.replace("§", "mainnet");
-     setupButton.setAttribute("data-link-url", setupUrl);
-   }
-
  });
-
 </script>
 {% end %}

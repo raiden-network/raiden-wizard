@@ -373,12 +373,6 @@ class AccountDetailHandler(BaseRequestHandler):
         self.render("account.html", configuration_file=configuration_file)
 
 
-class AccountFundingHandler(BaseRequestHandler):
-    def get(self, configuration_file_name):
-        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        self.render("funding.html", configuration_file=configuration_file)
-
-
 class FundingOptionsHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
@@ -408,7 +402,7 @@ class LaunchHandler(BaseRequestHandler):
         self.render("launch.html", configuration_file=configuration_file, balance=current_balance)
 
 
-class SwapOptionsHandler(BaseRequestHandler):
+class SwapHandler(BaseRequestHandler):
     def get(self, configuration_file_name, token_ticker):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
@@ -419,28 +413,11 @@ class SwapOptionsHandler(BaseRequestHandler):
         token = Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name)
 
         self.render(
-            "swap_options.html",
+            "swap.html",
             configuration_file=configuration_file,
             kyber=kyber,
             uniswap=uniswap,
             token=token,
-        )
-
-
-class SwapHandler(BaseRequestHandler):
-    def get(self, exchange_name, configuration_file_name, token_ticker):
-        exchange_class = Exchange.get_by_name(exchange_name)
-        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        w3 = make_web3_provider(
-            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
-        )
-
-        self.render(
-            "swap.html",
-            exchange=exchange_class(w3=w3),
-            configuration_file=configuration_file,
-            balance=configuration_file.account.get_ethereum_balance(w3),
-            token=Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name),
         )
 
 
@@ -550,9 +527,7 @@ if __name__ == "__main__":
             url(r"/setup/(mainnet|goerli)", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
-            url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
-            url(r"/exchanges/(.*)/([A-Z]{3})", SwapOptionsHandler, name="swap-options"),
-            url(r"/swap/(kyber|uniswap)/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
+            url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),
             url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail"),
             url(

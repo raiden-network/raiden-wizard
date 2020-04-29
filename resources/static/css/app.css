@@ -162,21 +162,13 @@ ul.funding-requirements li {
   list-style-type: disc;
 }
 
+ul.checklist {
+  margin: 0;
+}
+
 ul.checklist li {
   display: block;
-}
-
-ul.checklist li.fail, ul.checklist li.pass {
-  font-weight: 600;
-  font-size: 150%;
-}
-
-ul.checklist li.fail {
-  color: #ef5350;
-}
-
-ul.checklist li.pass {
-  color: #28a5c8;
+  padding-bottom: 10px;
 }
 
 ul.checklist li span.check-value.nok {
@@ -401,11 +393,23 @@ section.content div.container div.ack-prompt {
   font-size: 50%;
 }
 
-#background-task-tracker div.spinner {
+#background-task-tracker {
+  margin-top: 25vh;
+}
+
+#background-task-tracker ul.messages {
+  color: #fff;
+  line-height: 28px;
+  list-style-type: none;
+  margin: 0;
+  padding: 30px 0px 100px 0px;
+  text-align: center;
+}
+
+div.spinner {
   display: -ms-grid;
   display: grid;
   margin: auto;
-  margin-top: 25vh;
   -ms-grid-row-align: center;
       align-self: center;
   -webkit-animation: .8s spin infinite;
@@ -431,15 +435,6 @@ section.content div.container div.ack-prompt {
     -webkit-transform: rotate(360deg);
             transform: rotate(360deg);
   }
-}
-
-#background-task-tracker ul.messages {
-  color: #fff;
-  line-height: 28px;
-  list-style-type: none;
-  margin: 0;
-  padding: 30px 0px 100px 0px;
-  text-align: center;
 }
 
 .body-blackout {

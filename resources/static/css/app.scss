@@ -370,48 +370,6 @@ section.content {
             text-align: center;
         }
 
-        div.description {
-            display: flex;
-            flex-direction: column;
-            height: 520px;
-            width: 100%;
-            justify-content: space-evenly;
-
-            &.big {
-                min-width: 920px;
-            }
-
-            .items {
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
-                width: 100%;
-
-                div {
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    align-items: center;
-                    &:not(:last-child) {
-                        margin-right: 26px;
-                    }
-
-                    img {
-                        height: 105px;
-                        width: auto;
-                        margin-bottom: 52px;
-                    }
-                    span {
-                        max-width: 290px;
-                    }
-                }
-            }
-
-            .text-end {
-                align-self: flex-end;
-            }
-        }
-
         div.action {
             width: 100%;
             display: inline-grid;

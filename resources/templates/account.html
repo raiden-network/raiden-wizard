@@ -85,7 +85,7 @@
      const action = document.querySelector('.action');
      action.classList.add('tx-received');
      setTimeout(function() {
-        window.location.href = "{{ reverse_url('funding', configuration_file.file_name) }}";
+        window.location.href = "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
      }, 1000);
    }
  }

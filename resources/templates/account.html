@@ -36,6 +36,7 @@
 </div>
 {% end %} {% block page_header_scripts %}
 <script type="text/javascript">
+<<<<<<< HEAD
 
  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
@@ -128,6 +129,114 @@
    window.MAIN_VIEW_INTERVAL = 10000;
    window.runMainView();
  });
+=======
+  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
+  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
+
+  async function checkWeb3Network() {
+    let required_chain_id = "{{ configuration_file.network.chain_id }}";
+    await connectWeb3();
+    web3.version.getNetwork(function (error, chain_id) {
+      if (error) {
+        console.error(error);
+      }
+
+      if (chain_id != required_chain_id) {
+        let current_chain_name = CHAIN_ID_MAPPING[chain_id];
+        let required_chain_name = CHAIN_ID_MAPPING[required_chain_id];
+        alert(
+          `Web3 Browser connected to ${current_chain_name}, please change to ${required_chain_name}.`
+        );
+      }
+    });
+  }
+
+  function makeWeb3Transaction(w3, transaction_data) {
+    w3.eth.sendTransaction(transaction_data, function (error, result) {
+      if (result) {
+        // result is the transaction hash
+        trackTransaction(result, "{{ configuration_file.file_name }}");
+      }
+
+      if (error) {
+        console.error(error);
+      }
+    });
+  }
+
+  async function sendEthViaWeb3(wei_to_send) {
+    await checkWeb3Network();
+    let web3 = window.web3;
+    let sender_address =
+      (window.ethereum && window.ethereum.selectedAddress) ||
+      web3.eth.defaultAccount;
+
+    try {
+      eth_station_response = await fetch(
+        "https://ethgasstation.info/api/ethgasAPI.json"
+      ).then((response) => response.json());
+      gas_price = eth_station_response["fast"] * 10e7;
+    } catch {
+      console.err("Could not fetch gas price. Falling back to web3 gas price.");
+    }
+
+    let transaction_data = {
+      from: sender_address,
+      to: TARGET_ADDRESS,
+      value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT,
+    };
+
+    if (gas_price) {
+      transaction_data["gasPrice"] = gas_price;
+    }
+
+    makeWeb3Transaction(web3, transaction_data);
+  }
+
+  async function poll() {
+    let balance = await getBalances(
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
+    );
+
+    if (hasEnoughBalanceToLaunchRaiden(balance)) {
+      let button_send_eth = document.getElementById("btn-web3-eth");
+      button_send_eth.disabled = true;
+      const action = document.querySelector(".action");
+      action.classList.add("tx-received");
+      setTimeout(function () {
+        window.location.href =
+          "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
+      }, 1000);
+    }
+  }
+
+  function main() {
+    poll();
+  }
+
+  window.addEventListener("load", function () {
+    let has_web3 = Boolean(window.ethereum || window.web3);
+    let button_send_eth = document.getElementById("btn-web3-eth");
+
+    button_send_eth.disabled = !has_web3;
+
+    window.MAIN_VIEW_INTERVAL = 10000;
+    window.runMainView();
+  });
+
+  window.addEventListener("load", function () {
+    let account_div_elem = document.querySelector(
+      ".tooltip > .action-copy-paste"
+    );
+    let account_private_key_elem = account_div_elem.querySelector(
+      "span.private"
+    );
+
+    account_div_elem.addEventListener("click", function (evt) {
+      copyToClipboard(account_div_elem, account_private_key_elem);
+    });
+  });
+>>>>>>> bug fixes
 </script>
 
 {% end %}

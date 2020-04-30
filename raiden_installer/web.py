@@ -339,7 +339,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 self._send_status_update(f"Not confirmed after {time_elapsed} seconds...")
             self._send_status_update("Transaction confirmed")
-            self._send_redirect(self.reverse_url("funding", configuration_file_name))
+            self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
         except Exception as exc:
             self._send_error_message(str(exc))
 

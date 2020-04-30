@@ -1,22 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Connect Infura</h1>
+<h2>Connect to the Ethereum Blockchain</h2>
+
 <div class="hero">
-  Provide your existing Infura Project ID or
-  <a href="https://medium.com/@raiden_network/6c7c61c5b695" target="_blank">click here</a> for instructions on how to get one.
+  Provide your Infura ID to run your node
+  <a href="https://infura.io/product" target="_blank">
+      <img class="icon-link" src="{{ static_url('images/info.svg') }}" alt="Info" />
+  </a>
 </div>
 
 <div class="info-panel">
   <div>
     <input type="text" name="endpoint" placeholder="Your Infura ID (or Infura endpoint URL)" />
   </div>
-  <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+  <div class="error-box">
+    <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+  </div>
 </div>
 
 <div class="action">
   <button type="submit" disabled>Confirm</button>
-</div>
 </div>
 {% end %}
 
@@ -42,37 +46,6 @@
        error_display.hidden = true;
        submit_button.disabled = false;
      }
-   }
-
-   function postConfiguration(evt) {
-     const data = JSON.stringify({
-       endpoint: infura_project_input.value
-     });
-
-     const req = new XMLHttpRequest();
-
-     req.onload = function() {
-       if (this.status == 201) {
-         const new_config_url = this.getResponseHeader("Location");
-         const config_req = new XMLHttpRequest();
-
-         config_req.onload = function() {
-           if (this.status == 200){
-             let config_data = JSON.parse(this.response);
-             document.location = config_data.account_page_url;
-           }
-         };
-         config_req.open("GET", new_config_url);
-         config_req.send();
-       }
-     }
-
-     req.open("POST", API_CONFIGURATION_LIST_ENDPOINT, true);
-     req.setRequestHeader("Content-Type", "application/json");
-     req.send(data);
-     toggleView();
-
-     addFeedbackMessage("Generating new wallet and configuration file for raiden");
    }
 
    function submitConfiguration(evt) {

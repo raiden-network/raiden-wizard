@@ -8,7 +8,13 @@ ethereum_amount_required = 2e16
 [service_token]
 ticker = "RDN"
 amount_required = 6e18
+swap_amount_1 = 10e18
+swap_amount_2 = 20e18
+swap_amount_3 = 50e18
 
 [transfer_token]
 ticker = "DAI"
 amount_required = 2e18
+swap_amount_1 = 2e18
+swap_amount_2 = 5e18
+swap_amount_3 = 10e18

@@ -16,12 +16,11 @@ $colors: (
     button-hover-bg: #28a5c8,
     button-border: #28a5c8,
     button-inactive-border: rgba(40, 165, 200, .3),
+    tooltip-bg: #3c3c3c,
 );
 
 $dimensions: (
-    full-column-width: 960px,
-    padded-block-width: 900px,
-    padded-text-width: 840px,
+    full-column-width: 60vw,
 );
 
 @mixin button() {
@@ -96,13 +95,19 @@ body {
 a {
     color: color(text-blue);
     text-decoration: none;
+
+    .icon-link {
+        height: 24px;
+        width: auto;
+        vertical-align: middle;
+    }
 }
 
 button, a.button {
     @include fixedsize(270px, 40px);
     @include button();
     @include buttoncolor(color(button-bg), color(button-border), color(text-standard));
-    &:hover {
+    &:hover, &.selected {
         @include buttoncolor(color(button-hover-bg), color(button-border), color(text-standard));
     }
     &:disabled, &[aria-disabled="true"] {
@@ -136,6 +141,10 @@ input[type=text],input[type=number] {
     @include input(color(element-input-bg), color(text-blue));
 }
 
+.error-box {
+    height: 28px;
+}
+
 span.error {
     color: color(text-error);
     justify-self: center;
@@ -145,11 +154,11 @@ span.error {
 div.logo {
     width: 370px;
     height: 105px;
+    display: inline-block;
 
-    margin: 33px auto 0;
     text-align: center;
     img {
-        width: 100%;
+        width: auto;
         height: 100%;
     }
     &.business-card {
@@ -162,6 +171,9 @@ div.logo {
         // 60% of image size
         width: 222px;
         height: 63px;
+    }
+    &.home {
+        display: none;
     }
 }
 
@@ -199,18 +211,10 @@ ul.funding-requirements {
 
 
 ul.checklist {
+    margin: 0;
     li {
         display: block;
-        &.fail, &.pass {
-            font-weight: 600;
-            font-size: 150%;
-        }
-        &.fail {
-            color: color(text-error);
-        }
-        &.pass {
-            color: color(text-blue);
-        }
+        padding-bottom: 10px;
 
         span.check-value.nok {
             color: color(text-error) !important;
@@ -286,64 +290,76 @@ ul.account-info {
     }
 }
 
+span.private {
+    display: inline-block;
+    width: 75%;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+}
+
+.action-copy-paste {
+    cursor: pointer;
+}
+
+.action-copy-paste::after {
+    font-size: 12px;
+    background-repeat: no-repeat;
+    display: inline-block;
+    content: '';
+    background-image: url("../images/copy-icon.svg");
+    min-width: 20%;
+    height: 27px;
+    line-height: 27px;
+    background-size: auto 27px;
+
+}
+
+.action-copy-paste.clipboard::after {
+    vertical-align: top;
+    content: 'copied!' !important;
+    background-image: none !important;
+}
+
+.tx-received::after {
+    content: 'Received transaction!';
+}
 
 section.content {
     width: dimension(full-column-width);
     margin: 0 auto;
-    padding-top: 33px;
+    padding: 50px 0;
 
     div.container {
         display: grid;
         justify-content: center;
         align-items: center;
         justify-self: center;
-        min-height: 700px;
+        min-height: 400px;
 
-        grid-template-rows: 100px minmax(100px, auto) auto 120px 80px;
+        grid-template-rows: 80px 120px minmax(120px, auto) 80px;
 
         div {
             justify-self: center;
         }
 
+        h1 {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+
+            img {
+                width: auto;
+                height: 105px;
+            }
+        }
+
         div.hero {
-            font-size: 50px;
-            line-height: 60px;
             text-align: center;
-            align-self: start;
         }
 
         div.info-panel {
             text-align: center;
-
-            span.private {
-                display: inline-block;
-                max-width: 12em;
-                overflow-x: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .action-copy-paste {
-                cursor: pointer;
-            }
-
-            .action-copy-paste::after {
-                font-size: 12px;
-                background-repeat: no-repeat;
-                display: inline-block;
-                content: '';
-                background-image: url("../images/copy-icon.svg");
-                min-width: 24px;
-                height: 35px;
-                line-height: 35px;
-                background-size: 24px 35px;
-
-            }
-
-            .action-copy-paste.clipboard::after {
-                vertical-align: top;
-                content: 'copied!' !important;
-                background-image: none !important;
-            }
         }
 
         div.action {
@@ -351,6 +367,29 @@ section.content {
             display: inline-grid;
             grid-auto-flow: column;
             justify-content: space-evenly;
+
+            &.big {
+                height: 576px;
+            }
+
+            .exchange-button {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+
+                .dex-icon {
+                    height: 200px;
+                    font-size: 120px;
+                    line-height: 200px;
+                    width: auto;
+                }
+
+                .expand {
+                    width: 36px;
+                    height: 36px;
+                }
+            }
         }
 
         div.ack-prompt {
@@ -365,25 +404,7 @@ section.content {
 }
 
 #background-task-tracker {
-    div.spinner {
-        display: grid;
-        margin: auto;
-        margin-top: 25vh;
-        align-self: center;
-        animation: .8s spin infinite;
-        border: 4px solid color(element-input-bg);
-        border-radius: 50%;
-        border-bottom-color: color(element-border);
-        border-right-color: color(element-border);
-        border-top-color: color(element-border);
-        height: 100px;
-        width: 100px;
-    }
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
+    margin-top: 25vh;
 
     ul.messages {
         color: color(text-standard);
@@ -392,5 +413,158 @@ section.content {
         margin: 0;
         padding: 30px 0px 100px 0px;
         text-align: center;
+    }
+}
+
+div.spinner {
+    display: grid;
+    margin: auto;
+    align-self: center;
+    animation: .8s spin infinite;
+    border: 4px solid color(element-input-bg);
+    border-radius: 50%;
+    border-bottom-color: color(element-border);
+    border-right-color: color(element-border);
+    border-top-color: color(element-border);
+    height: 100px;
+    width: 100px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.body-blackout {
+    display: none;
+    position: fixed;
+    z-index: 1010;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.65);
+
+    &.is-blacked-out {
+        display: block;
+    }
+}
+
+.modal {
+    min-height: 400px;
+    max-height: 565px;
+    width: 480px;
+    background-color: #282828;
+    border-radius: 10px 10px 10px 10px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 45px;
+    transition: all 300ms ease-in-out;
+    z-index: 1011;
+    pointer-events: none;
+    opacity: 0;
+    overflow: hidden;
+
+    &.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .modal__close {
+        position: absolute;
+        right: 24px;
+        top: 24px;
+        cursor: pointer;
+    }
+
+    .overflow-box {
+        width: 100%;
+        height: 490px;
+        padding: 0 10px;
+        overflow-y: scroll;
+        
+        p {
+            font-weight: 400;
+            font-size: 50%;
+            text-align: left;
+        }
+    }
+}
+
+.tooltip-item:not(button) {
+    color: color(text-blue);
+}
+
+.tooltip-item, .popover-item {
+    position: relative;
+    display: inline-block;
+
+    &:hover>.tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+  
+.tooltip, .popover {
+    font-size: 18px;
+    text-align: left;
+    color: color(text-standard);
+    position: absolute;
+    z-index: 50;
+    top: 100%;
+    left: 50%;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+
+    ul {
+        list-style-type: disc;
+        padding-inline-start: 20px;
+    }
+
+    &.is-visible {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    &:not(.menu) {
+        width: 400px;
+        margin-left: -200px;
+        top: 100%;
+        padding: 15px;
+        background-color: color(tooltip-bg);
+        border-radius: 10px;
+    }
+
+    &.menu {
+        width: 270px;
+        margin-left: -135px;
+        top: 52%;
+        border: 2px solid;
+        border-color: color(button-border);
+        border-radius: 29px;
+    
+        button {
+            border-left: none;
+            border-right: none;
+            border-width: 1px;
+            border-radius: 0;
+        }
+    
+        button:first-of-type {
+            border-top: none;
+            border-top-right-radius: 24px;
+            border-top-left-radius: 24px;
+        }
+    
+        button:last-of-type {
+            border-bottom: none;
+            border-bottom-right-radius: 24px;
+            border-bottom-left-radius: 24px;
+        }
     }
 }

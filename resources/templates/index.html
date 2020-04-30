@@ -3,12 +3,23 @@
 {% block logo_class %}home{% end %}
 
 {% block content %}
-<h1>{{ network.capitalized_name }} Wizard</h1>
+<h1>
+  <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
+  Wizard
+</h1>
+
 <div class="hero">
-  Your tool to easily start running and operating a Raiden fullnode
+  Start Raiden in 5 steps
 </div>
 
-<div class="info-panel"></div>
+<div class="ack-prompt">
+  <input type="checkbox" name="ack-wizard" />
+  <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
+    I acknowledge that I am fully responsible for the usage of the
+    Wizard and I am aware of risks of operating software that
+    involves transactions in the Ethereum blockchain
+  </label>
+</div>
 
 <div class="action">
   {% if configuration_file %}
@@ -16,21 +27,61 @@
     Launch
   </button>
   {% else %}
-  <button class="link-button" id="setup-button" disabled>Start</button>
-  <select id="network-name-select">
-    <option>goerli</option>
-    <option>mainnet</option>
-  </select>
+  <button class="link-button" data-link-url="{{ reverse_url('setup', 'mainnet') }}" id="setup-button" disabled>
+    Start
+  </button>
   {% end %}
 </div>
 
-<div class="ack-prompt">
-  <input type="checkbox" name="ack-wizard" />
-  <label for="ack-wizard">
-    I acknowledge that I am fully responsible for the usage of the
-    Wizard and I am aware of risks of operating software that
-    involves transactions in the Ethereum blockchain
-  </label>
+<div class="modal" data-modal="disclaimer">
+  <img src="{{ static_url('images/close.svg') }}" class="modal__close" alt="Closes the modal">
+  <h2>Disclaimer<h2>
+  <div class="overflow-box">
+    <p>
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+      eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+      At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet,
+      consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+      sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+      eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+      At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet,
+      consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+      sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+      eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+      At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet,
+      consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+      sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+      eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+      At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet,
+      consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+      sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+      eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+      At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet,
+      consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+      sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy 
+      eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+      At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet,
+      consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat,
+      sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, 
+      no sea takimata sanctus est Lorem ipsum dolor sit amet.
+    </p>
+  </div>
 </div>
 {% end %}
 
@@ -38,24 +89,9 @@
 {% block page_header_scripts %}
 <script type="text/javascript">
  window.addEventListener("load", function() {
-
    let checkboxes = document.querySelectorAll("input[type=checkbox]");
    let button = document.querySelector("button.link-button");
    checkAcknowledgements(checkboxes, button);
-
-   let setupButton = document.getElementById("setup-button");
-   if(setupButton) {
-     let networkNameSelect = document.getElementById("network-name-select");
-     let setupUrlFormat = decodeURI("{{ reverse_url('setup', '§') }}");
-     updateSetupButton = function() {
-       setupUrl = setupUrlFormat.replace("§", networkNameSelect.value);
-       setupButton.setAttribute("data-link-url", setupUrl);
-     };
-     updateSetupButton();
-     networkNameSelect.onchange = updateSetupButton;
-   }
-
  });
-
 </script>
 {% end %}

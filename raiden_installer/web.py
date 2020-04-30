@@ -19,7 +19,14 @@ from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
-from raiden_installer.tokens import Erc20Token, EthereumAmount, RequiredAmounts, TokenAmount, Wei
+from raiden_installer.tokens import (
+    Erc20Token,
+    EthereumAmount,
+    RequiredAmounts,
+    TokenAmount,
+    Wei,
+    SwapAmounts,
+)
 from raiden_installer.transactions import (
     deposit_service_tokens,
     get_token_balance,
@@ -290,7 +297,23 @@ class AsyncTaskHandler(WebSocketHandler):
                 token_balance = get_token_balance(w3, account, token)
 
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
-                self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
+
+                required = RequiredAmounts.for_network(network_name)
+                service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
+                service_token_balance = get_token_balance(w3, account, service_token)
+                transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network_name)
+                transfer_token_balance = get_token_balance(w3, account, transfer_token)
+                
+                if service_token_balance < required.service_token:
+                    self._send_redirect(
+                        self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+                    )
+                elif transfer_token_balance < required.transfer_token:
+                    self._send_redirect(
+                        self.reverse_url("swap", configuration_file.file_name, transfer_token.ticker)
+                    ) 
+                else:
+                    self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
             else:
                 for key, error_list in form.errors.items():
                     error_message = f"{key}: {'/'.join(error_list)}"
@@ -316,7 +339,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 self._send_status_update(f"Not confirmed after {time_elapsed} seconds...")
             self._send_status_update("Transaction confirmed")
-            self._send_redirect(self.reverse_url("funding", configuration_file_name))
+            self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
         except Exception as exc:
             self._send_error_message(str(exc))
 
@@ -373,12 +396,6 @@ class AccountDetailHandler(BaseRequestHandler):
         self.render("account.html", configuration_file=configuration_file)
 
 
-class AccountFundingHandler(BaseRequestHandler):
-    def get(self, configuration_file_name):
-        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        self.render("funding.html", configuration_file=configuration_file)
-
-
 class FundingOptionsHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
@@ -408,7 +425,7 @@ class LaunchHandler(BaseRequestHandler):
         self.render("launch.html", configuration_file=configuration_file, balance=current_balance)
 
 
-class SwapOptionsHandler(BaseRequestHandler):
+class SwapHandler(BaseRequestHandler):
     def get(self, configuration_file_name, token_ticker):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         w3 = make_web3_provider(
@@ -418,29 +435,27 @@ class SwapOptionsHandler(BaseRequestHandler):
         uniswap = Uniswap(w3=w3)
         token = Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name)
 
+        network = configuration_file.network
+        settings = network_settings[network.name]
+        swap_amounts = SwapAmounts.from_settings(settings)
+        if token_ticker == settings.service_token.ticker:
+            swap_amount_1 = swap_amounts.service_token_1
+            swap_amount_2 = swap_amounts.service_token_2
+            swap_amount_3 = swap_amounts.service_token_3
+        elif token_ticker == settings.transfer_token.ticker:
+            swap_amount_1 = swap_amounts.transfer_token_1
+            swap_amount_2 = swap_amounts.transfer_token_2
+            swap_amount_3 = swap_amounts.transfer_token_3
+
         self.render(
-            "swap_options.html",
+            "swap.html",
             configuration_file=configuration_file,
             kyber=kyber,
             uniswap=uniswap,
             token=token,
-        )
-
-
-class SwapHandler(BaseRequestHandler):
-    def get(self, exchange_name, configuration_file_name, token_ticker):
-        exchange_class = Exchange.get_by_name(exchange_name)
-        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        w3 = make_web3_provider(
-            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
-        )
-
-        self.render(
-            "swap.html",
-            exchange=exchange_class(w3=w3),
-            configuration_file=configuration_file,
-            balance=configuration_file.account.get_ethereum_balance(w3),
-            token=Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name),
+            swap_amount_1=swap_amount_1,
+            swap_amount_2=swap_amount_2,
+            swap_amount_3=swap_amount_3,
         )
 
 
@@ -499,7 +514,6 @@ class ConfigurationItemAPIHandler(APIHandler):
                 "url": self.reverse_url("api-configuration-detail", configuration_file.file_name),
                 "file_name": configuration_file.file_name,
                 "account_page_url": self.reverse_url("account", configuration_file.file_name),
-                "funding_page_url": self.reverse_url("funding", configuration_file.file_name),
                 "account": configuration_file.account.address,
                 "network": configuration_file.network.name,
                 "balance": {
@@ -550,9 +564,7 @@ if __name__ == "__main__":
             url(r"/setup/(mainnet|goerli)", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
-            url(r"/funding/(.*)", AccountFundingHandler, name="funding"),
-            url(r"/exchanges/(.*)/([A-Z]{3})", SwapOptionsHandler, name="swap-options"),
-            url(r"/swap/(kyber|uniswap)/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
+            url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),
             url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail"),
             url(

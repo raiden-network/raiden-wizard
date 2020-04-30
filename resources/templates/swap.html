@@ -1,115 +1,126 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Swap with {{ exchange.name }}</h1>
+<h2>Swap ETH for {{ token.ticker }}</h2>
+
 <div class="hero">
-  Use a decentralized exchange to buy {{ token.ticker }}
+  Get {{ token.ticker }} via a decentralized exchange<br>
+  Choose an exchange and then the amount of {{ token.ticker }} to swap
 </div>
-<div class="info-panel">
-  <p>Available funds</p>
-  <ul class="account-info">
-    <li>
-      <span class="account-eth-balance highlighted">N/A ETH</span>
-    </li>
-    <li>
-      <span class="account-token-balance highlighted">N/A {{ token.ticker }}</span>
-    </li>
-  </ul>
-  <input type="number" name="token_amount" placeholder="{{ token.ticker }} Amount desired" disabled />
+
+<div class="action big">
+  <div class="popover-item">
+    <button class="exchange-button" value="kyber">
+      <img class="dex-icon" src="{{ static_url('images/kyber.svg') }}" alt="KyberNetwork" />
+      <span>KyberNetwork</span>
+      <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
+    </button>
+
+    <div class="popover menu" id="amount-menu">
+      <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
+        {{ swap_amount_1.formatted }}
+      </button>
+      <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
+        {{ swap_amount_2.formatted }}
+      </button>
+      <button class="amount-button" value="{{ swap_amount_3.as_wei }}">
+        {{ swap_amount_3.formatted }}
+      </button>
+    </div>
+  </div>
+
+  <div class="popover-item">
+    <button class="exchange-button" value="uniswap">
+      <span class="dex-icon">🦄</span>
+      <span>Uniswap</span>
+      <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
+    </button>
+  </div>
 </div>
+
 <div class="action">
-  <button disabled>Execute Swap</button>
-</div>
-<div class="ack-prompt">
-  <input type="checkbox" class="ack-swap" name="ack-automated-swap" />
-  <label for="ack-automated-swap">
-    I acknowledge that the Wizard may make API calls to
-    <a href="{{ exchange.MAIN_WEBSITE_URL }}" target="_blank">{{ exchange.name }}</a>,
-    a third-party service. I also understand there is no price
-    guarantee regarding the acquisition and exchange of tokens and I
-    am aware of the fees incurred on this operation.
-  </label>
+  <button type="submit" disabled>Confirm</button>
 </div>
 {% end %}
 
+
 {% block page_header_scripts %}
-<script>
- async function checkBalances() {
-   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
+<script type="text/javascript">
+  let selectedExchange = '';
+  let selectedAmount = 0;
 
-   
-   let display_elements = {
-     ethereum_element: document.querySelector("span.account-eth-balance")
-   }
+  function setupPopovers() {
+    const exchangeButtons = document.querySelectorAll('.exchange-button');
+    const amountMenu = document.querySelector('#amount-menu');
+    const amountButtons = document.querySelectorAll('.amount-button');
 
-   {% if token.ticker == service_token_required.ticker %}
-   display_elements.service_token_element = document.querySelector("span.account-token-balance");
-   {% end %}
+    const validate = () => {
+      const submitButton = document.querySelector('button[type=submit]');
+      submitButton.disabled = selectedExchange === '' || selectedAmount === 0;
+    };
 
-   {% if token.ticker == transfer_token_required.ticker %}
-   display_elements.transfer_token_element = document.querySelector("span.account-token-balance");
-   {% end %}
-   
-   updateBalanceDisplay(balance, display_elements);
-   
- }
+    const selectExchange = (button) => {
+      const currentButton = amountMenu.closest('.popover-item').querySelector('button');
+      currentButton.classList.remove('selected');
+      selectedAmount = 0;
+      amountButtons.forEach((button) => button.classList.remove('selected'));
 
- function validateForm(checkboxes, input_field, submit_button) {
-   let amount = input_field.value;
-   let all_checked = true;
-   checkboxes.forEach(function(checkbox) {
-     if (!checkbox.checked) {
-       all_checked = false;
-     }
-   });
-   submit_button.disabled = !(all_checked && amount && (parseFloat(amount) > 0));
- }
+      if (selectedExchange === button.value) {
+        selectedExchange = '';
+        amountMenu.classList.remove('is-visible');
+      } else {
+        selectedExchange = button.value;
+        button.classList.add('selected');
+        const newPopoverItem = button.closest('.popover-item');
+        amountMenu.remove();
+        newPopoverItem.appendChild(amountMenu);
+        amountMenu.classList.add('is-visible');
+      }
+      validate();
+    };
 
+    const selectAmount = (button) => {
+      amountButtons.forEach((button) => button.classList.remove('selected'));
+      if (selectedAmount === button.value) {
+        selectedAmount = 0;
+      } else {
+        selectedAmount = button.value;
+        button.classList.add('selected');
+      }
+      validate();
+    };
 
- function main() {
-   checkBalances();
- }
+    exchangeButtons.forEach((button) => {
+      button.addEventListener('click', () => selectExchange(button));
+    });
 
- window.addEventListener("load", async function() {
-   let checkboxes = document.querySelectorAll("input[type=checkbox]");
-   let service_token_amount_input = document.querySelector("input[name=token_amount]");
-   let swap_button = document.querySelector("div.action button");
+    amountButtons.forEach((button) => {
+      button.addEventListener('click', () => selectAmount(button));
+    });
+  }
 
-   function runValidation(evt) {
-     validateForm(checkboxes, service_token_amount_input, swap_button);
-   }
+  function setupSubmit() {
+    const submitButton = document.querySelector('button[type=submit]');
 
-   document.addEventListener("keypress", runValidation);
-   service_token_amount_input.addEventListener("blur", runValidation);
-   service_token_amount_input.addEventListener("change", runValidation);
-   service_token_amount_input.addEventListener("click", runValidation);
+    submitButton.addEventListener('click', function() {
+      const FILE_NAME = "{{ configuration_file.file_name }}";
+      const TOKEN_TICKER = "{{ token.ticker }}";
 
-   checkboxes.forEach(function(checkbox) {
-     checkbox.addEventListener("click", runValidation);
-   });
+      WEBSOCKET.send(JSON.stringify({
+        method: "swap",
+        configuration_file_name: FILE_NAME,
+        amount: selectedAmount.toString(),
+        token: TOKEN_TICKER,
+        exchange: selectedExchange
+      }));
 
-   swap_button.onclick = function(evt) {
-     const EXCHANGE_NAME = "{{ exchange.name }}".toLowerCase();
-     const FILE_NAME = "{{ configuration_file.file_name }}";
-     const NETWORK_NAME = "{{ configuration_file.network.name }}";
-     const TOKEN_TICKER = "{{ token.ticker }}";
+      toggleView();
+    });
+  }
 
-     let amount = service_token_amount_input.value;
-
-     WEBSOCKET.send(JSON.stringify({
-       method: "swap",
-       configuration_file_name: FILE_NAME,
-       amount: parseInt(amount * (10 ** 18)).toString(),
-       token: TOKEN_TICKER,
-       exchange: EXCHANGE_NAME
-     }));
-
-     toggleView();
-   }
-
-   checkAcknowledgements(checkboxes, service_token_amount_input);
-   window.MAIN_VIEW_INTERVAL = 6000;
-   window.runMainView();
- });
+  window.addEventListener("load", function () {
+    setupPopovers();
+    setupSubmit();
+  });
 </script>
 {% end %}

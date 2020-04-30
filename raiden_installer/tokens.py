@@ -1,4 +1,3 @@
-import requests
 from dataclasses import dataclass, field, replace
 from decimal import Decimal, getcontext
 from enum import Enum
@@ -107,24 +106,6 @@ class TokenAmount(Generic[Eth_T]):
     @property
     def as_wei(self) -> Wei:
         return Wei(self.value * (10 ** self.currency.decimals))
-
-    @property
-    def as_fiat(self, network_name="mainnet"):
-        if not self.value:
-            return f""
-        response = requests.get(
-            'https://pro-api.coinmarketcap.com/v1/tools/price-conversion',
-            params={'symbol': self.ticker, 'amount': self.value, 'convert': 'USD'},
-            headers={
-    	        'Accept': 'application/json',
-    	        'X-CMC_PRO_API_KEY': network_settings[network_name].cmc_api_key
-            },
-        )
-        if not response.ok:
-            log.info(response.text)
-            return f""
-        result = response.json()
-        return f"{result['data']['quote']['USD']['price']:.3f}"
 
     def __repr__(self):
         return f"{self.value} {self.ticker}"

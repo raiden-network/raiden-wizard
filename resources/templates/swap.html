@@ -22,7 +22,7 @@
       <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
         {{ swap_amount_2.formatted }}
       </button>
-      <button class="amount-button" value="5{{ swap_amount_3.as_wei }}">
+      <button class="amount-button" value="{{ swap_amount_3.as_wei }}">
         {{ swap_amount_3.formatted }}
       </button>
     </div>
@@ -104,12 +104,11 @@
     submitButton.addEventListener('click', function() {
       const FILE_NAME = "{{ configuration_file.file_name }}";
       const TOKEN_TICKER = "{{ token.ticker }}";
-      const DECIMALS = "{{ token.decimals }}";
 
       WEBSOCKET.send(JSON.stringify({
         method: "swap",
         configuration_file_name: FILE_NAME,
-        amount: parseInt(selectedAmount * (10 ** DECIMALS)).toString(),
+        amount: selectedAmount.toString(),
         token: TOKEN_TICKER,
         exchange: selectedExchange
       }));

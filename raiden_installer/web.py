@@ -332,6 +332,8 @@ class AsyncTaskHandler(WebSocketHandler):
             account = configuration_file.account
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
             self._send_status_update(f"Waiting for confirmation of transaction {tx_hash}")
+            # dirty fix for eth node not detecting tx hash
+            time.sleep(30)
 
             while not w3.eth.getTransactionReceipt(tx_hash):
                 time.sleep(POLLING_INTERVAL)
@@ -339,7 +341,10 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 self._send_status_update(f"Not confirmed after {time_elapsed} seconds...")
             self._send_status_update("Transaction confirmed")
-            self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+            service_token = configuration_file.settings.service_token
+            self._send_redirect(
+                self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+            )
         except Exception as exc:
             self._send_error_message(str(exc))
 

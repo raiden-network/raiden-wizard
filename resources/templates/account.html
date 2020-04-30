@@ -74,9 +74,9 @@
   async function sendEthViaWeb3(wei_to_send) {
     await checkWeb3Network();
     let web3 = window.web3;
-    let ser_address =
-      (window.ethereum && wsdaindow.ethereum.selectedAddress) ||
-      web3.eth.defaultAccodsadsaunt;
+    let sender_address =
+      (window.ethereum && window.ethereum.selectedAddress) ||
+      web3.eth.defaultAccount;
 
     let transaction_data = {
       from: sender_address,

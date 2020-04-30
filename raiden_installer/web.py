@@ -299,19 +299,23 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
 
                 required = RequiredAmounts.for_network(network_name)
-                service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
+                service_token = Erc20Token.find_by_ticker(
+                    required.service_token.ticker, network_name)
                 service_token_balance = get_token_balance(w3, account, service_token)
-                transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network_name)
+                transfer_token = Erc20Token.find_by_ticker(
+                    required.transfer_token.ticker, network_name)
                 transfer_token_balance = get_token_balance(w3, account, transfer_token)
-                
+
                 if service_token_balance < required.service_token:
                     self._send_redirect(
-                        self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+                        self.reverse_url("swap", configuration_file.file_name,
+                                         service_token.ticker)
                     )
                 elif transfer_token_balance < required.transfer_token:
                     self._send_redirect(
-                        self.reverse_url("swap", configuration_file.file_name, transfer_token.ticker)
-                    ) 
+                        self.reverse_url("swap", configuration_file.file_name,
+                                         transfer_token.ticker)
+                    )
                 else:
                     self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
             else:
@@ -326,7 +330,7 @@ class AsyncTaskHandler(WebSocketHandler):
         configuration_file_name = kw.get("configuration_file_name")
         tx_hash = kw.get("tx_hash")
         time_elapsed = 0
-
+        time.sleep(30)
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             account = configuration_file.account
@@ -503,7 +507,7 @@ class ConfigurationItemAPIHandler(APIHandler):
                 {
                     "as_wei": balance_amount.as_wei,
                     "formatted": balance_amount.formatted,
-                    "as_fiat": balance_amount.as_fiat    
+                    "as_fiat": balance_amount.as_fiat
                 }
                 if balance_amount
                 else None

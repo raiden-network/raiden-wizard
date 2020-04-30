@@ -66,11 +66,24 @@
    await checkWeb3Network();
    let web3 = window.web3;
    let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
+   let gasPrice;
+
+   try {
+     const ethStationResponse = await fetch("https://ethgasstation.info/api/ethgasAPI.json")
+       .then(response => response.json());
+     gasPrice = ethStationResponse.fast * 10e7;
+   } catch {
+     console.err("Could not fetch gas price. Falling back to web3 gas price.");
+   }
 
    let transaction_data = {
      from: sender_address,
      to: TARGET_ADDRESS,
-     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT
+     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT,
+   }
+
+   if (gasPrice) {
+     transaction_data.gasPrice = gasPrice;
    }
    
    makeWeb3Transaction(web3, transaction_data);

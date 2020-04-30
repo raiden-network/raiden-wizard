@@ -9,7 +9,13 @@ cmc_api_key = "30eeec47-754b-4fd1-85c5-a35edf88ff5b"
 [service_token]
 ticker = "RDN"
 amount_required = 6e18
+swap_amount_1 = 10e18
+swap_amount_2 = 20e18
+swap_amount_3 = 50e18
 
 [transfer_token]
 ticker = "DAI"
 amount_required = 2e18
+swap_amount_1 = 2e18
+swap_amount_2 = 5e18
+swap_amount_3 = 10e18

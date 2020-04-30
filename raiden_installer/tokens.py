@@ -289,3 +289,41 @@ class RequiredAmounts:
     @staticmethod
     def for_network(network_name):
         return RequiredAmounts.from_settings(network_settings[network_name])
+
+@dataclass
+class SwapAmounts:
+    service_token_1: TokenAmount
+    service_token_2: TokenAmount
+    service_token_3: TokenAmount
+    transfer_token_1: TokenAmount
+    transfer_token_2: TokenAmount
+    transfer_token_3: TokenAmount
+
+    @staticmethod
+    def from_settings(settings):
+        return SwapAmounts(
+            service_token_1=TokenAmount(
+                Wei(settings.service_token.swap_amount_1),
+                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
+            ),
+            service_token_2=TokenAmount(
+                Wei(settings.service_token.swap_amount_2),
+                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
+            ),
+            service_token_3=TokenAmount(
+                Wei(settings.service_token.swap_amount_3),
+                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
+            ),
+            transfer_token_1=TokenAmount(
+                Wei(settings.transfer_token.swap_amount_1),
+                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
+            ),
+            transfer_token_2=TokenAmount(
+                Wei(settings.transfer_token.swap_amount_2),
+                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
+            ),
+            transfer_token_3=TokenAmount(
+                Wei(settings.transfer_token.swap_amount_3),
+                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
+            ),
+        )

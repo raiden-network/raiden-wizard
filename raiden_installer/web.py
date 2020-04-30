@@ -19,7 +19,14 @@ from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
-from raiden_installer.tokens import Erc20Token, EthereumAmount, RequiredAmounts, TokenAmount, Wei
+from raiden_installer.tokens import (
+    Erc20Token,
+    EthereumAmount,
+    RequiredAmounts,
+    TokenAmount,
+    Wei,
+    SwapAmounts,
+)
 from raiden_installer.transactions import (
     deposit_service_tokens,
     get_token_balance,
@@ -428,12 +435,27 @@ class SwapHandler(BaseRequestHandler):
         uniswap = Uniswap(w3=w3)
         token = Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name)
 
+        network = configuration_file.network
+        settings = network_settings[network.name]
+        swap_amounts = SwapAmounts.from_settings(settings)
+        if token_ticker == settings.service_token.ticker:
+            swap_amount_1 = swap_amounts.service_token_1
+            swap_amount_2 = swap_amounts.service_token_2
+            swap_amount_3 = swap_amounts.service_token_3
+        elif token_ticker == settings.transfer_token.ticker:
+            swap_amount_1 = swap_amounts.transfer_token_1
+            swap_amount_2 = swap_amounts.transfer_token_2
+            swap_amount_3 = swap_amounts.transfer_token_3
+
         self.render(
             "swap.html",
             configuration_file=configuration_file,
             kyber=kyber,
             uniswap=uniswap,
             token=token,
+            swap_amount_1=swap_amount_1,
+            swap_amount_2=swap_amount_2,
+            swap_amount_3=swap_amount_3,
         )
 
 

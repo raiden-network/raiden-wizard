@@ -16,17 +16,14 @@
     </button>
 
     <div class="popover menu" id="amount-menu">
-      <button class="amount-button" value="10">
-        10 {{ token.ticker }}<br>
-        Costs 0.1 ETH
+      <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
+        {{ swap_amount_1.formatted }}
       </button>
-      <button class="amount-button" value="20">
-        20 {{ token.ticker }}<br>
-        Costs 0.2 ETH
+      <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
+        {{ swap_amount_2.formatted }}
       </button>
-      <button class="amount-button" value="50">
-        50 {{ token.ticker }}<br>
-        Costs 0.5 ETH
+      <button class="amount-button" value="5{{ swap_amount_3.as_wei }}">
+        {{ swap_amount_3.formatted }}
       </button>
     </div>
   </div>

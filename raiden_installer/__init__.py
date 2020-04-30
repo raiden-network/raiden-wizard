@@ -16,6 +16,9 @@ ROOT_FOLDER = Path(__file__).resolve().parent.parent
 class TokenSettings:
     ticker: str
     amount_required: int
+    swap_amount_1: int
+    swap_amount_2: int
+    swap_amount_3: int
     mintable: bool = False
 
 

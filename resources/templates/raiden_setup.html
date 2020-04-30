@@ -48,37 +48,6 @@
      }
    }
 
-   function postConfiguration(evt) {
-     const data = JSON.stringify({
-       endpoint: infura_project_input.value
-     });
-
-     const req = new XMLHttpRequest();
-
-     req.onload = function() {
-       if (this.status == 201) {
-         const new_config_url = this.getResponseHeader("Location");
-         const config_req = new XMLHttpRequest();
-
-         config_req.onload = function() {
-           if (this.status == 200){
-             let config_data = JSON.parse(this.response);
-             document.location = config_data.account_page_url;
-           }
-         };
-         config_req.open("GET", new_config_url);
-         config_req.send();
-       }
-     }
-
-     req.open("POST", API_CONFIGURATION_LIST_ENDPOINT, true);
-     req.setRequestHeader("Content-Type", "application/json");
-     req.send(data);
-     toggleView();
-
-     addFeedbackMessage("Generating new wallet and configuration file for raiden");
-   }
-
    function submitConfiguration(evt) {
      WEBSOCKET.send(JSON.stringify({
        method: "setup",

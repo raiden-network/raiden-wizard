@@ -3,10 +3,14 @@ import os
 import sys
 import time
 import webbrowser
+from collections import namedtuple
+from glob import glob
+from pathlib import Path
 from urllib.parse import urlparse
 
 import tornado.ioloop
 import wtforms
+from eth_utils import to_checksum_address
 from ethtoken.abi import EIP20_ABI
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
@@ -229,9 +233,7 @@ class AsyncTaskHandler(WebSocketHandler):
             raiden_client.launch(configuration_file)
 
         try:
-            raiden_client.wait_for_web_ui_ready(
-                status_callback=lambda stat: log.info(str(stat))
-            )
+            raiden_client.wait_for_web_ui_ready(status_callback=lambda stat: log.info(str(stat)))
             self._send_task_complete("Raiden is ready!")
             self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
         except (RaidenClientError, RuntimeError) as exc:
@@ -390,6 +392,7 @@ class ConfigurationListHandler(BaseRequestHandler):
 class SetupHandler(BaseRequestHandler):
     def get(self, network_name):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
+
         self.render(
             "raiden_setup.html", configuration_file_names=file_names, network_name=network_name
         )
@@ -398,7 +401,21 @@ class SetupHandler(BaseRequestHandler):
 class AccountDetailHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        self.render("account.html", configuration_file=configuration_file)
+        keystore_path = configuration_file.configuration_data["keystore-path"]
+        filename = ""
+        for file in glob(f"{keystore_path}/UTC--*"):
+            file_path = Path(file)
+            if file_path.is_file():
+                keystore_content = json.loads(file_path.read_text())
+                if (
+                    to_checksum_address(keystore_content["address"])
+                    == configuration_file.account.address
+                ):
+                    filename = os.path.basename(file)
+                    break
+
+        self.render("account.html", configuration_file=configuration_file,
+                    keystore=filename)
 
 
 class FundingOptionsHandler(BaseRequestHandler):
@@ -474,6 +491,13 @@ class APIHandler(RequestHandler):
         self.finish()
 
 
+class KeystoreHandler(APIHandler):
+    def get(self, configuration_file_name, keystore_filename):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        keystore_path = configuration_file.configuration_data["keystore-path"]
+        self.render(f"{keystore_path}/{keystore_filename}")
+
+
 class ConfigurationListAPIHandler(APIHandler):
     def get(self):
         self.render_json(
@@ -508,7 +532,7 @@ class ConfigurationItemAPIHandler(APIHandler):
                 {
                     "as_wei": balance_amount.as_wei,
                     "formatted": balance_amount.formatted,
-                    "as_fiat": balance_amount.as_fiat    
+                    "as_fiat": balance_amount.as_fiat,
                 }
                 if balance_amount
                 else None
@@ -568,6 +592,7 @@ if __name__ == "__main__":
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
             url(r"/setup/(mainnet|goerli)", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
+            url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
             url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),

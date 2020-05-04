@@ -12,11 +12,11 @@ import tornado.ioloop
 import wtforms
 from eth_utils import to_checksum_address
 from ethtoken.abi import EIP20_ABI
+from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
-from tornado.escape import json_decode
 
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
@@ -28,9 +28,9 @@ from raiden_installer.tokens import (
     Erc20Token,
     EthereumAmount,
     RequiredAmounts,
+    SwapAmounts,
     TokenAmount,
     Wei,
-    SwapAmounts,
 )
 from raiden_installer.transactions import (
     deposit_service_tokens,
@@ -337,7 +337,6 @@ class AsyncTaskHandler(WebSocketHandler):
         configuration_file_name = kw.get("configuration_file_name")
         tx_hash = kw.get("tx_hash")
         time_elapsed = 0
-        time.sleep(30)
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             account = configuration_file.account

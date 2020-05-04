@@ -9,6 +9,7 @@
          const SERVICE_TOKEN_REQUIRED_AMOUNT = parseInt("{{ service_token_required.as_wei }}");
          const TRANSFER_TOKEN_REQUIRED_AMOUNT = parseInt("{{ transfer_token_required.as_wei }}");
          const ETHEREUM_REQUIRED_AMOUNT = parseInt("{{ ethereum_required.as_wei }}");
+         const ETHEREUM_REQUIRED_AMOUNT_AFTER_SWAP = parseInt("{{ ethereum_required_after_swap.as_wei }}");
          const CHAIN_ID_MAPPING = {
            1: "Mainnet",
            3: "Ropsten",
@@ -88,7 +89,7 @@
          }
 
          function hasEnoughEthToLaunchRaiden(balance) {
-           return (balance && balance.ETH && balance.ETH.as_wei >= ETHEREUM_REQUIRED_AMOUNT);
+           return (balance && balance.ETH && balance.ETH.as_wei >= ETHEREUM_REQUIRED_AMOUNT_AFTER_SWAP);
          }
 
          function hasEnoughServiceTokenToLaunchRaiden(balance) {

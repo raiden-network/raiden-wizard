@@ -29,6 +29,7 @@ class Settings:
     client_release_version: str
     services_version: str
     ethereum_amount_required: int
+    ethereum_amount_required_after_swap: int
     service_token: TokenSettings
     transfer_token: TokenSettings
     routing_mode: str = "pfs"
@@ -63,6 +64,6 @@ def _get_settings(network):
     return Settings(**configuration_data)
 
 
-_NETWORKS = ["goerli", "mainnet"]
+_NETWORKS = ["mainnet"]
 network_settings = {network: _get_settings(network) for network in _NETWORKS}
-default_settings = network_settings["goerli"]
+default_settings = network_settings["mainnet"]

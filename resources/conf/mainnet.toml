@@ -2,7 +2,8 @@ network = "mainnet"
 client_release_channel = "testing"
 client_release_version = "v0.200.0-rc8"
 services_version = "test"
-ethereum_amount_required = 2e16
+ethereum_amount_required = 175e15
+ethereum_amount_required_after_swap = 100e15
 routing_mode = "local"
 cmc_api_key = "30eeec47-754b-4fd1-85c5-a35edf88ff5b"
 

@@ -371,6 +371,7 @@ class BaseRequestHandler(RequestHandler):
             {
                 "network": network,
                 "ethereum_required": required.eth,
+                "ethereum_required_after_swap": required.eth_after_swap,
                 "service_token_required": required.service_token,
                 "transfer_token_required": required.transfer_token,
                 "eip20_abi": json.dumps(EIP20_ABI),

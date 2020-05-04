@@ -16,6 +16,7 @@ from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
+from tornado.escape import json_decode
 
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
@@ -583,6 +584,27 @@ class CostEstimationAPIHandler(APIHandler):
             }
         )
 
+    def post(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        ex_currency_amt = json_decode(self.request.body)
+        exchange = Exchange.get_by_name(ex_currency_amt['exchange'])(w3=w3)
+        currency = Erc20Token.find_by_ticker(ex_currency_amt['currency'], configuration_file.network)
+        token_amount = TokenAmount(ex_currency_amt['target_amount'], currency)
+        exchange_costs = exchange.calculate_transaction_costs(token_amount, account)
+        total_cost = exchange_costs["total"]
+        self.render_json(
+            {
+                "exchange": exchange.name,
+                "currency": currency.ticker,
+                "target_amount": ex_currency_amt['target_amount'],
+                "as_wei": total_cost.as_wei,
+                "formatted": total_cost.formatted,
+                "utc_seconds": int(time.time())
+            }
+        )
+        
 
 if __name__ == "__main__":
     log.info("Starting web server")

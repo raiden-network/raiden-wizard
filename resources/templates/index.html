@@ -27,7 +27,7 @@
     Launch
   </button>
   {% else %}
-  <button class="link-button" data-link-url="{{ reverse_url('setup', 'mainnet') }}" id="setup-button" disabled>
+  <button class="link-button" data-link-url="{{ reverse_url('setup', 'mainnet', None) }}" id="setup-button" disabled>
     Start
   </button>
   {% end %}

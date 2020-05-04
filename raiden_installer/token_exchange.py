@@ -188,7 +188,8 @@ class Kyber(Exchange):
 class Uniswap(Exchange):
     GAS_REQUIRED = 75_000
     RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
-    SAI_EXCHANGE_ADDRESSES = {
+    DAI_EXCHANGE_ADDRESSES = {
+        "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C",
         "kovan": "0x8779C708e2C3b1067de9Cd63698E4334866c691C",
         "rinkeby": "0x77dB9C915809e7BE439D2AB21032B1b8B58F6891",
     }
@@ -216,7 +217,7 @@ class Uniswap(Exchange):
 
     def _get_exchange_address(self, token_ticker: TokenTicker) -> str:
         try:
-            exchanges = {"RDN": self.RAIDEN_EXCHANGE_ADDRESSES, "SAI": self.SAI_EXCHANGE_ADDRESSES}
+            exchanges = {"RDN": self.RAIDEN_EXCHANGE_ADDRESSES, "DAI": self.DAI_EXCHANGE_ADDRESSES}
             return exchanges[token_ticker][self.network.name]
         except KeyError:
             raise ExchangeError(f"{self.name} does not have a listed exchange for {token_ticker}")

@@ -6,19 +6,23 @@
   <span class="tooltip-item">
     Wallet
     <div class="tooltip">
-      <div class="action-copy-paste">
-        <span class="highlighted private private-key">
-          {{ configuration_file.account.private_key.hex() }}
-        </span>
-      </div>
-      This is your private key. Everyone with access to it will be able to
-      access your Raiden account.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
+      sed diam nonumy eirmod tempor invidunt ut labore et dolore
+      magna aliquyam erat, sed diam voluptua.
     </div>
   </span>
   for you
 </div>
 
-<div class="info-panel"></div>
+<div class="info-panel">
+  You need to download the Wallet&nbsp;
+  <a
+    href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
+    download
+  >
+    <img class="icon-link" src="{{ static_url('images/download.svg') }}" alt="Download link" />
+  </a>
+</div>
 
 <div class="action">
   <button
@@ -32,8 +36,9 @@
 </div>
 {% end %} {% block page_header_scripts %}
 <script type="text/javascript">
-  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
-  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
+
+ const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
+ const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
 
   async function checkWeb3Network() {
     let required_chain_id = "{{ configuration_file.network.chain_id }}";
@@ -66,34 +71,32 @@
     });
   }
 
-  async function sendEthViaWeb3(wei_to_send) {
-    await checkWeb3Network();
-    let web3 = window.web3;
-    let sender_address =
-      (window.ethereum && window.ethereum.selectedAddress) ||
-      web3.eth.defaultAccount;
+ async function sendEthViaWeb3(wei_to_send) {
+   await checkWeb3Network();
+   let web3 = window.web3;
+   let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
+   let gasPrice;
 
-    try {
-      eth_station_response = await fetch(
-        "https://ethgasstation.info/api/ethgasAPI.json"
-      ).then((response) => response.json());
-      gas_price = eth_station_response["fast"] * 10e7;
-    } catch {
-      console.err("Could not fetch gas price. Falling back to web3 gas price.");
-    }
+   try {
+     const ethStationResponse = await fetch("https://ethgasstation.info/api/ethgasAPI.json")
+       .then(response => response.json());
+     gasPrice = ethStationResponse.fast * 10e7;
+   } catch {
+     console.err("Could not fetch gas price. Falling back to web3 gas price.");
+   }
 
-    let transaction_data = {
-      from: sender_address,
-      to: TARGET_ADDRESS,
-      value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT,
-    };
+   let transaction_data = {
+     from: sender_address,
+     to: TARGET_ADDRESS,
+     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT,
+   }
 
-    if (gas_price) {
-      transaction_data["gasPrice"] = gas_price;
-    }
-
-    makeWeb3Transaction(web3, transaction_data);
-  }
+   if (gasPrice) {
+     transaction_data.gasPrice = gasPrice;
+   }
+   
+   makeWeb3Transaction(web3, transaction_data);
+ };
 
   async function poll() {
     let balance = await getBalances(
@@ -122,22 +125,9 @@
 
     button_send_eth.disabled = !has_web3;
 
-    window.MAIN_VIEW_INTERVAL = 10000;
-    window.runMainView();
-  });
-
-  window.addEventListener("load", function () {
-    let account_div_elem = document.querySelector(
-      ".tooltip > .action-copy-paste"
-    );
-    let account_private_key_elem = account_div_elem.querySelector(
-      "span.private"
-    );
-
-    account_div_elem.addEventListener("click", function (evt) {
-      copyToClipboard(account_div_elem, account_private_key_elem);
-    });
-  });
+   window.MAIN_VIEW_INTERVAL = 10000;
+   window.runMainView();
+ });
 </script>
 
 {% end %}

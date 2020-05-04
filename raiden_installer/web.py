@@ -596,7 +596,7 @@ class CostEstimationAPIHandler(APIHandler):
         total_cost = exchange_costs["total"]
         self.render_json(
             {
-                "exchange": exchange.__class__.__name__.lower(),
+                "exchange": exchange.name,
                 "currency": currency.ticker,
                 "target_amount": ex_currency_amt['target_amount'],
                 "as_wei": total_cost.as_wei,

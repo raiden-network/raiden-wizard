@@ -12,11 +12,11 @@ import tornado.ioloop
 import wtforms
 from eth_utils import to_checksum_address
 from ethtoken.abi import EIP20_ABI
+from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms_tornado import Form
-from tornado.escape import json_decode
 
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
@@ -28,9 +28,9 @@ from raiden_installer.tokens import (
     Erc20Token,
     EthereumAmount,
     RequiredAmounts,
+    SwapAmounts,
     TokenAmount,
     Wei,
-    SwapAmounts,
 )
 from raiden_installer.transactions import (
     deposit_service_tokens,
@@ -302,19 +302,27 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
 
                 required = RequiredAmounts.for_network(network_name)
-                service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
+                service_token = Erc20Token.find_by_ticker(
+                    required.service_token.ticker, network_name
+                )
                 service_token_balance = get_token_balance(w3, account, service_token)
-                transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network_name)
+                transfer_token = Erc20Token.find_by_ticker(
+                    required.transfer_token.ticker, network_name
+                )
                 transfer_token_balance = get_token_balance(w3, account, transfer_token)
-                
+
                 if service_token_balance < required.service_token:
                     self._send_redirect(
-                        self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+                        self.reverse_url(
+                            "swap", configuration_file.file_name, service_token.ticker
+                        )
                     )
                 elif transfer_token_balance < required.transfer_token:
                     self._send_redirect(
-                        self.reverse_url("swap", configuration_file.file_name, transfer_token.ticker)
-                    ) 
+                        self.reverse_url(
+                            "swap", configuration_file.file_name, transfer_token.ticker
+                        )
+                    )
                 else:
                     self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
             else:
@@ -329,7 +337,6 @@ class AsyncTaskHandler(WebSocketHandler):
         configuration_file_name = kw.get("configuration_file_name")
         tx_hash = kw.get("tx_hash")
         time_elapsed = 0
-
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             account = configuration_file.account
@@ -415,8 +422,7 @@ class AccountDetailHandler(BaseRequestHandler):
                     filename = os.path.basename(file)
                     break
 
-        self.render("account.html", configuration_file=configuration_file,
-                    keystore=filename)
+        self.render("account.html", configuration_file=configuration_file, keystore=filename)
 
 
 class FundingOptionsHandler(BaseRequestHandler):
@@ -589,22 +595,24 @@ class CostEstimationAPIHandler(APIHandler):
         account = configuration_file.account
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         ex_currency_amt = json_decode(self.request.body)
-        exchange = Exchange.get_by_name(ex_currency_amt['exchange'])(w3=w3)
-        currency = Erc20Token.find_by_ticker(ex_currency_amt['currency'], configuration_file.network)
-        token_amount = TokenAmount(ex_currency_amt['target_amount'], currency)
+        exchange = Exchange.get_by_name(ex_currency_amt["exchange"])(w3=w3)
+        currency = Erc20Token.find_by_ticker(
+            ex_currency_amt["currency"], configuration_file.network
+        )
+        token_amount = TokenAmount(ex_currency_amt["target_amount"], currency)
         exchange_costs = exchange.calculate_transaction_costs(token_amount, account)
         total_cost = exchange_costs["total"]
         self.render_json(
             {
                 "exchange": exchange.name,
                 "currency": currency.ticker,
-                "target_amount": ex_currency_amt['target_amount'],
+                "target_amount": ex_currency_amt["target_amount"],
                 "as_wei": total_cost.as_wei,
                 "formatted": total_cost.formatted,
-                "utc_seconds": int(time.time())
+                "utc_seconds": int(time.time()),
             }
         )
-        
+
 
 if __name__ == "__main__":
     log.info("Starting web server")

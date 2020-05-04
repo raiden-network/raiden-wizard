@@ -73,7 +73,6 @@ class Kyber(Exchange):
     MAIN_WEBSITE_URL = "https://kyber.network"
     TRANSFER_WEBSITE_URL = "https://kyberswap.com/transfer/eth"
     TERMS_OF_SERVICE_URL = "https://kyber.network/terms-and-conditions"
-    GAS_PRICE_MARGIN = 1.25
 
     def __init__(self, w3: Web3):
         super().__init__(w3=w3)
@@ -111,7 +110,7 @@ class Kyber(Exchange):
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_sold = EthereumAmount(token_amount.value * exchange_rate.value * Decimal(1.2))
-        web3_gas_price = Kyber.GAS_PRICE_MARGIN * self.w3.eth.gasPrice
+        web3_gas_price = self.w3.eth.generateGasPrice()
         kyber_max_gas_price = self.network_contract_proxy.functions.maxGasPrice().call()
         max_gas_price = min(web3_gas_price, kyber_max_gas_price)
         gas_price = EthereumAmount(Wei(max_gas_price))
@@ -225,7 +224,7 @@ class Uniswap(Exchange):
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
-        gas_price = EthereumAmount(Wei(self.w3.eth.gasPrice))
+        gas_price = EthereumAmount(Wei(self.w3.eth.generateGasPrice()))
         exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT

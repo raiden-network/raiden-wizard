@@ -6,24 +6,23 @@
   <span class="tooltip-item">
     Wallet
     <div class="tooltip">
-      <div class="action-copy-paste">
-        <span class="highlighted private private-key">
-          {{ configuration_file.account.private_key.hex() }}
-        </span>
-      </div>
-      This is your private key. Everyone with access to it will be able to
-      access your Raiden account.
+      Lorem ipsum dolor sit amet, consetetur sadipscing elitr,
+      sed diam nonumy eirmod tempor invidunt ut labore et dolore
+      magna aliquyam erat, sed diam voluptua.
     </div>
   </span>
   for you
 </div>
-<a
-  href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
-  download
-  >Download link</a
->
 
-<div class="info-panel"></div>
+<div class="info-panel">
+  You need to download the Wallet&nbsp;
+  <a
+    href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
+    download
+  >
+    <img class="icon-link" src="{{ static_url('images/download.svg') }}" alt="Download link" />
+  </a>
+</div>
 
 <div class="action">
   <button
@@ -123,15 +122,6 @@
 
    window.MAIN_VIEW_INTERVAL = 10000;
    window.runMainView();
- });
-
- window.addEventListener("load", function() {
-   let account_div_elem = document.querySelector(".tooltip > .action-copy-paste");
-   let account_private_key_elem = account_div_elem.querySelector("span.private");
-
-   account_div_elem.addEventListener("click", function(evt) {
-     copyToClipboard(account_div_elem, account_private_key_elem);
-   });
  });
 </script>
 

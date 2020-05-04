@@ -14,10 +14,6 @@ body {
   display: none !important;
 }
 
-.tbd::before, .tbd::after {
-  content: "<<<TBD>>>";
-}
-
 .highlighted {
   font-size: 125%;
   font-weight: 500;

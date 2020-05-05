@@ -31,6 +31,10 @@ a .icon-link {
   vertical-align: middle;
 }
 
+a .icon-link.big {
+  height: 36px;
+}
+
 button, a.button {
   line-height: 40px;
   width: 270px;

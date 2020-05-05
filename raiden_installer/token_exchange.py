@@ -60,7 +60,7 @@ class Exchange:
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         raise NotImplementedError
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
         raise NotImplementedError
 
     def is_listing_token(self, ticker: TokenTicker):
@@ -206,12 +206,8 @@ class Kyber(Exchange):
 
 class Uniswap(Exchange):
     GAS_REQUIRED = 75_000
-    RAIDEN_EXCHANGE_ADDRESSES = {
-        "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"
-    }
-    DAI_EXCHANGE_ADDRESSES = {
-        "mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"
-    }
+    RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
+    DAI_EXCHANGE_ADDRESSES = {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
     EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds
     TRANSFER_WEBSITE_URL = "https://uniswap.ninja/send"
@@ -276,7 +272,7 @@ class Uniswap(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
         costs = self.calculate_transaction_costs(token_amount, account)
 
         if costs is None:

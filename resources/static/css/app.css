@@ -523,9 +523,18 @@ div.spinner {
 }
 
 .tooltip ul, .popover ul {
+  margin: 10px 0;
   list-style-type: disc;
   -webkit-padding-start: 20px;
           padding-inline-start: 20px;
+}
+
+.tooltip ul li, .popover ul li {
+  margin-bottom: 10px;
+}
+
+.tooltip ul li:last-child, .popover ul li:last-child {
+  margin-bottom: 0;
 }
 
 .tooltip.is-visible, .popover.is-visible {

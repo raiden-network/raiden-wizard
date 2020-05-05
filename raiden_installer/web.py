@@ -296,7 +296,7 @@ class AsyncTaskHandler(WebSocketHandler):
                 )
                 self._send_status_update(f"Estimated costs: {needed_funds.formatted}")
 
-                exchange.buy_tokens(account, token_amount)
+                exchange.buy_tokens(account, token_amount, costs)
                 token_balance = get_token_balance(w3, account, token)
 
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
@@ -342,8 +342,16 @@ class AsyncTaskHandler(WebSocketHandler):
             account = configuration_file.account
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
             self._send_status_update(f"Waiting for confirmation of transaction {tx_hash}")
-            # dirty fix for eth node not detecting tx hash
-            time.sleep(30)
+
+            transaction_found = False
+            iteration_cycle = 0
+
+            while not transaction_found and iteration_cycle < 30:
+                try:
+                    w3.eth.getTransactionReceipt(tx_hash)
+                    transaction_found = True
+                except Exception:
+                    time.sleep(2)
 
             while not w3.eth.getTransactionReceipt(tx_hash):
                 time.sleep(POLLING_INTERVAL)

@@ -187,11 +187,11 @@ class Kyber(Exchange):
 
 class Uniswap(Exchange):
     GAS_REQUIRED = 75_000
-    RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
+    RAIDEN_EXCHANGE_ADDRESSES = {
+        "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"
+    }
     DAI_EXCHANGE_ADDRESSES = {
-        "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C",
-        "kovan": "0x8779C708e2C3b1067de9Cd63698E4334866c691C",
-        "rinkeby": "0x77dB9C915809e7BE439D2AB21032B1b8B58F6891",
+        "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"
     }
     EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds

@@ -93,6 +93,10 @@ a {
         height: 24px;
         width: auto;
         vertical-align: middle;
+
+        &.big {
+            height: 36px;
+        }
     }
 }
 

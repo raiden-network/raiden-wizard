@@ -37,6 +37,12 @@
   >
     Send {{ ethereum_required.formatted }}
   </button>
+  <span id="no-web3">
+    You need MetaMask to proceed&nbsp;
+    <a href="https://metamask.io/download.html" target="_blank">
+      <img class="icon-link big" src="{{ static_url('images/metamask.svg') }}" alt="Download MetaMask" />
+    </a>
+  </span>
 </div>
 {% end %} {% block page_header_scripts %}
 <script type="text/javascript">
@@ -102,32 +108,40 @@
    makeWeb3Transaction(web3, transaction_data);
  };
 
-  async function poll() {
-    let balance = await getBalances(
-      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
-    );
+ function checkWeb3Available() {
+   let has_web3 = Boolean(window.ethereum || window.web3);
+   let button_send_eth = document.getElementById("btn-web3-eth");
+   let noWeb3Text = document.getElementById("no-web3");
 
-    if (hasEnoughBalanceToLaunchRaiden(balance)) {
-      let button_send_eth = document.getElementById("btn-web3-eth");
-      button_send_eth.disabled = true;
-      const action = document.querySelector(".action");
-      action.classList.add("tx-received");
-      setTimeout(function () {
-        window.location.href =
-          "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
-      }, 1000);
-    }
-  }
+   button_send_eth.disabled = !has_web3;
+   if (has_web3) {
+     noWeb3Text.style.display = 'none';
+   } else {
+    noWeb3Text.style.display = 'inline';
+   }
+ }
 
-  function main() {
-    poll();
-  }
+ async function poll() {
+   checkWeb3Available();
 
-  window.addEventListener("load", function () {
-    let has_web3 = Boolean(window.ethereum || window.web3);
-    let button_send_eth = document.getElementById("btn-web3-eth");
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
+   
+   if (hasEnoughBalanceToLaunchRaiden(balance)) {
+     let button_send_eth = document.getElementById("btn-web3-eth");
+     button_send_eth.disabled = true;
+     const action = document.querySelector('.action');
+     action.classList.add('tx-received');
+     setTimeout(function() {
+        window.location.href = "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
+     }, 1000);
+   }
+ }
 
-    button_send_eth.disabled = !has_web3;
+ function main() {
+   poll();
+ }
+
+ window.addEventListener("load", function () {
 
    window.MAIN_VIEW_INTERVAL = 10000;
    window.runMainView();

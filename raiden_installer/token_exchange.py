@@ -273,7 +273,12 @@ class Uniswap(Exchange):
         }
 
     def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
-        costs = self.calculate_transaction_costs(token_amount, account)
+        if transaction_costs:
+            costs = transaction_costs
+        else:
+            costs = self.calculate_transaction_costs(token_amount, account)
+
+
 
         if costs is None:
             raise ExchangeError("Failed to get transaction costs")

@@ -58,17 +58,15 @@
    let has_enough_transfer_token = hasEnoughTransferTokenToLaunchRaiden(balance);
 
 
-   eth_balance_display_elem.textContent = balance.ETH.formatted + (balance.ETH.as_fiat && ` (${balance.ETH.as_fiat} $)`);
+   eth_balance_display_elem.textContent = balance.ETH.formatted;
    eth_balance_display_elem.classList.toggle("ok", has_enough_eth);
    eth_balance_display_elem.classList.toggle("nok", !has_enough_eth);
 
-   service_token_balance_display_elem.textContent = (balance.service_token && balance.service_token.formatted) || "{{ service_token_required.ticker }} N/A";
-   service_token_balance_display_elem.textContent += balance.service_token.as_fiat && ` (${balance.service_token.as_fiat} $)`;
+   service_token_balance_display_elem.textContent = (balance.service_token && balance.service_token.formatted) || "N/A";
    service_token_balance_display_elem.classList.toggle("ok", has_enough_service_token);
    service_token_balance_display_elem.classList.toggle("nok", !has_enough_service_token);
 
-   transfer_token_balance_display_elem.textContent = (balance.transfer_token && balance.transfer_token.formatted) || "{{ transfer_token_required.ticker }} N/A";
-   transfer_token_balance_display_elem.textContent += balance.transfer_token.as_fiat && ` (${balance.transfer_token.as_fiat} $)`;
+   transfer_token_balance_display_elem.textContent = (balance.transfer_token && balance.transfer_token.formatted) || "N/A";
    transfer_token_balance_display_elem.classList.toggle("ok", has_enough_transfer_token);
    transfer_token_balance_display_elem.classList.toggle("nok", !has_enough_transfer_token);
 

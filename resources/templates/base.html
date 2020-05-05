@@ -172,17 +172,14 @@
 
            if (balance && balance.ETH && eth_balance_display) {
              eth_balance_display.textContent = balance && balance.ETH.formatted;
-             eth_balance_display.textContent += balance.ETH.as_fiat && ` (${balance.ETH.as_fiat} $)`;
            }
 
            if (balance && balance.service_token && service_token_display) {
              service_token_display.textContent = balance && balance.service_token.formatted;
-             service_token_display.textContent += balance.service_token.as_fiat && ` (${balance.service_token.as_fiat} $)`;
            }
 
            if (balance && balance.transfer_token && transfer_token_display) {
              transfer_token_display.textContent = balance && balance.transfer_token.formatted;
-             transfer_token_display.textContent += balance.transfer_token.as_fiat && ` (${balance.transfer_token.as_fiat} $)`;
            }
          }
 

@@ -250,6 +250,7 @@ class TokensV37(Enum):
 @dataclass
 class RequiredAmounts:
     eth: EthereumAmount
+    eth_after_swap: EthereumAmount
     service_token: TokenAmount
     transfer_token: TokenAmount
 
@@ -257,6 +258,7 @@ class RequiredAmounts:
     def from_settings(settings):
         return RequiredAmounts(
             eth=EthereumAmount(Wei(settings.ethereum_amount_required)),
+            eth_after_swap=EthereumAmount(Wei(settings.ethereum_amount_required_after_swap)),
             service_token=TokenAmount(
                 Wei(settings.service_token.amount_required),
                 Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),

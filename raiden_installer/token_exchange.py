@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import List, Optional
 
+import structlog
 from eth_utils import to_checksum_address
 from web3 import Web3
 
@@ -10,6 +11,8 @@ from raiden_installer.network import Network
 from raiden_installer.tokens import EthereumAmount, TokenAmount, TokenTicker, Wei
 from raiden_installer.uniswap.web3 import contracts as uniswap_contracts
 from raiden_installer.utils import estimate_gas, send_raw_transaction
+
+log = structlog.get_logger()
 
 
 class ExchangeError(Exception):
@@ -22,6 +25,7 @@ class Exchange:
     TRANSFER_WEBSITE_URL: Optional[str] = None
     MAIN_WEBSITE_URL: Optional[str] = None
     TERMS_OF_SERVICE_URL: Optional[str] = None
+    GAS_PRICE_MARGIN = 1.25
 
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -110,10 +114,12 @@ class Kyber(Exchange):
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_sold = EthereumAmount(token_amount.value * exchange_rate.value * Decimal(1.2))
-        web3_gas_price = self.w3.eth.generateGasPrice()
+        web3_gas_price = Wei(int(self.w3.eth.generateGasPrice() * self.GAS_PRICE_MARGIN))
+
         kyber_max_gas_price = self.network_contract_proxy.functions.maxGasPrice().call()
         max_gas_price = min(web3_gas_price, kyber_max_gas_price)
         gas_price = EthereumAmount(Wei(max_gas_price))
+        log.debug(f"gas price: {gas_price}")
         token_network_address = self.get_token_network_address(token_amount.ticker)
         transaction_params = {"from": account.address, "value": eth_sold.as_wei}
         eth_address = to_checksum_address(
@@ -134,8 +140,21 @@ class Kyber(Exchange):
             **transaction_params,
         )
 
+        block = self.w3.eth.getBlock(self.w3.eth.blockNumber)
+        max_gas_limit = Wei(int(block["gasLimit"] * 0.9))
+        gas_with_margin = Wei(int(gas * self.GAS_PRICE_MARGIN))
+        gas = max(gas_with_margin, max_gas_limit)
+
+        if max_gas_limit < gas_with_margin:
+            log.debug(
+                f"calculated gas was higher than block's gas limit {max_gas_limit}. Using this limit."
+            )
+
         gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
         total = EthereumAmount(gas_cost.value + eth_sold.value)
+
+        log.debug("transaction cost", gas_price=gas_price, gas=gas, eth=eth_sold)
+
         return {
             "gas_price": gas_price,
             "gas": gas,
@@ -144,13 +163,14 @@ class Kyber(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
         if self.network.name not in self.SUPPORTED_NETWORKS:
             raise ExchangeError(
                 f"{self.name} does not list {token_amount.ticker} on {self.network.name}"
             )
 
-        transaction_costs = self.calculate_transaction_costs(token_amount, account)
+        if not transaction_costs:
+            transaction_costs = self.calculate_transaction_costs(token_amount, account)
         if transaction_costs is None:
             raise ExchangeError("Failed to get transactions costs")
 
@@ -169,7 +189,6 @@ class Kyber(Exchange):
             "gas": gas,
             "value": eth_to_sell.as_wei,
         }
-
         return send_raw_transaction(
             self.w3,
             account,
@@ -225,7 +244,9 @@ class Uniswap(Exchange):
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
-        gas_price = EthereumAmount(Wei(self.w3.eth.generateGasPrice()))
+        gas_price = EthereumAmount(
+            Wei(int(self.w3.eth.generateGasPrice() * self.GAS_PRICE_MARGIN))
+        )
         exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
@@ -239,6 +260,11 @@ class Uniswap(Exchange):
             deadline,
             **transaction_params,
         )
+
+        block = self.w3.eth.getBlock(self.w3.eth.blockNumber)
+        max_gas_limit = int(block["gasLimit"] * 0.9)
+
+        gas = max(Wei(int(gas * self.GAS_PRICE_MARGIN)), max_gas_limit)
 
         gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
         total = EthereumAmount(gas_cost.value + eth_sold.value)

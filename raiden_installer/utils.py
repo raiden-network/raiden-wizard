@@ -50,7 +50,7 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     transaction_data = result.buildTransaction(transaction_params)
     signed = w3.eth.account.signTransaction(transaction_data, account.private_key)
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
-
+    log.debug(f"transaction hash: {tx_hash.hex()}")
     return w3.eth.waitForTransactionReceipt(tx_hash, timeout=600)
 
 

@@ -191,7 +191,7 @@ class Uniswap(Exchange):
         "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"
     }
     DAI_EXCHANGE_ADDRESSES = {
-        "mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"
+        "mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"
     }
     EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds

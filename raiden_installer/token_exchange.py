@@ -257,9 +257,8 @@ class Uniswap(Exchange):
             **transaction_params,
         )
 
-        block = self.w3.eth.getBlock(self.w3.eth.blockNumber)
-        max_gas_limit = Wei(int(block["gasLimit"] * 0.9))
-        gas_with_margin = Wei(int(gas * self.GAS_PRICE_MARGIN))
+        max_gas_limit = Wei(int(latest_block["gasLimit"] * 0.9))
+        gas_with_margin = Wei(int(gas * self.GAS_PRICE_MARGIN * self.GAS_PRICE_MARGIN))
         gas = min(gas_with_margin, max_gas_limit)
         gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
         total = EthereumAmount(gas_cost.value + eth_sold.value)

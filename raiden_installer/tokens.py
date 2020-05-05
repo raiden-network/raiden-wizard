@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import default_settings, network_settings
+from raiden_installer import default_settings, network_settings, log
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")

@@ -3,11 +3,16 @@ import os
 import sys
 import time
 import webbrowser
+from collections import namedtuple
+from glob import glob
+from pathlib import Path
 from urllib.parse import urlparse
 
 import tornado.ioloop
 import wtforms
+from eth_utils import to_checksum_address
 from ethtoken.abi import EIP20_ABI
+from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
@@ -23,9 +28,9 @@ from raiden_installer.tokens import (
     Erc20Token,
     EthereumAmount,
     RequiredAmounts,
+    SwapAmounts,
     TokenAmount,
     Wei,
-    SwapAmounts,
 )
 from raiden_installer.transactions import (
     deposit_service_tokens,
@@ -229,9 +234,7 @@ class AsyncTaskHandler(WebSocketHandler):
             raiden_client.launch(configuration_file)
 
         try:
-            raiden_client.wait_for_web_ui_ready(
-                status_callback=lambda stat: log.info(str(stat))
-            )
+            raiden_client.wait_for_web_ui_ready(status_callback=lambda stat: log.info(str(stat)))
             self._send_task_complete("Raiden is ready!")
             self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
         except (RaidenClientError, RuntimeError) as exc:
@@ -299,19 +302,27 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
 
                 required = RequiredAmounts.for_network(network_name)
-                service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
+                service_token = Erc20Token.find_by_ticker(
+                    required.service_token.ticker, network_name
+                )
                 service_token_balance = get_token_balance(w3, account, service_token)
-                transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network_name)
+                transfer_token = Erc20Token.find_by_ticker(
+                    required.transfer_token.ticker, network_name
+                )
                 transfer_token_balance = get_token_balance(w3, account, transfer_token)
-                
+
                 if service_token_balance < required.service_token:
                     self._send_redirect(
-                        self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+                        self.reverse_url(
+                            "swap", configuration_file.file_name, service_token.ticker
+                        )
                     )
                 elif transfer_token_balance < required.transfer_token:
                     self._send_redirect(
-                        self.reverse_url("swap", configuration_file.file_name, transfer_token.ticker)
-                    ) 
+                        self.reverse_url(
+                            "swap", configuration_file.file_name, transfer_token.ticker
+                        )
+                    )
                 else:
                     self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
             else:
@@ -326,12 +337,13 @@ class AsyncTaskHandler(WebSocketHandler):
         configuration_file_name = kw.get("configuration_file_name")
         tx_hash = kw.get("tx_hash")
         time_elapsed = 0
-
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             account = configuration_file.account
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
             self._send_status_update(f"Waiting for confirmation of transaction {tx_hash}")
+            # dirty fix for eth node not detecting tx hash
+            time.sleep(30)
 
             while not w3.eth.getTransactionReceipt(tx_hash):
                 time.sleep(POLLING_INTERVAL)
@@ -339,7 +351,10 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 self._send_status_update(f"Not confirmed after {time_elapsed} seconds...")
             self._send_status_update("Transaction confirmed")
-            self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+            service_token = configuration_file.settings.service_token
+            self._send_redirect(
+                self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+            )
         except Exception as exc:
             self._send_error_message(str(exc))
 
@@ -385,6 +400,7 @@ class ConfigurationListHandler(BaseRequestHandler):
 class SetupHandler(BaseRequestHandler):
     def get(self, network_name):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
+
         self.render(
             "raiden_setup.html", configuration_file_names=file_names, network_name=network_name
         )
@@ -393,7 +409,20 @@ class SetupHandler(BaseRequestHandler):
 class AccountDetailHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        self.render("account.html", configuration_file=configuration_file)
+        keystore_path = configuration_file.configuration_data["keystore-path"]
+        filename = ""
+        for file in glob(f"{keystore_path}/UTC--*"):
+            file_path = Path(file)
+            if file_path.is_file():
+                keystore_content = json.loads(file_path.read_text())
+                if (
+                    to_checksum_address(keystore_content["address"])
+                    == configuration_file.account.address
+                ):
+                    filename = os.path.basename(file)
+                    break
+
+        self.render("account.html", configuration_file=configuration_file, keystore=filename)
 
 
 class FundingOptionsHandler(BaseRequestHandler):
@@ -467,6 +496,13 @@ class APIHandler(RequestHandler):
     def render_json(self, data):
         self.write(json.dumps(data))
         self.finish()
+
+
+class KeystoreHandler(APIHandler):
+    def get(self, configuration_file_name, keystore_filename):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        keystore_path = configuration_file.configuration_data["keystore-path"]
+        self.render(f"{keystore_path}/{keystore_filename}")
 
 
 class ConfigurationListAPIHandler(APIHandler):
@@ -550,6 +586,29 @@ class CostEstimationAPIHandler(APIHandler):
             }
         )
 
+    def post(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        ex_currency_amt = json_decode(self.request.body)
+        exchange = Exchange.get_by_name(ex_currency_amt["exchange"])(w3=w3)
+        currency = Erc20Token.find_by_ticker(
+            ex_currency_amt["currency"], configuration_file.network
+        )
+        token_amount = TokenAmount(ex_currency_amt["target_amount"], currency)
+        exchange_costs = exchange.calculate_transaction_costs(token_amount, account)
+        total_cost = exchange_costs["total"]
+        self.render_json(
+            {
+                "exchange": exchange.name,
+                "currency": currency.ticker,
+                "target_amount": ex_currency_amt["target_amount"],
+                "as_wei": total_cost.as_wei,
+                "formatted": total_cost.formatted,
+                "utc_seconds": int(time.time()),
+            }
+        )
+
 
 if __name__ == "__main__":
     log.info("Starting web server")
@@ -559,6 +618,7 @@ if __name__ == "__main__":
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
             url(r"/setup/(mainnet|goerli)", SetupHandler, name="setup"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
+            url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
             url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
             url(r"/ws", AsyncTaskHandler, name="websocket"),

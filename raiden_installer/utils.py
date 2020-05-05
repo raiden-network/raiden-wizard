@@ -30,7 +30,7 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     transaction_params = {
         "chainId": int(w3.net.version),
         "nonce": w3.eth.getTransactionCount(account.address),
-        "gasPrice": kw.pop("gas_price", w3.eth.gasPrice),
+        "gasPrice": kw.pop("gas_price", w3.eth.generateGasPrice()),
         "gas": kw.pop("gas", None),
     }
 

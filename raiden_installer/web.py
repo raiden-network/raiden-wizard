@@ -19,7 +19,7 @@ from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
-from raiden_installer.base import Account, PassphraseFile, RaidenConfigurationFile
+from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
@@ -43,6 +43,7 @@ from raiden_installer.utils import check_eth_node_responsivity
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
+PASSPHRASE = None
 
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
@@ -121,6 +122,7 @@ class AsyncTaskHandler(WebSocketHandler):
             "close": self._run_close,
             "launch": self._run_launch,
             "setup": self._run_setup,
+            "unlock": self._run_unlock,
             "create_wallet": self._run_create_wallet,
             "swap": self._run_swap,
             "track_transaction": self._run_track_transaction,
@@ -142,6 +144,7 @@ class AsyncTaskHandler(WebSocketHandler):
             return
 
         account = configuration_file.account
+        try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         self._send_status_update(f"Obtaining {network.capitalized_name} ETH through faucet")
         network.fund(account)
@@ -162,19 +165,25 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_status_update(f"Minting {transfer_token.ticker}")
             mint_tokens(w3, account, transfer_token)
 
+    def _run_unlock(self, **kw):
+        passphrase = kw.get("passphrase")
+        keystore_file_path = kw.get("keystore_file_path")
+        account = Account(keystore_file_path)
+        if account.check_passphrase(passphrase):
+            global PASSPHRASE
+            PASSPHRASE = kw.get("passphrase")
+            self._send_redirect(kw.get("return_to"))
+        else:
+            self._send_error_message("Incorrect passphrase, try again.")
+
     def _run_create_wallet(self, **kw):
         form = PasswordForm(passphrase1=kw.get("passphrase1"), passphrase2=kw.get("passphrase2"))
         network_name = kw.get("network_name")
         if form.validate():
             self._send_status_update("Generating new wallet file for Raiden")
-            passphrase = form.data["passphrase1"].strip()
-            account = Account.create(passphrase=passphrase)
-
-            passphrase_path = RaidenConfigurationFile.FOLDER_PATH.joinpath(
-                f"{account.address}.passphrase.txt"
-            )
-            passphrase_file = PassphraseFile(passphrase_path)
-            passphrase_file.store(passphrase)
+            global PASSPHRASE
+            PASSPHRASE = form.data["passphrase1"].strip()
+            account = Account.create(passphrase=PASSPHRASE)
 
             self._send_redirect(
                 self.reverse_url("setup", network_name, account.keystore_file_path)
@@ -182,13 +191,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
     def _run_setup(self, **kw):
         account_file = kw.get("account_file")
-        account = Account(account_file)
-        passphrase_path = RaidenConfigurationFile.FOLDER_PATH.joinpath(
-            f"{account.address}.passphrase.txt"
-        )
-        passphrase_file = PassphraseFile(passphrase_path)
-        passphrase = passphrase_file.retrieve()
-        account.passphrase = passphrase
+        account = Account(account_file, passphrase=PASSPHRASE)
         form = QuickSetupForm(endpoint=kw.get("endpoint"), network=kw.get("network"))
         if form.validate():
             self._send_status_update("Generating new wallet and configuration file for raiden")
@@ -208,7 +211,7 @@ class AsyncTaskHandler(WebSocketHandler):
                 return
 
             conf_file = RaidenConfigurationFile(
-                account,
+                account.keystore_file_path,
                 network,
                 ethereum_rpc_provider.url,
                 routing_mode="pfs" if form.data["use_rsb"] else "local",
@@ -237,6 +240,13 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_status_update("Installation complete")
 
         account = configuration_file.account
+        try_unlock(account)
+        if account.passphrase is None:
+            return self.render(
+                "account_unlock.html",
+                keystore_file_path=account.keystore_file_path,
+                return_to=f"/launch/{configuration_file_name}",
+            )
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
 
@@ -295,6 +305,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
             if form.validate():
                 account = configuration_file.account
+                try_unlock(account)
                 w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
                 token = Erc20Token.find_by_ticker(form.data["token_ticker"], network_name)
 
@@ -477,7 +488,14 @@ class AccountDetailHandler(BaseRequestHandler):
                     filename = os.path.basename(file)
                     break
 
-        self.render("account.html", configuration_file=configuration_file, keystore=filename)
+        if PASSPHRASE is not None:
+            self.render("account.html", configuration_file=configuration_file, keystore=filename)
+        else:
+            self.render(
+                "account_unlock.html",
+                keystore_file_path=configuration_file.account.keystore_file_path,
+                return_to=f"/account/{configuration_file_name}",
+            )
 
 
 class FundingOptionsHandler(BaseRequestHandler):
@@ -573,8 +591,11 @@ class ConfigurationListAPIHandler(APIHandler):
 class ConfigurationItemAPIHandler(APIHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        account = configuration_file.account
         network = configuration_file.network.name
+
+        account = configuration_file.account
+
+        try_unlock()
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
 
         required = RequiredAmounts.for_network(network)
@@ -612,11 +633,17 @@ class ConfigurationItemAPIHandler(APIHandler):
         )
 
 
+def try_unlock(account):
+    if account.check_passphrase(PASSPHRASE):
+        account.passphrase = PASSPHRASE
+
+
 class CostEstimationAPIHandler(APIHandler):
     def get(self, configuration_file_name):
         # Returns the highest estimate of ETH needed to get required service token amount
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
+        try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         required = RequiredAmounts.for_network(configuration_file.network.name)
 
@@ -644,6 +671,7 @@ class CostEstimationAPIHandler(APIHandler):
     def post(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
+        try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         ex_currency_amt = json_decode(self.request.body)
         exchange = Exchange.get_by_name(ex_currency_amt["exchange"])(w3=w3)

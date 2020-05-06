@@ -51,6 +51,8 @@
 
  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
+ const ETHEREUM_REQUIRED_AMOUNT_FORMATTED = "{{ ethereum_required.formatted }}";
+ let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 
   async function checkWeb3Network() {
     let required_chain_id = "{{ configuration_file.network.chain_id }}";
@@ -83,7 +85,7 @@
     });
   }
 
- async function sendEthViaWeb3(wei_to_send) {
+ async function sendEthViaWeb3() {
    await checkWeb3Network();
    let web3 = window.web3;
    let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
@@ -100,7 +102,7 @@
    let transaction_data = {
      from: sender_address,
      to: TARGET_ADDRESS,
-     value: wei_to_send || ETHEREUM_REQUIRED_AMOUNT,
+     value: neededEthAmount,
    }
 
    if (gasPrice) {
@@ -123,6 +125,22 @@
    }
  }
 
+ function updateNeededEth(balance) {
+   neededEthAmount = ETHEREUM_REQUIRED_AMOUNT - balance.ETH.as_wei;
+   if (balance.ETH.as_wei > 0) {
+     const sendButton = document.getElementById("btn-web3-eth");
+     sendButton.textContent = 'Send missing ETH';
+     let info = document.getElementById('low-eth-info');
+     if (!info) {
+       info = document.createElement('div');
+       info.id = 'low-eth-info';
+       const infoPanel = document.querySelector('.info-panel');
+       infoPanel.appendChild(info);
+     }
+     info.textContent = `You have ${balance.ETH.formatted} but you need ${ETHEREUM_REQUIRED_AMOUNT_FORMATTED}`;
+   }
+ }
+
  async function poll() {
    checkWeb3Available();
 
@@ -136,6 +154,8 @@
      setTimeout(function() {
         window.location.href = "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
      }, 2000);
+   } else {
+    updateNeededEth(balance);
    }
  }
 
@@ -144,7 +164,6 @@
  }
 
  window.addEventListener("load", function () {
-
    window.MAIN_VIEW_INTERVAL = 10000;
    window.runMainView();
  });

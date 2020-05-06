@@ -135,6 +135,14 @@
         window.location.href = "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
      }, 1000);
    }
+   document.getElementById("btn-web3-eth").addEventListener("click", disableButton);
+ }
+
+ function disableButton() {
+    document.getElementById("btn-web3-eth").disabled = true;
+    setTimeout(function() {
+        document.getElementById("btn-web3-eth").disabled = false;
+    }, 10000);
  }
 
  function main() {

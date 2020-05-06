@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import webbrowser
-from collections import namedtuple
 from glob import glob
 from pathlib import Path
 from urllib.parse import urlparse
@@ -165,11 +164,11 @@ class AsyncTaskHandler(WebSocketHandler):
 
     def _run_create_wallet(self, **kw):
         form = PasswordForm(passphrase1=kw.get("passphrase1"), passphrase2=kw.get("passphrase2"))
+        network_name = kw.get("network_name")
         if form.validate():
             self._send_status_update("Generating new wallet file for Raiden")
             passphrase = form.data["passphrase1"].strip()
             account = Account.create(passphrase=passphrase)
-            network_name = "mainnet"
 
             passphrase_path = RaidenConfigurationFile.FOLDER_PATH.joinpath(
                 f"{account.address}.passphrase.txt"
@@ -438,26 +437,19 @@ class ConfigurationListHandler(BaseRequestHandler):
 
 
 class WalletCreationHandler(BaseRequestHandler):
-    def get(self):
-        self.render("account_password.html")
+    def get(self, network_name):
+        self.render("account_password.html", network_name=network_name)
 
 
 class SetupHandler(BaseRequestHandler):
     def get(self, network_name, account_file):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
-        if not account_file or account_file is None or account_file == "None":
-            self.render(
-                "account_password.html",
-                configuration_file_names=file_names,
-                network_name=network_name,
-            )
-        else:
-            self.render(
-                "raiden_setup.html",
-                configuration_file_names=file_names,
-                network_name=network_name,
-                account_file=account_file,
-            )
+        self.render(
+            "raiden_setup.html",
+            configuration_file_names=file_names,
+            network_name=network_name,
+            account_file=account_file,
+        )
 
 
 class AccountDetailHandler(BaseRequestHandler):
@@ -671,7 +663,7 @@ if __name__ == "__main__":
             url(r"/", IndexHandler, name="index"),
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
             url(r"/setup/(mainnet|goerli)/(.*)", SetupHandler, name="setup"),
-            url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
+            url(r"/create_wallet/(mainnet|goerli)", WalletCreationHandler, name="create_wallet"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),

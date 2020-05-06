@@ -128,14 +128,14 @@
 
    let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
    
-   if (hasEnoughBalanceToLaunchRaiden(balance)) {
+   if (hasEnoughEthToLaunchRaiden(balance)) {
      let button_send_eth = document.getElementById("btn-web3-eth");
      button_send_eth.disabled = true;
      const action = document.querySelector('.action');
      action.classList.add('tx-received');
      setTimeout(function() {
         window.location.href = "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
-     }, 1000);
+     }, 2000);
    }
  }
 

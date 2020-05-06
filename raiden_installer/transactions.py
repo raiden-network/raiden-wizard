@@ -11,7 +11,6 @@ from raiden_installer.utils import get_contract_address, send_raw_transaction
 GAS_REQUIRED_FOR_DEPOSIT: int = 200_000
 GAS_REQUIRED_FOR_APPROVE: int = 70_000
 GAS_REQUIRED_FOR_MINT: int = 100_000
-
 GAS_PRICE_MARGIN: float = 1.25
 
 
@@ -53,11 +52,21 @@ def deposit_service_tokens(w3: Web3, account: Account, token: Erc20Token, amount
         Wei(deposit_proxy.functions.total_deposit(account.address).call()), token
     )
 
-    gas_price = EthereumAmount(Wei(int(w3.eth.generateGasPrice() * GAS_PRICE_MARGIN)))
-
+    gas_price = Wei(int(w3.eth.generateGasPrice() * GAS_PRICE_MARGIN))
     new_deposit_amount = TokenAmount(amount, token)
-
     total_deposit = current_deposit_amount + new_deposit_amount
+    nonce = w3.eth.getTransactionCount(account.address)
+
+    send_raw_transaction(
+        w3,
+        account,
+        token_proxy.functions.approve,
+        deposit_proxy.address,
+        0,
+        gas=GAS_REQUIRED_FOR_APPROVE,
+        gas_price=gas_price,
+        nonce=nonce,
+    )
 
     send_raw_transaction(
         w3,
@@ -67,6 +76,7 @@ def deposit_service_tokens(w3: Web3, account: Account, token: Erc20Token, amount
         total_deposit.as_wei,
         gas=GAS_REQUIRED_FOR_APPROVE,
         gas_price=gas_price,
+        nonce=nonce + 1,
     )
 
     return send_raw_transaction(
@@ -77,6 +87,7 @@ def deposit_service_tokens(w3: Web3, account: Account, token: Erc20Token, amount
         total_deposit.as_wei,
         gas=GAS_REQUIRED_FOR_DEPOSIT,
         gas_price=gas_price,
+        nonce=nonce + 2,
     )
 
 

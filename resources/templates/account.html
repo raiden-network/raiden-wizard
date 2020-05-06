@@ -128,7 +128,7 @@
 
    let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
    
-   if (hasEnoughEthToLaunchRaiden(balance)) {
+   if (hasEnoughEthToStartSwaps(balance)) {
      let button_send_eth = document.getElementById("btn-web3-eth");
      button_send_eth.disabled = true;
      const action = document.querySelector('.action');

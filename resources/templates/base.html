@@ -88,6 +88,10 @@
            toggleView();
          }
 
+         function hasEnoughEthToStartSwaps(balance) {
+           return (balance && balance.ETH && balance.ETH.as_wei >= ETHEREUM_REQUIRED_AMOUNT);
+         }
+
          function hasEnoughEthToLaunchRaiden(balance) {
            return (balance && balance.ETH && balance.ETH.as_wei >= ETHEREUM_REQUIRED_AMOUNT_AFTER_SWAP);
          }

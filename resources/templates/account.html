@@ -19,13 +19,21 @@
 </div>
 
 <div class="info-panel">
-  You need to download the Raiden Account&nbsp;
-  <a
-    href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
-    download
-  >
-    <img class="icon-link" src="{{ static_url('images/download.svg') }}" alt="Download link" />
-  </a>
+  <div>You need to download the Raiden Account<br>
+    <a
+      href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
+      download
+    >
+      <img class="icon-link big" src="{{ static_url('images/download.svg') }}" alt="Download link" />
+    </a>
+  </div>
+  <br>
+  <div id="no-web3">
+    You need MetaMask to proceed<br>
+    <a href="https://metamask.io/download.html" target="_blank">
+      <img class="icon-link big" src="{{ static_url('images/metamask.svg') }}" alt="Download MetaMask" />
+    </a>
+  </div>
 </div>
 
 <div class="action">
@@ -37,12 +45,6 @@
   >
     Send {{ ethereum_required.formatted }}
   </button>
-  <span id="no-web3">
-    You need MetaMask to proceed&nbsp;
-    <a href="https://metamask.io/download.html" target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/metamask.svg') }}" alt="Download MetaMask" />
-    </a>
-  </span>
 </div>
 {% end %} {% block page_header_scripts %}
 <script type="text/javascript">

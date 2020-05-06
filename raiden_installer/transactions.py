@@ -53,7 +53,7 @@ def deposit_service_tokens(w3: Web3, account: Account, token: Erc20Token, amount
         Wei(deposit_proxy.functions.total_deposit(account.address).call()), token
     )
 
-    gas_price = EthereumAmount(Wei(int(w3.eth.generateGasPrice() * GAS_PRICE_MARGIN)))
+    gas_price = Wei(int(w3.eth.generateGasPrice() * GAS_PRICE_MARGIN))
 
     new_deposit_amount = TokenAmount(amount, token)
 

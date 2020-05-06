@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import webbrowser
-from collections import namedtuple
 from glob import glob
 from pathlib import Path
 from urllib.parse import urlparse
@@ -16,10 +15,11 @@ from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
+from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
-from raiden_installer.base import Account, RaidenConfigurationFile
+from raiden_installer.base import Account, PassphraseFile, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError
@@ -73,6 +73,11 @@ class QuickSetupForm(Form):
             raise wtforms.ValidationError("Not a valid URL nor Infura Project ID")
 
 
+class PasswordForm(Form):
+    passphrase1 = wtforms.PasswordField(validators=[EqualTo("passphrase2")])
+    passphrase2 = wtforms.PasswordField(validators=[EqualTo("passphrase1")])
+
+
 class TokenExchangeForm(Form):
     exchange = wtforms.SelectField(choices=[("kyber", "Kyber"), ("uniswap", "Uniswap")])
     network = wtforms.SelectField(
@@ -116,6 +121,7 @@ class AsyncTaskHandler(WebSocketHandler):
             "close": self._run_close,
             "launch": self._run_launch,
             "setup": self._run_setup,
+            "create_wallet": self._run_create_wallet,
             "swap": self._run_swap,
             "track_transaction": self._run_track_transaction,
         }.get(method)
@@ -156,7 +162,33 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_status_update(f"Minting {transfer_token.ticker}")
             mint_tokens(w3, account, transfer_token)
 
+    def _run_create_wallet(self, **kw):
+        form = PasswordForm(passphrase1=kw.get("passphrase1"), passphrase2=kw.get("passphrase2"))
+        network_name = kw.get("network_name")
+        if form.validate():
+            self._send_status_update("Generating new wallet file for Raiden")
+            passphrase = form.data["passphrase1"].strip()
+            account = Account.create(passphrase=passphrase)
+
+            passphrase_path = RaidenConfigurationFile.FOLDER_PATH.joinpath(
+                f"{account.address}.passphrase.txt"
+            )
+            passphrase_file = PassphraseFile(passphrase_path)
+            passphrase_file.store(passphrase)
+
+            self._send_redirect(
+                self.reverse_url("setup", network_name, account.keystore_file_path)
+            )
+
     def _run_setup(self, **kw):
+        account_file = kw.get("account_file")
+        account = Account(account_file)
+        passphrase_path = RaidenConfigurationFile.FOLDER_PATH.joinpath(
+            f"{account.address}.passphrase.txt"
+        )
+        passphrase_file = PassphraseFile(passphrase_path)
+        passphrase = passphrase_file.retrieve()
+        account.passphrase = passphrase
         form = QuickSetupForm(endpoint=kw.get("endpoint"), network=kw.get("network"))
         if form.validate():
             self._send_status_update("Generating new wallet and configuration file for raiden")
@@ -168,8 +200,6 @@ class AsyncTaskHandler(WebSocketHandler):
                 ethereum_rpc_provider = Infura.make(network, url_or_infura_id)
             else:
                 ethereum_rpc_provider = EthereumRPCProvider(url_or_infura_id)
-
-            account = Account.create()
 
             try:
                 check_eth_node_responsivity(ethereum_rpc_provider.url)
@@ -406,12 +436,19 @@ class ConfigurationListHandler(BaseRequestHandler):
         self.render("configuration_list.html")
 
 
-class SetupHandler(BaseRequestHandler):
+class WalletCreationHandler(BaseRequestHandler):
     def get(self, network_name):
-        file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
+        self.render("account_password.html", network_name=network_name)
 
+
+class SetupHandler(BaseRequestHandler):
+    def get(self, network_name, account_file):
+        file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
         self.render(
-            "raiden_setup.html", configuration_file_names=file_names, network_name=network_name
+            "raiden_setup.html",
+            configuration_file_names=file_names,
+            network_name=network_name,
+            account_file=account_file,
         )
 
 
@@ -625,7 +662,8 @@ if __name__ == "__main__":
         [
             url(r"/", IndexHandler, name="index"),
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
-            url(r"/setup/(mainnet|goerli)", SetupHandler, name="setup"),
+            url(r"/setup/(mainnet|goerli)/(.*)", SetupHandler, name="setup"),
+            url(r"/create_wallet/(mainnet|goerli)", WalletCreationHandler, name="create_wallet"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),

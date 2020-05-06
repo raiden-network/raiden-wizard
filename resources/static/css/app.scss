@@ -134,8 +134,12 @@ ul {
     padding-inline-start: 0;
 }
 
-input[type=text],input[type=number] {
+input[type=text],input[type=number],input[type=password] {
     @include input(color(element-input-bg), color(text-blue));
+}
+
+input[type=password] {
+    margin-bottom: 15px;
 }
 
 .error-box {

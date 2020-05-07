@@ -527,7 +527,16 @@ class LaunchHandler(BaseRequestHandler):
 
         current_balance = configuration_file.account.get_ethereum_balance(w3)
 
-        self.render("launch.html", configuration_file=configuration_file, balance=current_balance)
+        if PASSPHRASE is not None:
+            self.render(
+                "launch.html", configuration_file=configuration_file, balance=current_balance
+            )
+        else:
+            self.render(
+                "account_unlock.html",
+                keystore_file_path=configuration_file.account.keystore_file_path,
+                return_to=f"/launch/{configuration_file_name}",
+            )
 
 
 class SwapHandler(BaseRequestHandler):
@@ -598,7 +607,7 @@ class ConfigurationItemAPIHandler(APIHandler):
 
         account = configuration_file.account
 
-        try_unlock()
+        try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
 
         required = RequiredAmounts.for_network(network)

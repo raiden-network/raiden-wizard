@@ -57,16 +57,18 @@ def deposit_service_tokens(w3: Web3, account: Account, token: Erc20Token, amount
     total_deposit = current_deposit_amount + new_deposit_amount
     nonce = w3.eth.getTransactionCount(account.address)
 
-    send_raw_transaction(
-        w3,
-        account,
-        token_proxy.functions.approve,
-        deposit_proxy.address,
-        0,
-        gas=GAS_REQUIRED_FOR_APPROVE,
-        gas_price=gas_price,
-        nonce=nonce,
-    )
+    old_allowance = token_proxy.functions.allowance(account, deposit_proxy.address).call()
+    if old_allowance > 0:
+        send_raw_transaction(
+            w3,
+            account,
+            token_proxy.functions.approve,
+            deposit_proxy.address,
+            0,
+            gas=GAS_REQUIRED_FOR_APPROVE,
+            gas_price=gas_price,
+            nonce=nonce,
+        )
 
     send_raw_transaction(
         w3,

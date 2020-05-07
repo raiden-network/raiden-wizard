@@ -354,10 +354,6 @@ section.content div.container div.action {
           justify-content: space-evenly;
 }
 
-section.content div.container div.action.big {
-  height: 576px;
-}
-
 section.content div.container div.action .exchange-button {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -506,17 +502,17 @@ div.spinner {
   color: #28a5c8;
 }
 
-.tooltip-item, .popover-item {
+.tooltip-item {
   position: relative;
   display: inline-block;
 }
 
-.tooltip-item:hover > .tooltip, .popover-item:hover > .tooltip {
+.tooltip-item:hover > .tooltip {
   visibility: visible;
   opacity: 1;
 }
 
-.tooltip, .popover {
+.tooltip {
   font-size: 18px;
   text-align: left;
   color: #fff;
@@ -528,29 +524,6 @@ div.spinner {
   opacity: 0;
   -webkit-transition: opacity 0.3s;
   transition: opacity 0.3s;
-}
-
-.tooltip ul, .popover ul {
-  margin: 10px 0;
-  list-style-type: disc;
-  -webkit-padding-start: 20px;
-          padding-inline-start: 20px;
-}
-
-.tooltip ul li, .popover ul li {
-  margin-bottom: 10px;
-}
-
-.tooltip ul li:last-child, .popover ul li:last-child {
-  margin-bottom: 0;
-}
-
-.tooltip.is-visible, .popover.is-visible {
-  visibility: visible;
-  opacity: 1;
-}
-
-.tooltip:not(.menu), .popover:not(.menu) {
   width: 400px;
   margin-left: -200px;
   top: 100%;
@@ -559,30 +532,66 @@ div.spinner {
   border-radius: 10px;
 }
 
-.tooltip.menu, .popover.menu {
+.tooltip ul {
+  margin: 10px 0;
+  list-style-type: disc;
+  -webkit-padding-start: 20px;
+          padding-inline-start: 20px;
+}
+
+.tooltip ul li {
+  margin-bottom: 10px;
+}
+
+.tooltip ul li:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip.is-visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+.menu-item {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+.menu {
+  margin-top: 18px;
   width: 270px;
-  margin-left: -135px;
-  top: 52%;
   border: 2px solid;
   border-color: #28a5c8;
   border-radius: 29px;
+  font-size: 18px;
+  color: #fff;
+  visibility: hidden;
+  opacity: 0;
+  -webkit-transition: opacity 0.3s;
+  transition: opacity 0.3s;
 }
 
-.tooltip.menu button, .popover.menu button {
-  border-left: none;
-  border-right: none;
-  border-width: 1px;
+.menu.is-visible {
+  visibility: visible;
+  opacity: 1;
+}
+
+.menu button {
+  border: none;
   border-radius: 0;
 }
 
-.tooltip.menu button:first-of-type, .popover.menu button:first-of-type {
-  border-top: none;
+.menu button:first-of-type {
   border-top-right-radius: 24px;
   border-top-left-radius: 24px;
 }
 
-.tooltip.menu button:last-of-type, .popover.menu button:last-of-type {
-  border-bottom: none;
+.menu button:last-of-type {
   border-bottom-right-radius: 24px;
   border-bottom-left-radius: 24px;
 }

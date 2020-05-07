@@ -305,12 +305,12 @@ class AsyncTaskHandler(WebSocketHandler):
                 costs = exchange.calculate_transaction_costs(token_amount, account)
                 needed_funds = costs["total"]
                 exchange_rate = costs["exchange_rate"]
-                current_balance = account.get_ethereum_balance(w3)
+                balance_before_swap = account.get_ethereum_balance(w3)
 
-                if needed_funds > current_balance:
+                if needed_funds > balance_before_swap:
                     raise ValueError(
                         (
-                            f"Not enough ETH. {current_balance.formatted} available, but "
+                            f"Not enough ETH. {balance_before_swap.formatted} available, but "
                             f"{needed_funds.formatted} needed"
                         )
                     )
@@ -318,19 +318,27 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(
                     (
                         f"Best exchange rate found at {exchange.name}: "
-                        f"{exchange_rate.formatted} / {token_amount.ticker}"
+                        f"{exchange_rate} / {token_amount.ticker}"
                     )
                 )
-                self._send_status_update(
-                    f"Trying to acquire up to {token_amount.formatted} at this rate"
-                )
-                self._send_status_update(f"Estimated costs: {needed_funds.formatted}")
+                self._send_status_update(f"Trying to acquire {token_amount} at this rate")
+                self._send_status_update(f"maximal costs estimated: {needed_funds} ")
 
-                exchange.buy_tokens(account, token_amount, costs)
+                transaction_receipt = exchange.buy_tokens(account, token_amount, costs)
+                block_with_transaction = transaction_receipt["blockNumber"]
+                current_block = w3.eth.blockNumber
+
+                while current_block < block_with_transaction:
+                    log.debug("wait for block with transaction to be fetched")
+                    current_block = w3.eth.blockNumber
+                    time.sleep(1)
+
                 token_balance = get_token_balance(w3, account, token)
+                balance_after_swap = account.get_ethereum_balance(w3)
+                actual_total_costs = balance_before_swap - balance_after_swap
 
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
-
+                self._send_status_update(f"Actual costs: {actual_total_costs}")
                 required = RequiredAmounts.for_network(network_name)
                 service_token = Erc20Token.find_by_ticker(
                     required.service_token.ticker, network_name
@@ -340,6 +348,7 @@ class AsyncTaskHandler(WebSocketHandler):
                     required.transfer_token.ticker, network_name
                 )
                 transfer_token_balance = get_token_balance(w3, account, transfer_token)
+                time.sleep(2)
 
                 if service_token_balance < required.service_token:
                     self._send_redirect(

@@ -200,9 +200,15 @@ class RaidenClient:
         if self.install_path.exists():
             self.install_path.unlink()
 
-    def launch(self, configuration_file):
+    def launch(self, configuration_file, passphrase_file):
         proc = subprocess.Popen(
-            [str(self.install_path), "--config-file", str(configuration_file.path)]
+            [
+                str(self.install_path),
+                "--config-file",
+                str(configuration_file.path),
+                "--password-file",
+                str(passphrase_file),
+            ]
         )
         self._process_id = proc.pid
 

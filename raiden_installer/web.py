@@ -22,7 +22,7 @@ from raiden_installer import default_settings, get_resource_folder_path, log, ne
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.raiden import RaidenClient, RaidenClientError
+from raiden_installer.raiden import RaidenClient, RaidenClientError, temporary_passphrase_file
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
 from raiden_installer.tokens import (
     Erc20Token,
@@ -270,16 +270,19 @@ class AsyncTaskHandler(WebSocketHandler):
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
         )
 
-        if not raiden_client.is_running:
-            raiden_client.launch(configuration_file)
+        with temporary_passphrase_file(PASSPHRASE) as passphrase_file:
+            if not raiden_client.is_running:
+                raiden_client.launch(configuration_file, passphrase_file)
 
-        try:
-            raiden_client.wait_for_web_ui_ready(status_callback=lambda stat: log.info(str(stat)))
-            self._send_task_complete("Raiden is ready!")
-            self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
-        except (RaidenClientError, RuntimeError) as exc:
-            self._send_error_message(f"Raiden process failed to start: {exc}")
-            raiden_client.kill()
+            try:
+                raiden_client.wait_for_web_ui_ready(
+                    status_callback=lambda stat: log.info(str(stat))
+                )
+                self._send_task_complete("Raiden is ready!")
+                self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
+            except (RaidenClientError, RuntimeError) as exc:
+                self._send_error_message(f"Raiden process failed to start: {exc}")
+                raiden_client.kill()
 
     def _run_swap(self, **kw):
         try:

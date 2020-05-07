@@ -6,9 +6,10 @@ import socket
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 import zipfile
-from contextlib import closing
+from contextlib import closing, contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Callable
@@ -20,6 +21,23 @@ import requests
 from requests.exceptions import ConnectionError
 
 from raiden_installer import default_settings, log, network_settings
+
+
+@contextmanager
+def temporary_passphrase_file(passphrase):
+    fd, passphrase_file_path = tempfile.mkstemp()
+    try:
+        passfile = open(fd, 'w')
+        passfile.write(passphrase)
+        passfile.flush()
+        yield passphrase_file_path
+    finally:
+        for i in range(5):
+            passfile.seek(0)
+            passfile.write(os.urandom(1024).hex())
+            passfile.flush()
+        os.close(fd)
+        os.unlink(passphrase_file_path)
 
 
 def extract_version_modifier(release_name):

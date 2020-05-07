@@ -116,6 +116,12 @@ class TokenAmount(Generic[Eth_T]):
 
         return self.__class__(Wei(self.as_wei + other.as_wei), self.currency)
 
+    def __sub__(self, other):
+        if not self.__class__ == other.__class__:
+            raise ValueError(f"Can not sub {self.formatted} and {other.formatted}")
+
+        return self.__class__(Wei(self.as_wei - other.as_wei), self.currency)
+
     def __eq__(self, other):
         return self.currency == other.currency and self.as_wei == other.as_wei
 
@@ -272,6 +278,7 @@ class RequiredAmounts:
     @staticmethod
     def for_network(network_name):
         return RequiredAmounts.from_settings(network_settings[network_name])
+
 
 @dataclass
 class SwapAmounts:

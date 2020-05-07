@@ -586,4 +586,32 @@ div.spinner {
   border-bottom-right-radius: 24px;
   border-bottom-left-radius: 24px;
 }
+
+.stepper {
+  width: 405px;
+  position: fixed;
+  bottom: 30px;
+  right: 45px;
+}
+
+.stepper .coins {
+  margin-bottom: 20px;
+  width: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+}
+
+.stepper .coins img {
+  display: inline-block;
+  height: 105px;
+  width: auto;
+}
+
+.stepper .coins img.transparent {
+  opacity: 0.1;
+}
 /*# sourceMappingURL=app.css.map */

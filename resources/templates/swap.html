@@ -16,15 +16,15 @@
   Choose an exchange and then the amount of {{ token.ticker }} to swap
 </div>
 
-<div class="action big">
-  <div class="popover-item">
+<div class="action">
+  <div class="menu-item">
     <button class="exchange-button" value="kyber">
       <img class="dex-icon" src="{{ static_url('images/kyber.svg') }}" alt="KyberNetwork" />
       <span>KyberNetwork</span>
       <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
     </button>
 
-    <div class="popover menu" id="amount-menu">
+    <div class="menu" id="amount-menu">
       <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
         {{ swap_amount_1.formatted }}
       </button>
@@ -37,7 +37,7 @@
     </div>
   </div>
 
-  <div class="popover-item">
+  <div class="menu-item">
     <button class="exchange-button" value="uniswap">
       <span class="dex-icon">🦄</span>
       <span>Uniswap</span>
@@ -88,7 +88,7 @@
     ]
   };
 
-  function setupPopovers() {
+  function setupMenus() {
     const exchangeButtons = document.querySelectorAll('.exchange-button');
     const amountMenu = document.querySelector('#amount-menu');
     const amountButtons = document.querySelectorAll('.amount-button');
@@ -99,7 +99,7 @@
     };
 
     const selectExchange = (button) => {
-      const currentButton = amountMenu.closest('.popover-item').querySelector('button');
+      const currentButton = amountMenu.closest('.menu-item').querySelector('button');
       currentButton.classList.remove('selected');
       selectedAmount = 0;
       amountButtons.forEach((button) => button.classList.remove('selected'));
@@ -110,9 +110,9 @@
       } else {
         selectedExchange = button.value;
         button.classList.add('selected');
-        const newPopoverItem = button.closest('.popover-item');
+        const newMenuItem = button.closest('.menu-item');
         amountMenu.remove();
-        newPopoverItem.appendChild(amountMenu);
+        newMenuItem.appendChild(amountMenu);
         amountMenu.classList.add('is-visible');
       }
       validate();
@@ -171,7 +171,7 @@
   }
 
   window.addEventListener("load", function () {
-    setupPopovers();
+    setupMenus();
     setupSubmit();
     setupTooltipText();
   });

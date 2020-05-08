@@ -369,10 +369,6 @@ section.content {
             grid-auto-flow: column;
             justify-content: space-evenly;
 
-            &.big {
-                height: 576px;
-            }
-
             .exchange-button {
                 display: flex;
                 flex-direction: column;
@@ -500,7 +496,7 @@ div.spinner {
     color: color(text-blue);
 }
 
-.tooltip-item, .popover-item {
+.tooltip-item {
     position: relative;
     display: inline-block;
 
@@ -510,7 +506,7 @@ div.spinner {
     }
 }
   
-.tooltip, .popover {
+.tooltip {
     font-size: 18px;
     text-align: left;
     color: color(text-standard);
@@ -521,6 +517,12 @@ div.spinner {
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.3s;
+    width: 400px;
+    margin-left: -200px;
+    top: 100%;
+    padding: 15px;
+    background-color: color(tooltip-bg);
+    border-radius: 10px;
 
     ul {
         margin: 10px 0;
@@ -538,42 +540,43 @@ div.spinner {
         visibility: visible;
         opacity: 1;
     }
+}
 
-    &:not(.menu) {
-        width: 400px;
-        margin-left: -200px;
-        top: 100%;
-        padding: 15px;
-        background-color: color(tooltip-bg);
-        border-radius: 10px;
+.menu-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu {
+    margin-top: 18px;
+    width: 270px;
+    border: 2px solid;
+    border-color: color(button-border);
+    border-radius: 29px;
+    font-size: 18px;
+    color: color(text-standard);
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+    
+    &.is-visible {
+        visibility: visible;
+        opacity: 1;
     }
 
-    &.menu {
-        width: 270px;
-        margin-left: -135px;
-        top: 52%;
-        border: 2px solid;
-        border-color: color(button-border);
-        border-radius: 29px;
-    
-        button {
-            border-left: none;
-            border-right: none;
-            border-width: 1px;
-            border-radius: 0;
-        }
-    
-        button:first-of-type {
-            border-top: none;
-            border-top-right-radius: 24px;
-            border-top-left-radius: 24px;
-        }
-    
-        button:last-of-type {
-            border-bottom: none;
-            border-bottom-right-radius: 24px;
-            border-bottom-left-radius: 24px;
-        }
+    button {
+        border: none;
+        border-radius: 0;
+    }
+
+    button:first-of-type {
+        border-top-right-radius: 24px;
+        border-top-left-radius: 24px;
+    }
+
+    button:last-of-type {
+        border-bottom-right-radius: 24px;
+        border-bottom-left-radius: 24px;
     }
 }
 

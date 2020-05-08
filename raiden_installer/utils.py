@@ -1,7 +1,12 @@
+from datetime import time
+from typing import Any, Dict
+
 import requests
+from web3 import Web3
 
 from raiden_contracts.contract_manager import get_contracts_deployment_info
 from raiden_installer import log
+from raiden_installer.constants import GAS_PRICE_MARGIN
 from raiden_installer.tokens import EthereumAmount, Wei
 
 
@@ -30,7 +35,7 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     transaction_params = {
         "chainId": int(w3.net.version),
         "nonce": w3.eth.getTransactionCount(account.address),
-        "gasPrice": kw.pop("gas_price", w3.eth.generateGasPrice()),
+        "gasPrice": kw.pop("gas_price", (w3.eth.generateGasPrice())),
         "gas": kw.pop("gas", None),
     }
 
@@ -52,6 +57,20 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
     log.debug(f"transaction hash: {tx_hash.hex()}")
     return w3.eth.waitForTransactionReceipt(tx_hash, timeout=600)
+
+
+def wait_for_transaction(web3: Web3, transaction_receipt: Dict[str, Any]) -> None:
+
+    if "blockNumber" not in transaction_receipt:
+        raise KeyError("blockNumber not in transaction receipt.")
+
+    block_with_transaction = transaction_receipt["blockNumber"]
+    current_block = web3.eth.blockNumber
+
+    while current_block < block_with_transaction:
+        log.debug("wait for block with transaction to be fetched")
+        current_block = web3.eth.blockNumber
+        time.sleep(1)
 
 
 def check_eth_node_responsivity(url):

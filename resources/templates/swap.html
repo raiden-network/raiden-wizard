@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Swap ETH for {{ token.ticker }}</h2>
+<h2>Swap ETH for 
+  <span class="tooltip-item" id="{{ token.ticker }}">
+  {{ token.ticker }}
+  <div class="tooltip">
+    <!-- Tool tip help is setup by setupTooltipText function-->
+  </div>
+  </span>
+
+</h2>
 
 <div class="hero">
   Get {{ token.ticker }} via a decentralized exchange<br>
-  Choose an exchange and then the amount of 
-  <span class="tooltip-item" id="{{ token.ticker }}">
-    {{ token.ticker }} 
-    <div class="tooltip">
-      <!-- Tool tip help is setup by setupTooltipText function-->
-    </div>
-  </span>
-  to swap
+  Choose an exchange and then the amount of {{ token.ticker }} to swap
 </div>
 
 <div class="action big">
@@ -80,8 +81,8 @@
       `A minimum of 10 RDN tokens would be required to pay for these services though you could go higher.`
     ],
     "DAI" : [
-      `As part of the wizard we offer you to transfer micro-payments in the Multicollateral 
-      DAI stablecoin and join the DAI token network, hence you require to be funded with DAI`,
+      `Since Raiden offers users to join the DAI token network to make micropayments
+      we need to fund the raiden account with DAI tokens`,
       `We recommend you to fund with minimum of 2 DAI and if you require more you 
       could come back and refund yourself`
     ]

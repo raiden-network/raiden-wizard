@@ -30,9 +30,13 @@ class RaidenConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
     def __init__(
-        self, account: Account, network: Network, ethereum_client_rpc_endpoint: str, **kw
+        self, account_filename: str, network: Network, ethereum_client_rpc_endpoint: str, **kw
     ):
-        self.account = account
+        if 'passphrase' in kw:
+            self.account = Account(account_filename, passphrase=kw.get('passphrase'))
+        else:
+            self.account = Account(account_filename)
+        self.account_filename = account_filename
         self.network = network
         self.settings = network_settings[network.name]
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
@@ -51,7 +55,6 @@ class RaidenConfigurationFile:
             "environment-type": self.environment_type,
             "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
             "address": to_checksum_address(self.account.address),
-            "password-file": str(self.passphrase_file_path),
             "network-id": self.network.name,
             "accept-disclaimer": self.accept_disclaimer,
             "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,
@@ -82,22 +85,12 @@ class RaidenConfigurationFile:
         return self.FOLDER_PATH.joinpath(self.file_name)
 
     @property
-    def passphrase_file_path(self):
-        return self.FOLDER_PATH.joinpath(f"{self.account.address}.passphrase.txt")
-
-    @property
     def ethereum_balance(self):
         w3 = make_web3_provider(self.ethereum_client_rpc_endpoint, self.account)
         return self.account.get_ethereum_balance(w3)
 
     def save(self):
-        if not self.account.check_passphrase(self.account.passphrase):
-            raise ValueError("no valid passphrase for account collected")
-
         self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
-
-        passphrase_file = PassphraseFile(self.passphrase_file_path)
-        passphrase_file.store(self.account.passphrase)
 
         with open(self.path, "w") as config_file:
             toml.dump(self.configuration_data, config_file)
@@ -126,13 +119,11 @@ class RaidenConfigurationFile:
 
         with file_path.open() as config_file:
             data = toml.load(config_file)
-            passphrase = PassphraseFile(Path(data["password-file"])).retrieve()
             keystore_file_path = Account.find_keystore_file_path(
                 data["address"], Path(data["keystore-path"])
             )
-            account = Account(keystore_file_path, passphrase)
             return cls(
-                account=account,
+                account_filename=keystore_file_path,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
                 network=Network.get_by_name(network_name),
                 routing_mode=data["routing-mode"],

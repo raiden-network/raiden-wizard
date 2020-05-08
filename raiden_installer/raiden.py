@@ -6,9 +6,10 @@ import socket
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 import zipfile
-from contextlib import closing
+from contextlib import closing, contextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Callable
@@ -20,6 +21,23 @@ import requests
 from requests.exceptions import ConnectionError
 
 from raiden_installer import default_settings, log, network_settings
+
+
+@contextmanager
+def temporary_passphrase_file(passphrase):
+    fd, passphrase_file_path = tempfile.mkstemp()
+    try:
+        passfile = open(fd, 'w')
+        passfile.write(passphrase)
+        passfile.flush()
+        yield passphrase_file_path
+    finally:
+        for i in range(5):
+            passfile.seek(0)
+            passfile.write(os.urandom(1024).hex())
+            passfile.flush()
+        os.close(fd)
+        os.unlink(passphrase_file_path)
 
 
 def extract_version_modifier(release_name):
@@ -182,9 +200,15 @@ class RaidenClient:
         if self.install_path.exists():
             self.install_path.unlink()
 
-    def launch(self, configuration_file):
+    def launch(self, configuration_file, passphrase_file):
         proc = subprocess.Popen(
-            [str(self.install_path), "--config-file", str(configuration_file.path)]
+            [
+                str(self.install_path),
+                "--config-file",
+                str(configuration_file.path),
+                "--password-file",
+                str(passphrase_file),
+            ]
         )
         self._process_id = proc.pid
 

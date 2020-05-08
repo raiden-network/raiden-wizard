@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Unlock your Wallet</h2>
+
+<div class="hero">
+    Please enter the passphrase for your Wallet<br> 
+</div>
+
+<div class="info-panel">
+  <div>
+    <input type="password" name="passphrase" placeholder="Please type your password" />
+  </div>
+  <div class="error-box">
+    <span class="error" hidden></span>
+  </div>
+</div>
+
+<div class="action">
+  <button type="submit">Unlock</button>
+</div>
+{% end %}
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+
+
+ window.addEventListener("load", function() {
+   const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
+   const passphrase = document.querySelector("input[name=passphrase]");
+   const error_display = document.querySelector("span.error");
+   const submit_button = document.querySelector("button");
+
+   function submitPassphrase(evt) {
+     WEBSOCKET.send(JSON.stringify({
+       method: "unlock",
+       passphrase: passphrase.value,
+       keystore_file_path: "{{ keystore_file_path }}",
+       return_to: "{{ return_to }}"
+     }));
+
+     toggleView();
+   }
+
+   submit_button.addEventListener("click", submitPassphrase);
+ });
+</script>
+{% end %}

@@ -1,7 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Swap ETH for {{ token.ticker }}</h2>
+<h2>Swap ETH for 
+  <span class="tooltip-item" id="{{ token.ticker }}">
+  {{ token.ticker }}
+  <div class="tooltip">
+    <!-- Tool tip help is setup by setupTooltipText function-->
+  </div>
+  </span>
+
+</h2>
 
 <div class="hero">
   Get {{ token.ticker }} via a decentralized exchange<br>
@@ -65,6 +73,20 @@
 <script type="text/javascript">
   let selectedExchange = '';
   let selectedAmount = 0;
+
+  const tokenTips = { 
+    "RDN" : [
+      `RDN tokens are required to pay for the Path finding and Monitoring Services which helps you
+      finding short or cheap routes and going offline safely.`,
+      `A minimum of 10 RDN tokens would be required to pay for these services though you could go higher.`
+    ],
+    "DAI" : [
+      `Since Raiden offers users to join the DAI token network to make micropayments
+      we need to fund the raiden account with DAI tokens`,
+      `We recommend you to fund with minimum of 2 DAI and if you require more you 
+      could come back and refund yourself`
+    ]
+  };
 
   function setupPopovers() {
     const exchangeButtons = document.querySelectorAll('.exchange-button');
@@ -135,9 +157,23 @@
     });
   }
 
+  function setupTooltipText() {
+    const TOKEN_TICKER = "{{ token.ticker }}";
+    const toolTip = document.getElementById(TOKEN_TICKER).querySelector(".tooltip");
+    let ul = document.createElement('ul');
+    toolTip.appendChild(ul);
+    function renderTokenTips(element, index, arr) {
+      let li = document.createElement("li");
+      li.innerHTML += element;
+      ul.appendChild(li);
+    }
+    tokenTips[TOKEN_TICKER].forEach(renderTokenTips);
+  }
+
   window.addEventListener("load", function () {
     setupPopovers();
     setupSubmit();
+    setupTooltipText();
   });
 </script>
 {% end %}

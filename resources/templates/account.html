@@ -123,17 +123,19 @@ Step 3 of 6: Get ETH...
    makeWeb3Transaction(web3, transaction_data);
  };
 
- function checkWeb3Available() {
+ function checkWeb3Available(balance) {
    let has_web3 = Boolean(window.ethereum || window.web3);
    let button_send_eth = document.getElementById("btn-web3-eth");
    let noWeb3Text = document.getElementById("no-web3");
 
-   button_send_eth.disabled = !has_web3;
+   button_send_eth.disabled = has_web3 ? has_web3 && hasEnoughEthToStartSwaps(balance) : true;;
    if (has_web3) {
+     console.log("Inside has_web3 true");
      noWeb3Text.style.display = 'none';
    } else {
     noWeb3Text.style.display = 'inline';
    }
+   return has_web3;
  }
 
  function updateNeededEth(balance) {
@@ -153,10 +155,11 @@ Step 3 of 6: Get ETH...
  }
 
  async function poll() {
-   checkWeb3Available();
-
    let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
-   
+   const has_web3 = checkWeb3Available(balance);
+   if (!has_web3) {
+     return;
+   }
    if (hasEnoughEthToStartSwaps(balance)) {
      let button_send_eth = document.getElementById("btn-web3-eth");
      button_send_eth.disabled = true;

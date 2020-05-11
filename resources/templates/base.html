@@ -237,6 +237,11 @@
                next_view = function() {
                  document.location = message.redirect_url;
                }
+             case "summary":
+               spinner_elem.classList.remove("spinner");
+               while (message_list_elem.firstChild) {
+                message_list_elem.removeChild(message_list_elem.firstChild);
+               }
                break;
            }
 

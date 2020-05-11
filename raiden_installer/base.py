@@ -18,6 +18,9 @@ class PassphraseFile:
         self.file_path = file_path
 
     def store(self, passphrase):
+        directory_path = self.file_path.parent.absolute()
+        directory_path.mkdir(parents=True, exist_ok=True)
+
         with self.file_path.open("w") as f:
             f.write(passphrase)
 

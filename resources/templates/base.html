@@ -215,9 +215,8 @@
            let message = JSON.parse(evt.data);
            let message_list_elem = document.querySelector("#background-task-tracker ul.messages");
            let spinner_elem = document.querySelector("#background-task-tracker div.task-status-icon");
-           let li = document.createElement("li");
            let next_view = null;
-
+           let li = document.createElement("li");
            let waiting_time = 2000;
 
            resetSpinner();
@@ -246,10 +245,13 @@
            }
 
            if (message.text) {
+             console.log(message.text)
              message.text.forEach(element => {
+              let li = document.createElement("li");
               li.textContent = element;
               message_list_elem.appendChild(li);
              })
+
            }
 
            if (next_view) {

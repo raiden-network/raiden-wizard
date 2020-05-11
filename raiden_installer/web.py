@@ -99,20 +99,23 @@ class FundingOptionsForm(Form):
 
 class AsyncTaskHandler(WebSocketHandler):
     def _send_status_update(self, message_text):
-        self.write_message(json.dumps({"type": "status-update", "text": message_text}))
+        self.write_message(json.dumps({"type": "status-update", "text": [message_text]}))
         log.info(message_text)
 
     def _send_error_message(self, error_message):
-        self.write_message(json.dumps({"type": "error-message", "text": error_message}))
+        self.write_message(json.dumps({"type": "error-message", "text": [error_message]}))
         log.error(error_message)
 
     def _send_task_complete(self, message_text):
-        self.write_message(json.dumps({"type": "task-complete", "text": message_text}))
+        self.write_message(json.dumps({"type": "task-complete", "text": [message_text]}))
         log.info(message_text)
 
     def _send_redirect(self, redirect_url):
         self.write_message(json.dumps({"type": "redirect", "redirect_url": redirect_url}))
         log.info(f"Redirecting to {redirect_url}")
+
+    def _send_summary(self, text):
+        self.write_message({"type": "summary", "text": text})
 
     def on_message(self, message):
         data = json.loads(message)
@@ -317,7 +320,6 @@ class AsyncTaskHandler(WebSocketHandler):
                     )
                 )
                 self._send_status_update(f"Trying to acquire {token_amount} at this rate")
-                self._send_status_update(f"maximal costs estimated: {needed_funds} ")
 
                 transaction_receipt = exchange.buy_tokens(account, token_amount, costs)
                 wait_for_transaction(w3, transaction_receipt)
@@ -341,15 +343,11 @@ class AsyncTaskHandler(WebSocketHandler):
                 time.sleep(2)
 
                 if service_token_balance < required.service_token:
-                    self._send_redirect(
-                        self.reverse_url(
-                            "swap", configuration_file.file_name, service_token.ticker
-                        )
-                    )
+                    raise Exception
 
                 else:
                     self._send_status_update(
-                        f"Making deposit of {service_token_balance.formatted} for Raiden Services"
+                        f"Making deposit of {service_token_balance.formatted} to the User Deposit Contract"
                     )
                     transaction_receipt = deposit_service_tokens(
                         w3=w3,
@@ -364,14 +362,20 @@ class AsyncTaskHandler(WebSocketHandler):
                     self._send_status_update(
                         f"Amount deposited at UDC: {service_token_deposited.formatted}"
                     )
+
                 if transfer_token_balance < required.transfer_token:
-                    self._send_redirect(
-                        self.reverse_url(
-                            "swap", configuration_file.file_name, transfer_token.ticker
-                        )
+                    redirect_url = self.reverse_url(
+                        "swap", configuration_file.file_name, transfer_token.ticker
                     )
+                    next_page = "Moving on to exchanging DAI"
+
                 else:
-                    self._send_redirect(self.reverse_url("launch", configuration_file.file_name))
+                    redirect_url = self.reverse_url("launch", configuration_file.file_name)
+                    next_page = "You are ready to launch Raiden!"
+
+                self._send_summary(["Congratulations! Swap Successful!", next_page])
+                time.sleep(5)
+                self._send_redirect(redirect_url)
             else:
                 for key, error_list in form.errors.items():
                     error_message = f"{key}: {'/'.join(error_list)}"

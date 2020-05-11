@@ -288,6 +288,10 @@ span.private {
   content: 'Funded with ETH!';
 }
 
+#no-web3 {
+  display: none;
+}
+
 section.content {
   width: 60vw;
   margin: 0 auto;

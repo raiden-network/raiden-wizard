@@ -31,7 +31,7 @@ def make_web3_provider(url: str, account: Account) -> Web3:
             response = requests.get(ETH_GAS_STATION_API)
             if response and response.status_code == 200:
                 data = response.json()
-                return Wei(int(data["fast"] * 10e7))
+                return Wei(int(data["fast"] * 10e7 * 1.1))
         except (TimeoutError, ConnectionError, KeyError):
             log.debug("Could not fetch from ethgasstation. Falling back to web3 gas estimation.")
 

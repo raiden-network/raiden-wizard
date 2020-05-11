@@ -39,7 +39,7 @@ from raiden_installer.transactions import (
     get_total_token_owned,
     mint_tokens,
 )
-from raiden_installer.utils import check_eth_node_responsivity
+from raiden_installer.utils import check_eth_node_responsivity, wait_for_transaction
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
@@ -232,7 +232,6 @@ class AsyncTaskHandler(WebSocketHandler):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         network_name = configuration_file.network.name
         raiden_client = RaidenClient.get_client(network_name)
-        required = RequiredAmounts.for_network(network_name)
 
         if not raiden_client.is_installed:
             self._send_status_update(f"Downloading and installing raiden {raiden_client.release}")
@@ -246,24 +245,6 @@ class AsyncTaskHandler(WebSocketHandler):
                 "account_unlock.html",
                 keystore_file_path=account.keystore_file_path,
                 return_to=f"/launch/{configuration_file_name}",
-            )
-        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network_name)
-
-        service_token_balance = get_token_balance(w3=w3, account=account, token=service_token)
-        service_token_in_deposit = get_token_deposit(w3=w3, account=account, token=service_token)
-        if service_token_balance.as_wei and service_token_in_deposit < required.service_token:
-            self._send_status_update(
-                f"Making deposit of {service_token_balance.formatted} for Raiden Services"
-            )
-            deposit_service_tokens(
-                w3=w3, account=account, token=service_token, amount=service_token_balance.as_wei
-            )
-            service_token_deposited = get_token_deposit(
-                w3=w3, account=account, token=service_token
-            )
-            self._send_status_update(
-                f"Amount deposited at UDC: {service_token_deposited.formatted}"
             )
 
         self._send_status_update(
@@ -339,13 +320,7 @@ class AsyncTaskHandler(WebSocketHandler):
                 self._send_status_update(f"maximal costs estimated: {needed_funds} ")
 
                 transaction_receipt = exchange.buy_tokens(account, token_amount, costs)
-                block_with_transaction = transaction_receipt["blockNumber"]
-                current_block = w3.eth.blockNumber
-
-                while current_block < block_with_transaction:
-                    log.debug("wait for block with transaction to be fetched")
-                    current_block = w3.eth.blockNumber
-                    time.sleep(1)
+                wait_for_transaction(w3, transaction_receipt)
 
                 token_balance = get_token_balance(w3, account, token)
                 balance_after_swap = account.get_ethereum_balance(w3)
@@ -353,6 +328,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
                 self._send_status_update(f"Actual costs: {actual_total_costs}")
+
                 required = RequiredAmounts.for_network(network_name)
                 service_token = Erc20Token.find_by_ticker(
                     required.service_token.ticker, network_name
@@ -370,7 +346,25 @@ class AsyncTaskHandler(WebSocketHandler):
                             "swap", configuration_file.file_name, service_token.ticker
                         )
                     )
-                elif transfer_token_balance < required.transfer_token:
+
+                else:
+                    self._send_status_update(
+                        f"Making deposit of {service_token_balance.formatted} for Raiden Services"
+                    )
+                    transaction_receipt = deposit_service_tokens(
+                        w3=w3,
+                        account=account,
+                        token=service_token,
+                        amount=service_token_balance.as_wei,
+                    )
+                    wait_for_transaction(w3, transaction_receipt)
+                    service_token_deposited = get_token_deposit(
+                        w3=w3, account=account, token=service_token
+                    )
+                    self._send_status_update(
+                        f"Amount deposited at UDC: {service_token_deposited.formatted}"
+                    )
+                if transfer_token_balance < required.transfer_token:
                     self._send_redirect(
                         self.reverse_url(
                             "swap", configuration_file.file_name, transfer_token.ticker

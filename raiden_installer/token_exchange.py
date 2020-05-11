@@ -6,6 +6,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from raiden_installer.account import Account
+from raiden_installer.constants import GAS_LIMIT_MARGIN
 from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from raiden_installer.network import Network
 from raiden_installer.tokens import EthereumAmount, TokenAmount, TokenTicker, Wei
@@ -112,20 +113,25 @@ class Kyber(Exchange):
         return EthereumAmount(Wei(max(expected_rate, slippage_rate)))
 
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
+        log.debug("calculating exchange rate")
         exchange_rate = self.get_current_rate(token_amount)
-        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value * Decimal(1.2))
-        web3_gas_price = Wei(int(self.w3.eth.generateGasPrice() * self.GAS_PRICE_MARGIN))
 
+        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value * Decimal(1.2))
+        log.debug("calculating gas price")
+        web3_gas_price = self.w3.eth.generateGasPrice()
         kyber_max_gas_price = self.network_contract_proxy.functions.maxGasPrice().call()
         max_gas_price = min(web3_gas_price, kyber_max_gas_price)
         gas_price = EthereumAmount(Wei(max_gas_price))
-        log.debug(f"gas price: {gas_price}")
         token_network_address = self.get_token_network_address(token_amount.ticker)
-        transaction_params = {"from": account.address, "value": eth_sold.as_wei}
+        transaction_params = {
+            "from": account.address,
+            "value": eth_sold.as_wei,
+            "gas_price": gas_price.as_wei,
+        }
         eth_address = to_checksum_address(
             kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
         )
-
+        log.debug("estimating gas")
         gas = estimate_gas(
             self.w3,
             account,
@@ -142,7 +148,7 @@ class Kyber(Exchange):
 
         block = self.w3.eth.getBlock(self.w3.eth.blockNumber)
         max_gas_limit = Wei(int(block["gasLimit"] * 0.9))
-        gas_with_margin = Wei(int(gas * self.GAS_PRICE_MARGIN))
+        gas_with_margin = Wei(int(gas * GAS_LIMIT_MARGIN))
         gas = min(gas_with_margin, max_gas_limit)
         log.debug("Gas Limit", gas_with_margin=gas_with_margin, max_gas_limit=max_gas_limit)
         if max_gas_limit < gas_with_margin:
@@ -240,13 +246,15 @@ class Uniswap(Exchange):
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
-        gas_price = EthereumAmount(
-            Wei(int(self.w3.eth.generateGasPrice() * self.GAS_PRICE_MARGIN))
-        )
+        gas_price = EthereumAmount(Wei(self.w3.eth.generateGasPrice()))
         exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
-        transaction_params = {"from": account.address, "value": eth_sold.as_wei}
+        transaction_params = {
+            "from": account.address,
+            "value": eth_sold.as_wei,
+            "gas_price": gas_price.as_wei,
+        }
 
         gas = estimate_gas(
             self.w3,
@@ -258,10 +266,11 @@ class Uniswap(Exchange):
         )
 
         max_gas_limit = Wei(int(latest_block["gasLimit"] * 0.9))
-        gas_with_margin = Wei(int(gas * self.GAS_PRICE_MARGIN * self.GAS_PRICE_MARGIN))
+        gas_with_margin = Wei(int(gas * GAS_LIMIT_MARGIN))
         gas = min(gas_with_margin, max_gas_limit)
         gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
         total = EthereumAmount(gas_cost.value + eth_sold.value)
+        log.debug("transaction cost", gas_price=gas_price, gas=gas, eth=eth_sold)
         return {
             "gas_price": gas_price,
             "gas": gas,
@@ -275,8 +284,6 @@ class Uniswap(Exchange):
             costs = transaction_costs
         else:
             costs = self.calculate_transaction_costs(token_amount, account)
-
-
 
         if costs is None:
             raise ExchangeError("Failed to get transaction costs")

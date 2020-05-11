@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Swap Summary</h2>
+
+<div class="hero">
+    The message that we pass will be here.
+</div>
+
+{% end %}
+
+{% block page_header_scripts %}
+<script type="text/javascript">
+
+  function setUpRedirect() {
+    const NEXT_URL = JSON.parse("{{ next_url }}");
+    const message_elem = document.querySelector('.hero');
+    message_elem += NEXT_URL.message;
+    setTimeout(function() {
+        window.location.href = NEXT_URL.url;
+    }, 2000);
+
+  }
+
+  window.addEventListener("load", function () {
+    setUpRedirect()
+  });
+</script>
+{% end %}

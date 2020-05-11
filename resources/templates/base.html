@@ -246,8 +246,10 @@
            }
 
            if (message.text) {
-             li.textContent = message.text;
-             message_list_elem.appendChild(li);
+             message.text.forEach(element => {
+              li.textContent = element;
+              message_list_elem.appendChild(li);
+             })
            }
 
            if (next_view) {

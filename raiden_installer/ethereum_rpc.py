@@ -5,7 +5,11 @@ import requests
 import structlog
 from web3 import HTTPProvider, Web3
 from web3.gas_strategies.time_based import construct_time_based_gas_price_strategy
-from web3.middleware import construct_sign_and_send_raw_middleware, geth_poa_middleware
+from web3.middleware import (
+    construct_sign_and_send_raw_middleware,
+    geth_poa_middleware,
+    simple_cache_middleware,
+)
 from web3.types import Wei
 
 from raiden_installer.account import Account
@@ -17,6 +21,7 @@ log = structlog.get_logger()
 
 def make_web3_provider(url: str, account: Account) -> Web3:
     w3 = Web3(HTTPProvider(url))
+    w3.middleware_onion.add(simple_cache_middleware)
 
     def gas_price_strategy_eth_gas_station_or_with_margin(web3: Web3, transaction_params):
         # FIXME: This is a temporary fix to speed up gas price generation

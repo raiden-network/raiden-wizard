@@ -215,9 +215,8 @@
            let message = JSON.parse(evt.data);
            let message_list_elem = document.querySelector("#background-task-tracker ul.messages");
            let spinner_elem = document.querySelector("#background-task-tracker div.task-status-icon");
-           let li = document.createElement("li");
            let next_view = null;
-
+           let li = document.createElement("li");
            let waiting_time = 2000;
 
            resetSpinner();
@@ -237,12 +236,22 @@
                next_view = function() {
                  document.location = message.redirect_url;
                }
+             case "summary":
+               spinner_elem.classList.remove("spinner");
+               while (message_list_elem.firstChild) {
+                message_list_elem.removeChild(message_list_elem.firstChild);
+               }
                break;
            }
 
            if (message.text) {
-             li.textContent = message.text;
-             message_list_elem.appendChild(li);
+             console.log(message.text)
+             message.text.forEach(element => {
+              let li = document.createElement("li");
+              li.textContent = element;
+              message_list_elem.appendChild(li);
+             })
+
            }
 
            if (next_view) {

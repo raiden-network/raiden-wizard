@@ -7,11 +7,24 @@
     Raiden Account
     <div class="tooltip">
       <ul>
-        <li>Raiden accounts are Ethereum accounts defined by a pair of keys, a private key and public key.</li>
-        <li>Every private key/address pair is encoded in a keyfile. Keyfiles are JSON text files which you can open and view in any text editor.</li>
+        <li>
+          Raiden accounts are Ethereum accounts defined by a pair of keys, a
+          private key and public key.
+        </li>
+        <li>
+          Every private key/address pair is encoded in a keyfile. Keyfiles are
+          JSON text files which you can open and view in any text editor.
+        </li>
         <li>You need to download and store this keyfile somewhere safe.</li>
-        <li>The critical component of the keyfile, your account's private key, is always encrypted, and it is encrypted with the password you entered when you created the account.</li>
-        <li>You can restore your account and with this keyfile and the password via Metamask.</li>
+        <li>
+          The critical component of the keyfile, your account's private key, is
+          always encrypted, and it is encrypted with the password you entered
+          when you created the account.
+        </li>
+        <li>
+          You can restore your account and with this keyfile and the password
+          via Metamask.
+        </li>
       </ul>
     </div>
   </span>
@@ -20,19 +33,27 @@
 
 <div class="info-panel">
   <div>You need to download the Raiden Account<br>
-    <a 
+    <a
       id="keystore"
       href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
       download
     >
-      <img class="icon-link big" src="{{ static_url('images/download.svg') }}" alt="Download link" />
+      <img
+        class="icon-link big"
+        src="{{ static_url('images/download.svg') }}"
+        alt="Download link"
+      />
     </a>
   </div>
-  <br>
+  <br />
   <div id="no-web3">
-    You need MetaMask to proceed<br>
+    You need MetaMask to proceed<br />
     <a href="https://metamask.io/download.html" target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/metamask.svg') }}" alt="Download MetaMask" />
+      <img
+        class="icon-link big"
+        src="{{ static_url('images/metamask.svg') }}"
+        alt="Download MetaMask"
+      />
     </a>
   </div>
 </div>
@@ -47,24 +68,27 @@
     Send {{ ethereum_required.formatted }}
   </button>
 </div>
-{% end %}
-
-{% block stepper %}
+{% end %} {% block stepper %}
 <div class="coins">
-    <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
-    <img class="transparent" src="{{ static_url('images/rdn.png') }}" alt="Raiden Network" />
-    <img class="transparent" src="{{ static_url('images/dai.png') }}" alt="Raiden Network" />
+  <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
+  <img
+    class="transparent"
+    src="{{ static_url('images/rdn.png') }}"
+    alt="Raiden Network"
+  />
+  <img
+    class="transparent"
+    src="{{ static_url('images/dai.png') }}"
+    alt="Raiden Network"
+  />
 </div>
-Step 3 of 6: Get ETH...
-{% end %}
-
-{% block page_header_scripts %}
+Step 3 of 6: Get ETH... {% end %} {% block page_header_scripts %}
 <script type="text/javascript">
-
- const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
- const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
- const ETHEREUM_REQUIRED_AMOUNT_FORMATTED = "{{ ethereum_required.formatted }}";
- let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
+  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
+  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
+  const ETHEREUM_REQUIRED_AMOUNT_FORMATTED =
+    "{{ ethereum_required.formatted }}";
+  let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 
   async function checkWeb3Network() {
     let required_chain_id = "{{ configuration_file.network.chain_id }}";
@@ -97,63 +121,67 @@ Step 3 of 6: Get ETH...
     });
   }
 
- async function sendEthViaWeb3() {
-   await checkWeb3Network();
-   let web3 = window.web3;
-   let sender_address = (window.ethereum && window.ethereum.selectedAddress) || web3.eth.defaultAccount;
-   let gasPrice;
+  async function sendEthViaWeb3() {
+    await checkWeb3Network();
+    let web3 = window.web3;
+    let sender_address =
+      (window.ethereum && window.ethereum.selectedAddress) ||
+      web3.eth.defaultAccount;
+    let gasPrice;
 
-   try {
-     const ethStationResponse = await fetch("https://ethgasstation.info/api/ethgasAPI.json")
-       .then(response => response.json());
-     gasPrice = ethStationResponse.fast * 10e7;
-   } catch {
-     console.err("Could not fetch gas price. Falling back to web3 gas price.");
-   }
+    try {
+      const gasPrice = await getGasPrice(
+        "{{ reverse_url('gas_price', configuration_file.file_name) }}"
+      );
+    } catch {
+      console.err("Could not fetch gas price. Falling back to web3 gas price.");
+    }
 
-   let transaction_data = {
-     from: sender_address,
-     to: TARGET_ADDRESS,
-     value: neededEthAmount,
-   }
+    let transaction_data = {
+      from: sender_address,
+      to: TARGET_ADDRESS,
+      value: neededEthAmount,
+    };
 
-   if (gasPrice) {
-     transaction_data.gasPrice = gasPrice;
-   }
-   
-   makeWeb3Transaction(web3, transaction_data);
- };
+    if (gasPrice) {
+      transaction_data.gasPrice = gasPrice;
+    }
 
- function checkWeb3Available(balance) {
-   let has_web3 = Boolean(window.ethereum || window.web3);
-   let button_send_eth = document.getElementById("btn-web3-eth");
-   let noWeb3Text = document.getElementById("no-web3");
+    makeWeb3Transaction(web3, transaction_data);
+  }
 
-   button_send_eth.disabled = has_web3 ? has_web3 && hasEnoughEthToStartSwaps(balance) : true;;
-   if (has_web3) {
-     console.log("Inside has_web3 true");
-     noWeb3Text.style.display = 'none';
-   } else {
-    noWeb3Text.style.display = 'inline';
-   }
-   return has_web3;
- }
+  function checkWeb3Available(balance) {
+    let has_web3 = Boolean(window.ethereum || window.web3);
+    let button_send_eth = document.getElementById("btn-web3-eth");
+    let noWeb3Text = document.getElementById("no-web3");
 
- function updateNeededEth(balance) {
-   neededEthAmount = ETHEREUM_REQUIRED_AMOUNT - balance.ETH.as_wei;
-   if (balance.ETH.as_wei > 0) {
-     const sendButton = document.getElementById("btn-web3-eth");
-     sendButton.textContent = 'Send missing ETH';
-     let info = document.getElementById('low-eth-info');
-     if (!info) {
-       info = document.createElement('div');
-       info.id = 'low-eth-info';
-       const infoPanel = document.querySelector('.info-panel');
-       infoPanel.appendChild(info);
-     }
-     info.textContent = `You have ${balance.ETH.formatted} but you need ${ETHEREUM_REQUIRED_AMOUNT_FORMATTED}`;
-   }
- }
+    button_send_eth.disabled = has_web3
+      ? has_web3 && hasEnoughEthToStartSwaps(balance)
+      : true;
+    if (has_web3) {
+      console.log("Inside has_web3 true");
+      noWeb3Text.style.display = "none";
+    } else {
+      noWeb3Text.style.display = "inline";
+    }
+    return has_web3;
+  }
+
+  function updateNeededEth(balance) {
+    neededEthAmount = ETHEREUM_REQUIRED_AMOUNT - balance.ETH.as_wei;
+    if (balance.ETH.as_wei > 0) {
+      const sendButton = document.getElementById("btn-web3-eth");
+      sendButton.textContent = "Send missing ETH";
+      let info = document.getElementById("low-eth-info");
+      if (!info) {
+        info = document.createElement("div");
+        info.id = "low-eth-info";
+        const infoPanel = document.querySelector(".info-panel");
+        infoPanel.appendChild(info);
+      }
+      info.textContent = `You have ${balance.ETH.formatted} but you need ${ETHEREUM_REQUIRED_AMOUNT_FORMATTED}`;
+    }
+  }
 
  function sendEthButtonlogic(balance) {
    const has_web3 = checkWeb3Available(balance);
@@ -181,7 +209,7 @@ Step 3 of 6: Get ETH...
      let keystore_button = document.getElementById("keystore");
      keystore_button.onclick = function() {
       sendEthButtonlogic(balance);
-     } 
+     }
    }
  }
 
@@ -189,10 +217,10 @@ Step 3 of 6: Get ETH...
    poll();
  }
 
- window.addEventListener("load", function () {
-   window.MAIN_VIEW_INTERVAL = 10000;
-   window.runMainView();
- });
+  window.addEventListener("load", function () {
+    window.MAIN_VIEW_INTERVAL = 10000;
+    window.runMainView();
+  });
 </script>
 
 {% end %}

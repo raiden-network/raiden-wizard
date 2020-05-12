@@ -336,19 +336,21 @@ class AsyncTaskHandler(WebSocketHandler):
                     required.service_token.ticker, network_name
                 )
                 service_token_balance = get_token_balance(w3, account, service_token)
+                total_service_token_balance = get_total_token_owned(w3, account, service_token)
                 transfer_token = Erc20Token.find_by_ticker(
                     required.transfer_token.ticker, network_name
                 )
                 transfer_token_balance = get_token_balance(w3, account, transfer_token)
-                time.sleep(2)
 
-                if service_token_balance < required.service_token:
-                    raise Exception
+                if total_service_token_balance < required.service_token:
+                    raise ExchangeError("Exchange was not successful")
 
-                else:
+                elif service_token_balance.as_wei > 0:
+
                     self._send_status_update(
                         f"Making deposit of {service_token_balance.formatted} to the User Deposit Contract"
                     )
+                    self._send_status_update(f"This might take a few minutes")
                     transaction_receipt = deposit_service_tokens(
                         w3=w3,
                         account=account,
@@ -360,18 +362,18 @@ class AsyncTaskHandler(WebSocketHandler):
                         w3=w3, account=account, token=service_token
                     )
                     self._send_status_update(
-                        f"Amount deposited at UDC: {service_token_deposited.formatted}"
+                        f"Total amount deposited at UDC: {service_token_deposited.formatted}"
                     )
 
                 if transfer_token_balance < required.transfer_token:
                     redirect_url = self.reverse_url(
                         "swap", configuration_file.file_name, transfer_token.ticker
                     )
-                    next_page = "Moving on to exchanging DAI"
+                    next_page = "Moving on to exchanging DAI ..."
 
                 else:
                     redirect_url = self.reverse_url("launch", configuration_file.file_name)
-                    next_page = "You are ready to launch Raiden!"
+                    next_page = "You are ready to launch Raiden! ..."
 
                 self._send_summary(["Congratulations! Swap Successful!", next_page])
                 time.sleep(5)
@@ -382,6 +384,11 @@ class AsyncTaskHandler(WebSocketHandler):
                     self._send_error_message(error_message)
         except (json.decoder.JSONDecodeError, KeyError, ExchangeError, ValueError) as exc:
             self._send_error_message(str(exc))
+            redirect_url = self.reverse_url("swap", configuration_file.file_name, token_ticker)
+            next_page = f"Try again to exchange {token_ticker}..."
+            self._send_summary(["Transaction failed", str(exc), next_page])
+            time.sleep(5)
+            self._send_redirect(redirect_url)
 
     def _run_track_transaction(self, **kw):
         POLLING_INTERVAL = 10
@@ -703,6 +710,21 @@ class CostEstimationAPIHandler(APIHandler):
         )
 
 
+class GasPriceHandler(APIHandler):
+    def get(self, configuration_file_name):
+        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        account = configuration_file.account
+        try_unlock(account)
+        web3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        self.render_json(
+            {
+                "gas_price": web3.eth.generateGasPrice(),
+                "block_number": web3.eth.blockNumber,
+                "utc_seconds": int(time.time()),
+            }
+        )
+
+
 if __name__ == "__main__":
     log.info("Starting web server")
     app = Application(
@@ -725,6 +747,7 @@ if __name__ == "__main__":
                 ConfigurationItemAPIHandler,
                 name="api-configuration-detail",
             ),
+            url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
         ],
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),

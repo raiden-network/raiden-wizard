@@ -31,12 +31,13 @@ def make_web3_provider(url: str, account: Account) -> Web3:
             response = requests.get(ETH_GAS_STATION_API)
             if response and response.status_code == 200:
                 data = response.json()
+                log.debug(f"fetched gas price: {Wei(int(data['fast'] * 10e7 * 1.1))} Wei")
                 return Wei(int(data["fast"] * 10e7 * 1.1))
         except (TimeoutError, ConnectionError, KeyError):
             log.debug("Could not fetch from ethgasstation. Falling back to web3 gas estimation.")
 
         gas_price_strategy = construct_time_based_gas_price_strategy(
-            max_wait_seconds=60, sample_size=25
+            max_wait_seconds=15, sample_size=25
         )
         gas_price = Wei(int(gas_price_strategy(web3, transaction_params) * GAS_PRICE_MARGIN))
         return gas_price

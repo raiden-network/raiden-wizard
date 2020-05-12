@@ -20,7 +20,8 @@
 
 <div class="info-panel">
   <div>You need to download the Raiden Account<br>
-    <a
+    <a 
+      id="keystore"
       href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
       download
     >
@@ -154,8 +155,7 @@ Step 3 of 6: Get ETH...
    }
  }
 
- async function poll() {
-   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
+ function sendEthButtonlogic(balance) {
    const has_web3 = checkWeb3Available(balance);
    if (!has_web3) {
      return;
@@ -170,6 +170,18 @@ Step 3 of 6: Get ETH...
      }, 2000);
    } else {
     updateNeededEth(balance);
+   }
+ }
+
+ async function poll() {
+   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
+   if (balance.ETH.as_wei) {
+     sendEthButtonlogic(balance);
+   } else {
+     let keystore_button = document.getElementById("keystore");
+     keystore_button.onclick = function() {
+      sendEthButtonlogic(balance);
+     } 
    }
  }
 

@@ -76,6 +76,10 @@ h1 {
   font-style: normal;
 }
 
+h2 {
+  font-size: 36px;
+}
+
 ul {
   list-style-type: none;
   -webkit-padding-start: 0;
@@ -292,10 +296,6 @@ span.private {
   display: none;
 }
 
-#eth {
-  display: none;
-}
-
 section.content {
   width: 60vw;
   margin: 0 auto;
@@ -412,6 +412,16 @@ section.content div.container div.ack-prompt {
   margin: 0;
   padding: 30px 0px 100px 0px;
   text-align: center;
+}
+
+#background-task-tracker ul.messages.big {
+  font-size: 36px;
+  line-height: 94px;
+}
+
+#background-task-tracker img {
+  height: 105px;
+  width: auto;
 }
 
 div.spinner {

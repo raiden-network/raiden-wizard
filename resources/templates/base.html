@@ -21,6 +21,10 @@
         5: "Görli",
         42: "Kovan",
       };
+      const TOKEN_ICON_URLS = {
+        RDN: "{{ static_url('images/rdn.png') }}",
+        DAI: "{{ static_url('images/dai.png') }}",
+      };
 
       const EIP20_ABI = {% raw eip20_abi %};
 
@@ -250,6 +254,12 @@
             spinner_elem.classList.remove("spinner");
             while (message_list_elem.firstChild) {
              message_list_elem.removeChild(message_list_elem.firstChild);
+            }
+            message_list_elem.classList.add('big')
+            if (message.icon) {
+              let img = document.createElement("img");
+              img.src = TOKEN_ICON_URLS[message.icon];
+              message_list_elem.appendChild(img);
             }
             break;
         }

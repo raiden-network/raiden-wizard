@@ -114,8 +114,12 @@ class AsyncTaskHandler(WebSocketHandler):
         self.write_message(json.dumps({"type": "redirect", "redirect_url": redirect_url}))
         log.info(f"Redirecting to {redirect_url}")
 
-    def _send_summary(self, text):
-        self.write_message({"type": "summary", "text": text})
+    def _send_summary(self, text, **kw):
+        message = {"type": "summary", "text": text}
+        icon = kw.get("icon")
+        if icon:
+            message["icon"] = icon
+        self.write_message({"type": "summary", "text": text, "icon": icon})
 
     def on_message(self, message):
         data = json.loads(message)
@@ -375,7 +379,7 @@ class AsyncTaskHandler(WebSocketHandler):
                     redirect_url = self.reverse_url("launch", configuration_file.file_name)
                     next_page = "You are ready to launch Raiden! ..."
 
-                self._send_summary(["Congratulations! Swap Successful!", next_page])
+                self._send_summary(["Congratulations! Swap Successful!", next_page], icon=token_ticker)
                 time.sleep(5)
                 self._send_redirect(redirect_url)
             else:

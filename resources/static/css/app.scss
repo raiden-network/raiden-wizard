@@ -129,6 +129,10 @@ h1 {
     font-style: normal;
 }
 
+h2 {
+    font-size: 36px;
+}
+
 ul {
     list-style-type: none;
     padding-inline-start: 0;
@@ -414,6 +418,16 @@ section.content {
         margin: 0;
         padding: 30px 0px 100px 0px;
         text-align: center;
+
+        &.big {
+            font-size: 36px;
+            line-height: 94px;
+        }
+    }
+
+    img {
+        height: 105px;
+        width: auto;
     }
 }
 

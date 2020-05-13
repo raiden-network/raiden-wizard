@@ -32,7 +32,8 @@
 </div>
 
 <div class="info-panel">
-  <div>You need to download the Raiden Account<br>
+  <div>
+    You need to download the Raiden Account<br />
     <a
       id="keystore"
       href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
@@ -130,7 +131,7 @@ Step 3 of 6: Get ETH... {% end %} {% block page_header_scripts %}
     let gasPrice;
 
     try {
-      const gasPrice = await getGasPrice(
+      gasPrice = await getGasPrice(
         "{{ reverse_url('gas_price', configuration_file.file_name) }}"
       );
     } catch {
@@ -183,39 +184,42 @@ Step 3 of 6: Get ETH... {% end %} {% block page_header_scripts %}
     }
   }
 
- function sendEthButtonlogic(balance) {
-   const has_web3 = checkWeb3Available(balance);
-   if (!has_web3) {
-     return;
-   }
-   if (hasEnoughEthToStartSwaps(balance)) {
-     let button_send_eth = document.getElementById("btn-web3-eth");
-     button_send_eth.disabled = true;
-     const action = document.querySelector('.action');
-     action.classList.add('tx-received');
-     setTimeout(function() {
-        window.location.href = "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
-     }, 2000);
-   } else {
-    updateNeededEth(balance);
-   }
- }
+  function sendEthButtonlogic(balance) {
+    const has_web3 = checkWeb3Available(balance);
+    if (!has_web3) {
+      return;
+    }
+    if (hasEnoughEthToStartSwaps(balance)) {
+      let button_send_eth = document.getElementById("btn-web3-eth");
+      button_send_eth.disabled = true;
+      const action = document.querySelector(".action");
+      action.classList.add("tx-received");
+      setTimeout(function () {
+        window.location.href =
+          "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
+      }, 2000);
+    } else {
+      updateNeededEth(balance);
+    }
+  }
 
- async function poll() {
-   let balance = await getBalances("{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}");
-   if (balance.ETH.as_wei) {
-     sendEthButtonlogic(balance);
-   } else {
-     let keystore_button = document.getElementById("keystore");
-     keystore_button.onclick = function() {
+  async function poll() {
+    let balance = await getBalances(
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
+    );
+    if (balance.ETH.as_wei) {
       sendEthButtonlogic(balance);
-     }
-   }
- }
+    } else {
+      let keystore_button = document.getElementById("keystore");
+      keystore_button.onclick = function () {
+        sendEthButtonlogic(balance);
+      };
+    }
+  }
 
- function main() {
-   poll();
- }
+  function main() {
+    poll();
+  }
 
   window.addEventListener("load", function () {
     window.MAIN_VIEW_INTERVAL = 10000;

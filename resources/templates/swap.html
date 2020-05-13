@@ -26,13 +26,13 @@
 
     <div class="menu" id="amount-menu-kyber">
       <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
-        {{ swap_amount_1.formatted }}<br>
+        {{ swap_amount_1.formatted }}
       </button>
       <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
-        {{ swap_amount_2.formatted }}<br>
+        {{ swap_amount_2.formatted }}
       </button>
       <button class="amount-button" value="{{ swap_amount_3.as_wei }}">
-        {{ swap_amount_3.formatted }}<br>
+        {{ swap_amount_3.formatted }}
       </button>
     </div>
   </div>
@@ -46,13 +46,13 @@
 
     <div class="menu" id="amount-menu-uniswap">
       <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
-        {{ swap_amount_1.formatted }}<br>
+        {{ swap_amount_1.formatted }}
       </button>
       <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
-        {{ swap_amount_2.formatted }}<br>
+        {{ swap_amount_2.formatted }}
       </button>
       <button class="amount-button" value="{{ swap_amount_3.as_wei }}">
-        {{ swap_amount_3.formatted }}<br>
+        {{ swap_amount_3.formatted }}
       </button>
     </div>
   </div>
@@ -106,6 +106,12 @@
   };
 
   function requestCostEstimation(button, exchange) {
+    const estimationElement = document.createElement('div');
+    estimationElement.classList.add('estimation');
+    const placeholder = document.createTextNode(`Calculating costs...`);
+    estimationElement.appendChild(placeholder);
+    button.appendChild(estimationElement);
+
     const data = JSON.stringify({
       exchange: exchange,
       currency: TOKEN_TICKER,
@@ -118,7 +124,8 @@
       if (this.status == 200) {
       const res = JSON.parse(this.response);
       const text = document.createTextNode(`Costs roughly ${res.formatted}`);
-      button.appendChild(text);
+      placeholder.remove();
+      estimationElement.appendChild(text);
       }
     }
 
@@ -203,7 +210,6 @@
   }
 
   function setupTooltipText() {
-    const TOKEN_TICKER = "{{ token.ticker }}";
     const toolTip = document.getElementById(TOKEN_TICKER).querySelector(".tooltip");
     let ul = document.createElement('ul');
     toolTip.appendChild(ul);

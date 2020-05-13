@@ -569,18 +569,28 @@ div.spinner {
     }
 
     button {
-        border: none;
+        border-right: none;
+        border-left: none;
         border-radius: 0;
+        border-top: 1px solid color(button-border);
+        border-bottom: 1px solid color(button-border);
+
+        .estimation {
+            font-size: 12px;
+            line-height: 24px;
+        }
     }
 
     button:first-of-type {
         border-top-right-radius: 24px;
         border-top-left-radius: 24px;
+        border-top: none;
     }
 
     button:last-of-type {
         border-bottom-right-radius: 24px;
         border-bottom-left-radius: 24px;
+        border-bottom: none;
     }
 }
 

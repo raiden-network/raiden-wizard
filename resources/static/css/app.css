@@ -292,6 +292,10 @@ span.private {
   display: none;
 }
 
+#eth {
+  display: none;
+}
+
 section.content {
   width: 60vw;
   margin: 0 auto;

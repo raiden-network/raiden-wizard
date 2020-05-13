@@ -69,6 +69,19 @@
     Send {{ ethereum_required.formatted }}
   </button>
 </div>
+
+<div class="hero" id="eth">
+  <details>
+    <summary>Why do I need 0.18 ETH</summary>
+    <ul>
+      <li>Calculating for worst case scenario for 4 channels </li>
+      <li>0.025 ETH for closing each channel sum up to 0.1 ETH</li>
+      <li>0.8 ETH are required for Exchanging RDN and DAI amounts</li>
+      <li>A total of 0.18 ETH are required</li>
+    </ul>
+  </details>
+</div>
+
 {% end %} {% block stepper %}
 <div class="coins">
   <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
@@ -189,6 +202,7 @@ Step 3 of 6: Get ETH... {% end %} {% block page_header_scripts %}
     if (!has_web3) {
       return;
     }
+    document.getElementById('eth').style.display = "block";
     if (hasEnoughEthToStartSwaps(balance)) {
       let button_send_eth = document.getElementById("btn-web3-eth");
       button_send_eth.disabled = true;

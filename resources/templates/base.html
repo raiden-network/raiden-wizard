@@ -89,7 +89,7 @@
       async function getGasPrice(api_gas_price) {
         let request = await fetch(api_gas_price);
         let response_data = await request.json();
-        return response_data;
+        return response_data["gas_price"];
       }
 
       function launchRaiden(configuration_file_name) {

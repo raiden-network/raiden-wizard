@@ -26,6 +26,7 @@
         DAI: "{{ static_url('images/dai.png') }}",
         error: "{{ static_url('images/error.svg') }}",
       };
+      const LAUNCH_VIDEO_URL = "{{ static_url('videos/launch-video.mp4') }}";
 
       const EIP20_ABI = {% raw eip20_abi %};
 
@@ -97,10 +98,33 @@
         return response_data["gas_price"];
       }
 
+      function showLaunchVideo(loadedCallback) {
+        const video = document.createElement('video');
+        if (!video.canPlayType('video/mp4')) {
+          loadedCallback();
+          return;
+        }
+
+        const videoWrapper = document.querySelector('.video-wrapper');
+        video.src = LAUNCH_VIDEO_URL;
+        video.autoplay = 'true';
+        video.type = 'video/mp4';
+        video.addEventListener('ended', () => {
+          video.remove();
+          videoWrapper.classList.remove('is-visible');
+        });
+        video.addEventListener('loadeddata', loadedCallback);
+        videoWrapper.classList.add('is-visible');
+        videoWrapper.appendChild(video);
+      }
+
       function launchRaiden(configuration_file_name) {
-        let message = {method: "launch", configuration_file_name: configuration_file_name}
-        WEBSOCKET.send(JSON.stringify(message));
-        toggleView();
+        const onVideoLoaded = () => {
+          let message = {method: "launch", configuration_file_name: configuration_file_name}
+          WEBSOCKET.send(JSON.stringify(message));
+          toggleView();
+        };
+        showLaunchVideo(onVideoLoaded);
       }
 
       function hasEnoughEthToStartSwaps(balance) {
@@ -349,6 +373,7 @@
     {% block page_header_scripts %} {% end %}
   </head>
   <body>
+    <div class="video-wrapper"></div>
     <div class="body-blackout"></div>
     <div class="logo {% block logo_class %}business-card{% end %}">
       <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />

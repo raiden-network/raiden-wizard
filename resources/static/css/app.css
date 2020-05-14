@@ -651,4 +651,22 @@ div.spinner {
 .stepper .coins img.transparent {
   opacity: 0.1;
 }
+
+.video-wrapper {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  display: none;
+  background-color: #000000;
+  z-index: 110;
+}
+
+.video-wrapper.is-visible {
+  display: block;
+}
+
+.video-wrapper video {
+  height: 100%;
+  width: 100%;
+}
 /*# sourceMappingURL=app.css.map */

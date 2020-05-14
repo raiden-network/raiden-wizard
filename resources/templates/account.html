@@ -201,7 +201,6 @@ Step 3 of 6: Get ETH... {% end %} {% block page_header_scripts %}
     if (!has_web3) {
       return;
     }
-    document.getElementById('eth').style.display = "block";
     if (hasEnoughEthToStartSwaps(balance)) {
       let button_send_eth = document.getElementById("btn-web3-eth");
       button_send_eth.disabled = true;

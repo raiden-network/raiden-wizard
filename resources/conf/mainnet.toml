@@ -2,8 +2,8 @@ network = "mainnet"
 client_release_channel = "testing"
 client_release_version = "v0.200.0-rc8"
 services_version = "test"
-ethereum_amount_required = 180e15
-ethereum_amount_required_after_swap = 100e15
+ethereum_amount_required = 110e15
+ethereum_amount_required_after_swap = 75e14
 routing_mode = "local"
 
 [service_token]
@@ -15,7 +15,7 @@ swap_amount_3 = 50e18
 
 [transfer_token]
 ticker = "DAI"
-amount_required = 2e18
-swap_amount_1 = 2e18
+amount_required = 3e18
+swap_amount_1 = 3e18
 swap_amount_2 = 5e18
 swap_amount_3 = 10e18

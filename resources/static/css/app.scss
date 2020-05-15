@@ -631,3 +631,20 @@ div.spinner {
         }
     }
 }
+
+.video-wrapper {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    background-color: #000000;
+    z-index: 110;
+
+    &.is-visible {
+        display: block;
+    }
+    video {
+        height: 100%;
+        width: 100%;
+    }
+}

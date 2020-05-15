@@ -366,6 +366,42 @@ section.content {
         div.hero {
             text-align: center;
         }
+        
+        div.description {
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+            
+            div:not(:last-child) {
+                margin-bottom: 30px;
+            }
+
+            .row-items {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+    
+                div {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    &:not(:last-child) {
+                        margin-right: 26px;
+                    }
+    
+                    img {
+                        height: 105px;
+                        width: auto;
+                        margin-bottom: 52px;
+                    }
+    
+                    span {
+                        max-width: 290px;
+                    }
+                }
+            }
+        }
 
         div.info-panel {
             text-align: center;

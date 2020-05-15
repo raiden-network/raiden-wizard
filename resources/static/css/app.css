@@ -348,6 +348,63 @@ section.content div.container div.hero {
   text-align: center;
 }
 
+section.content div.container div.description {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -ms-flex-line-pack: center;
+      align-content: center;
+}
+
+section.content div.container div.description div:not(:last-child) {
+  margin-bottom: 30px;
+}
+
+section.content div.container div.description .row-items {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  width: 100%;
+}
+
+section.content div.container div.description .row-items div {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+section.content div.container div.description .row-items div:not(:last-child) {
+  margin-right: 26px;
+}
+
+section.content div.container div.description .row-items div img {
+  height: 105px;
+  width: auto;
+  margin-bottom: 52px;
+}
+
+section.content div.container div.description .row-items div span {
+  max-width: 290px;
+}
+
 section.content div.container div.info-panel {
   text-align: center;
 }

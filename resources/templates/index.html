@@ -9,16 +9,35 @@
 </h1>
 
 <div class="hero">
-  Start Raiden in 6 steps
+  Raiden needs three different coins to work
 </div>
 
-<div class="ack-prompt">
-  <input type="checkbox" name="ack-wizard" />
-  <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
-    I acknowledge that I am fully responsible for the usage of the
-    Wizard and I am aware of risks of operating software that
-    involves transactions in the Ethereum blockchain
-  </label>
+<div class="description">
+  <div class="row-items">
+    <div>
+      <img src="{{ static_url('images/eth.png') }}" alt="ETH" title="ETH" />
+      <span>...to talk to the Ethereum Blockchain</span>
+    </div>
+    <div>
+      <img src="{{ static_url('images/rdn.png') }}" alt="RDN token" title="RDN token" />
+      <span>...to get pathfinding and monitoring services</span>
+    </div>
+    <div>
+      <img src="{{ static_url('images/dai.png') }}" alt="DAI token" title="DAI token" />
+      <span>...to transfer in the Raiden Network</span>
+    </div>
+  </div>
+
+  <div>The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps</div>
+
+  <div class="ack-prompt">
+    <input type="checkbox" name="ack-wizard" />
+    <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
+      I acknowledge that I am fully responsible for the usage of the
+      Wizard and I am aware of risks of operating software that
+      involves transactions in the Ethereum blockchain
+    </label>
+  </div>
 </div>
 
 <div class="action">

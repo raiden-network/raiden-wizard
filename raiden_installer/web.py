@@ -121,10 +121,10 @@ class AsyncTaskHandler(WebSocketHandler):
             message["icon"] = icon
         self.write_message(message)
 
-    def _send_txhash_message(self, text, **kw):
-        message = {"type": "hash", "text": text, "tx_hash": kw.get("tx_hash")}
+    def _send_txhash_message(self, text, tx_hash):
+        message = {"type": "hash", "text": text, "tx_hash": tx_hash}
         self.write_message(message)
-        log.info(f"Waiting for confirmation of txhash {kw.get('tx_hash')}")
+        log.info(f"Waiting for confirmation of txhash {tx_hash}")
 
     def on_message(self, message):
         data = json.loads(message)

@@ -1,38 +1,39 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block content %}
+<h2>
+  Swap ETH for RDN
+</h2>
 
-{% block content %}
-<h2>Swap ETH for 
+<div class="hero">
+  Get
   <span class="tooltip-item" id="{{ token.ticker }}">
-    {{ token.ticker }}
+    {{ swap_amount_1 }}
     <div class="tooltip">
       <!-- Tool tip help is setup by setupTooltipText function-->
     </div>
   </span>
-
-</h2>
-
-<div class="hero">
-  Get {{ token.ticker }} via a decentralized exchange<br>
-  Choose an exchange and then the amount of {{ token.ticker }} to swap
+  via a decentralized exchange<br />
+  Choose an exchange of your choice to swap
 </div>
 
 <div class="action">
   <div class="menu-item">
     <button class="exchange-button" value="kyber">
-      <img class="dex-icon" src="{{ static_url('images/kyber.svg') }}" alt="KyberNetwork" />
+      <img
+        class="dex-icon"
+        src="{{ static_url('images/kyber.svg') }}"
+        alt="KyberNetwork"
+      />
       <span>KyberNetwork</span>
-      <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
+      <img
+        class="expand"
+        src="{{ static_url('images/expand.svg') }}"
+        alt="Expand"
+      />
     </button>
 
     <div class="menu" id="amount-menu-kyber">
       <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
         {{ swap_amount_1.formatted }}
-      </button>
-      <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
-        {{ swap_amount_2.formatted }}
-      </button>
-      <button class="amount-button" value="{{ swap_amount_3.as_wei }}">
-        {{ swap_amount_3.formatted }}
       </button>
     </div>
   </div>
@@ -41,18 +42,16 @@
     <button class="exchange-button" value="uniswap">
       <span class="dex-icon">🦄</span>
       <span>Uniswap</span>
-      <img class="expand" src="{{ static_url('images/expand.svg') }}" alt="Expand" />
+      <img
+        class="expand"
+        src="{{ static_url('images/expand.svg') }}"
+        alt="Expand"
+      />
     </button>
 
     <div class="menu" id="amount-menu-uniswap">
       <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
         {{ swap_amount_1.formatted }}
-      </button>
-      <button class="amount-button" value="{{ swap_amount_2.as_wei }}">
-        {{ swap_amount_2.formatted }}
-      </button>
-      <button class="amount-button" value="{{ swap_amount_3.as_wei }}">
-        {{ swap_amount_3.formatted }}
       </button>
     </div>
   </div>
@@ -61,53 +60,50 @@
 <div class="action">
   <button type="submit" disabled>Confirm</button>
 </div>
-{% end %}
-
-{% block stepper %}
-  {% if token.ticker == "RDN" %}
-  <div class="coins">
-      <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
-      <img src="{{ static_url('images/rdn.png') }}" alt="Raiden Network" />
-      <img class="transparent" src="{{ static_url('images/dai.png') }}" alt="Raiden Network" />
-  </div>
-  Step 4 of 6: Get RDN...
-  {% elif token.ticker == "DAI" %}
-  <div class="coins">
-    <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
-    <img src="{{ static_url('images/rdn.png') }}" alt="Raiden Network" />
-    <img src="{{ static_url('images/dai.png') }}" alt="Raiden Network" />
-  </div>
-  Step 5 of 6: Get DAI...
-  {% end %}
-{% end %}
-
-{% block page_header_scripts %}
+{% end %} {% block stepper %} {% if token.ticker == "RDN" %}
+<div class="coins">
+  <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
+  <img src="{{ static_url('images/rdn.png') }}" alt="Raiden Network" />
+  <img
+    class="transparent"
+    src="{{ static_url('images/dai.png') }}"
+    alt="Raiden Network"
+  />
+</div>
+Step 4 of 6: Get RDN... {% elif token.ticker == "DAI" %}
+<div class="coins">
+  <img src="{{ static_url('images/eth.png') }}" alt="Raiden Network" />
+  <img src="{{ static_url('images/rdn.png') }}" alt="Raiden Network" />
+  <img src="{{ static_url('images/dai.png') }}" alt="Raiden Network" />
+</div>
+Step 5 of 6: Get DAI... {% end %} {% end %} {% block page_header_scripts %}
 <script type="text/javascript">
-  const API_COST_ESTIMATION_ENDPOINT = "/api/cost-estimation/{{ configuration_file.file_name }}";
+  const API_COST_ESTIMATION_ENDPOINT =
+    "/api/cost-estimation/{{ configuration_file.file_name }}";
   const TOKEN_TICKER = "{{ token.ticker }}";
   const DECIMALS = "{{ token.decimals }}";
 
   const amountMenus = {};
-  let selectedExchange = '';
+  let selectedExchange = "";
   let selectedAmount = 0;
 
-  const tokenTips = { 
-    "RDN" : [
+  const tokenTips = {
+    RDN: [
       `RDN tokens are required to pay for the Path finding and Monitoring Services which helps you
       finding short or cheap routes and going offline safely.`,
-      `A minimum of 10 RDN tokens would be required to pay for these services though you could go higher.`
+      `A minimum of 10 RDN tokens would be required to pay for these services though you could go higher.`,
     ],
-    "DAI" : [
+    DAI: [
       `Since Raiden offers users to join the DAI token network to make micropayments
       we need to fund the raiden account with DAI tokens`,
       `We recommend you to fund with minimum of 2 DAI and if you require more you 
-      could come back and refund yourself`
-    ]
+      could come back and refund yourself`,
+    ],
   };
 
   function requestCostEstimation(button, exchange) {
-    const estimationElement = document.createElement('div');
-    estimationElement.classList.add('estimation');
+    const estimationElement = document.createElement("div");
+    estimationElement.classList.add("estimation");
     const placeholder = document.createTextNode(`Calculating costs...`);
     estimationElement.appendChild(placeholder);
     button.appendChild(estimationElement);
@@ -115,19 +111,19 @@
     const data = JSON.stringify({
       exchange: exchange,
       currency: TOKEN_TICKER,
-      target_amount: parseInt(button.value) / (10 ** DECIMALS)
+      target_amount: parseInt(button.value) / 10 ** DECIMALS,
     });
 
     const req = new XMLHttpRequest();
 
-    req.onload = function() {
+    req.onload = function () {
       if (this.status == 200) {
-      const res = JSON.parse(this.response);
-      const text = document.createTextNode(`Costs roughly ${res.formatted}`);
-      placeholder.remove();
-      estimationElement.appendChild(text);
+        const res = JSON.parse(this.response);
+        const text = document.createTextNode(`Costs roughly ${res.formatted}`);
+        placeholder.remove();
+        estimationElement.appendChild(text);
       }
-    }
+    };
 
     req.open("POST", API_COST_ESTIMATION_ENDPOINT, true);
     req.setRequestHeader("Content-Type", "application/json");
@@ -135,84 +131,98 @@
   }
 
   function addCostsToButtons() {
-    const amountButtonsKyber = amountMenus.kyber.querySelectorAll('.amount-button');
-    const amountButtonsUniswap = amountMenus.uniswap.querySelectorAll('.amount-button');
+    const amountButtonsKyber = amountMenus.kyber.querySelectorAll(
+      ".amount-button"
+    );
+    const amountButtonsUniswap = amountMenus.uniswap.querySelectorAll(
+      ".amount-button"
+    );
 
-    amountButtonsKyber.forEach((button) => requestCostEstimation(button, 'kyber'));
-    amountButtonsUniswap.forEach((button) => requestCostEstimation(button, 'uniswap'));
+    amountButtonsKyber.forEach((button) =>
+      requestCostEstimation(button, "kyber")
+    );
+    amountButtonsUniswap.forEach((button) =>
+      requestCostEstimation(button, "uniswap")
+    );
   }
 
   function setupMenus() {
-    const exchangeButtons = document.querySelectorAll('.exchange-button');
-    const amountButtons = document.querySelectorAll('.amount-button');
+    const exchangeButtons = document.querySelectorAll(".exchange-button");
+    const amountButtons = document.querySelectorAll(".amount-button");
 
     const validate = () => {
-      const submitButton = document.querySelector('button[type=submit]');
-      submitButton.disabled = selectedExchange === '' || selectedAmount === 0;
+      const submitButton = document.querySelector("button[type=submit]");
+      submitButton.disabled = selectedExchange === "" || selectedAmount === 0;
     };
 
     const selectExchange = (button) => {
       Object.keys(amountMenus).forEach((exchange) => {
-        amountMenus[exchange].classList.remove('is-visible');
-        const button = amountMenus[exchange].closest('.menu-item').querySelector('button');
-        button.classList.remove('selected');
+        amountMenus[exchange].classList.remove("is-visible");
+        const button = amountMenus[exchange]
+          .closest(".menu-item")
+          .querySelector("button");
+        button.classList.remove("selected");
       });
       selectedAmount = 0;
-      amountButtons.forEach((button) => button.classList.remove('selected'));
+      amountButtons.forEach((button) => button.classList.remove("selected"));
 
       if (selectedExchange === button.value) {
-        selectedExchange = '';
+        selectedExchange = "";
       } else {
         selectedExchange = button.value;
-        button.classList.add('selected');
-        const newMenuItem = button.closest('.menu-item');
-        amountMenus[button.value].classList.add('is-visible');
+        button.classList.add("selected");
+        const newMenuItem = button.closest(".menu-item");
+        amountMenus[button.value].classList.add("is-visible");
       }
       validate();
     };
 
     const selectAmount = (button) => {
-      amountButtons.forEach((button) => button.classList.remove('selected'));
+      amountButtons.forEach((button) => button.classList.remove("selected"));
       if (selectedAmount === button.value) {
         selectedAmount = 0;
       } else {
         selectedAmount = button.value;
-        button.classList.add('selected');
+        button.classList.add("selected");
       }
       validate();
     };
 
     validate();
     exchangeButtons.forEach((button) => {
-      button.addEventListener('click', () => selectExchange(button));
+      button.addEventListener("click", () => selectExchange(button));
     });
 
     amountButtons.forEach((button) => {
-      button.addEventListener('click', () => selectAmount(button));
+      button.addEventListener("click", () => selectAmount(button));
     });
   }
 
   function setupSubmit() {
-    const submitButton = document.querySelector('button[type=submit]');
+    const submitButton = document.querySelector("button[type=submit]");
 
-    submitButton.addEventListener('click', function() {
+    submitButton.addEventListener("click", function () {
       const FILE_NAME = "{{ configuration_file.file_name }}";
 
-      WEBSOCKET.send(JSON.stringify({
-        method: "swap",
-        configuration_file_name: FILE_NAME,
-        amount: selectedAmount.toString(),
-        token: TOKEN_TICKER,
-        exchange: selectedExchange
-      }));
+      WEBSOCKET.send(
+        JSON.stringify({
+          method: "swap",
+          configuration_file_name: FILE_NAME,
+          amount: selectedAmount.toString(),
+          token: TOKEN_TICKER,
+          exchange: selectedExchange,
+        })
+      );
 
       toggleView();
     });
   }
 
   function setupTooltipText() {
-    const toolTip = document.getElementById(TOKEN_TICKER).querySelector(".tooltip");
-    let ul = document.createElement('ul');
+    const toolTip = document
+      .getElementById(TOKEN_TICKER)
+      .querySelector(".tooltip");
+    let ul = document.createElement("ul");
     toolTip.appendChild(ul);
     function renderTokenTips(element, index, arr) {
       let li = document.createElement("li");
@@ -223,8 +233,8 @@
   }
 
   window.addEventListener("load", function () {
-    amountMenus.kyber = document.querySelector('#amount-menu-kyber');
-    amountMenus.uniswap = document.querySelector('#amount-menu-uniswap');
+    amountMenus.kyber = document.querySelector("#amount-menu-kyber");
+    amountMenus.uniswap = document.querySelector("#amount-menu-uniswap");
 
     setupMenus();
     setupSubmit();

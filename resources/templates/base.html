@@ -296,7 +296,14 @@
            li.textContent = element;
            message_list_elem.appendChild(li);
           })
+        }
 
+        if (message.tx_hash) {
+          let li = document.createElement("li");
+          let link_text = `${message.tx_hash.substring(0, 6)}....${message.tx_hash.substring(message.tx_hash.length-4)}`;
+          li.innerHTML = 
+          `<a href="https://etherscan.io/tx/${message.tx_hash}" target="_blank">${link_text}</a>`
+          message_list_elem.appendChild(li);
         }
 
         if (next_view) {

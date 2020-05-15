@@ -121,6 +121,11 @@ class AsyncTaskHandler(WebSocketHandler):
             message["icon"] = icon
         self.write_message(message)
 
+    def _send_txhash_message(self, text, tx_hash):
+        message = {"type": "hash", "text": text, "tx_hash": tx_hash}
+        self.write_message(message)
+        log.info(f"Waiting for confirmation of txhash {tx_hash}")
+
     def on_message(self, message):
         data = json.loads(message)
 
@@ -403,7 +408,7 @@ class AsyncTaskHandler(WebSocketHandler):
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             account = configuration_file.account
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-            self._send_status_update(f"Waiting for confirmation of transaction {tx_hash}")
+            self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash= tx_hash)
 
             transaction_found = False
             iteration_cycle = 0

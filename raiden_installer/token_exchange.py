@@ -126,7 +126,7 @@ class Kyber(Exchange):
         transaction_params = {
             "from": account.address,
             "value": eth_sold.as_wei,
-            "gas_price": gas_price.as_wei,
+            "gasPrice": gas_price.as_wei,
         }
         eth_address = to_checksum_address(
             kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
@@ -253,7 +253,7 @@ class Uniswap(Exchange):
         transaction_params = {
             "from": account.address,
             "value": eth_sold.as_wei,
-            "gas_price": gas_price.as_wei,
+            "gasPrice": gas_price.as_wei,
         }
 
         gas = estimate_gas(

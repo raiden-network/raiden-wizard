@@ -6,7 +6,7 @@ from web3 import Web3
 
 from raiden_contracts.contract_manager import get_contracts_deployment_info
 from raiden_installer import log
-from raiden_installer.constants import GAS_PRICE_MARGIN
+from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.tokens import EthereumAmount, Wei
 
 
@@ -56,7 +56,7 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     signed = w3.eth.account.signTransaction(transaction_data, account.private_key)
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
     log.debug(f"transaction hash: {tx_hash.hex()}")
-    return w3.eth.waitForTransactionReceipt(tx_hash, timeout=600)
+    return w3.eth.waitForTransactionReceipt(tx_hash, timeout=WEB3_TIMEOUT)
 
 
 def wait_for_transaction(web3: Web3, transaction_receipt: Dict[str, Any]) -> None:

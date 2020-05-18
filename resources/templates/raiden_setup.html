@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Connect to the Ethereum Blockchain</h2>
-
 <div class="hero">
   Provide your Infura ID to run your node&nbsp;
   <a href="https://infura.io/product" target="_blank">
@@ -29,6 +27,8 @@
 
 
  window.addEventListener("load", function() {
+   setProgressStep(1, 'Connect to the Ethereum Blockchain');
+
    const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
    const infura_project_input = document.querySelector("input[name=endpoint]");
    const error_display = document.querySelector("span.error");

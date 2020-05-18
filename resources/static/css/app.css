@@ -78,6 +78,7 @@ h1 {
 
 h2 {
   font-size: 36px;
+  line-height: 43px;
 }
 
 ul {
@@ -313,9 +314,9 @@ section.content div.container {
           align-items: center;
   -ms-grid-column-align: center;
       justify-self: center;
-  min-height: 400px;
-  -ms-grid-rows: 80px 120px minmax(120px, auto) 80px;
-      grid-template-rows: 80px 120px minmax(120px, auto) 80px;
+  min-height: 480px;
+  -ms-grid-rows: 160px 120px minmax(120px, auto) 80px;
+      grid-template-rows: 160px 120px minmax(120px, auto) 80px;
 }
 
 section.content div.container div {
@@ -342,6 +343,76 @@ section.content div.container h1 {
 section.content div.container h1 img {
   width: auto;
   height: 105px;
+}
+
+section.content div.container .progress {
+  display: none;
+}
+
+section.content div.container .progress.is-visible {
+  display: block;
+}
+
+section.content div.container .progress .steps {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 30px;
+  width: 45vw;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+section.content div.container .progress .steps .circle {
+  background-color: #323232;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  padding: 10px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -ms-flex-line-pack: center;
+      align-content: center;
+}
+
+section.content div.container .progress .steps .circle img {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%;
+  opacity: 0.2;
+}
+
+section.content div.container .progress .steps .circle img.rounded {
+  border-radius: 50%;
+}
+
+section.content div.container .progress .steps .circle.active {
+  background-color: #28a5c8;
+}
+
+section.content div.container .progress .steps .circle.active img {
+  opacity: 1;
+}
+
+section.content div.container .progress .steps .divider {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  height: 4px;
+  background-color: #323232;
 }
 
 section.content div.container div.hero {

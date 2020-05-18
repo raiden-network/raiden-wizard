@@ -1,6 +1,4 @@
 {% extends "base.html" %} {% block content %}
-<h2>Fund your Raiden Account with ETH</h2>
-
 <div class="hero">
   We generated a Raiden Account for you 
   <span class="tooltip-item">
@@ -221,6 +219,7 @@
   }
 
   window.addEventListener("load", function () {
+    setProgressStep(2, 'Fund Account with ETH');
     window.MAIN_VIEW_INTERVAL = 10000;
     window.runMainView();
   });

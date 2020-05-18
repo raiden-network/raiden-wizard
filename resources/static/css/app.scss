@@ -644,30 +644,6 @@ div.spinner {
     }
 }
 
-.stepper {
-    width: 405px;
-    position: fixed;
-    bottom: 30px;
-    right: 45px;
-
-    .coins {
-        margin-bottom: 20px;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-
-        img {
-            display: inline-block;
-            height: 105px;
-            width: auto;
-
-            &.transparent {
-                opacity: 0.1;
-            }
-        }
-    }
-}
-
 .video-wrapper {
     position: fixed;
     width: 100vw;

@@ -681,34 +681,6 @@ div.spinner {
   border-bottom: none;
 }
 
-.stepper {
-  width: 405px;
-  position: fixed;
-  bottom: 30px;
-  right: 45px;
-}
-
-.stepper .coins {
-  margin-bottom: 20px;
-  width: 100%;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
-}
-
-.stepper .coins img {
-  display: inline-block;
-  height: 105px;
-  width: auto;
-}
-
-.stepper .coins img.transparent {
-  opacity: 0.1;
-}
-
 .video-wrapper {
   position: fixed;
   width: 100vw;

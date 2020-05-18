@@ -273,7 +273,7 @@
             break;
           case "redirect":
             next_view = function() {
-              document.location = message.redirect_url;
+              forceNavigation(message.redirect_url);
             }
           case "summary":
             spinner_elem.classList.remove("spinner");
@@ -322,7 +322,6 @@
         modalTriggers.forEach(trigger => {
           trigger.addEventListener('click', () => {
             const { modalTrigger } = trigger.dataset;
-            console.log(modalTrigger)
             const modal = document.querySelector(
               `[data-modal="${modalTrigger}"]`
             );
@@ -373,12 +372,24 @@
         progressItems[step].classList.add('active');
       }
 
+      function beforeunloadHandler(e) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+
+      function forceNavigation(url) {
+        window.removeEventListener('beforeunload', beforeunloadHandler);
+        document.location = url;
+      }
+
+      window.addEventListener('beforeunload', beforeunloadHandler);
+
       window.addEventListener("load", function() {
         let link_buttons = document.querySelectorAll("button.link-button");
 
         link_buttons.forEach(function(elem) {
           elem.addEventListener("click", function(evt) {
-            document.location = elem.getAttribute("data-link-url");
+            forceNavigation(elem.getAttribute("data-link-url"));
           });
         });
 

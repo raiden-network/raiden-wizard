@@ -16,6 +16,7 @@ from web3 import Web3
 
 from raiden_installer import log
 from raiden_installer.tokens import ETH, TokenAmount, Wei
+from raiden_installer.constants import WEB3_TIMEOUT
 
 
 def make_random_string(length=32):
@@ -51,7 +52,7 @@ class Account:
         return TokenAmount(Wei(w3.eth.getBalance(self.address)), ETH)
 
     def wait_for_ethereum_funds(
-        self, w3: Web3, expected_amount: TokenAmount, timeout: int = 300
+        self, w3: Web3, expected_amount: TokenAmount, timeout: int = WEB3_TIMEOUT
     ) -> TokenAmount:
         time_remaining = timeout
         POLLING_INTERVAL = 1

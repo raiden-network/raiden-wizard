@@ -6,7 +6,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from raiden_installer.account import Account
-from raiden_installer.constants import GAS_LIMIT_MARGIN
+from raiden_installer.constants import GAS_LIMIT_MARGIN, WEB3_TIMEOUT
 from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from raiden_installer.network import Network
 from raiden_installer.tokens import EthereumAmount, TokenAmount, TokenTicker, Wei
@@ -215,7 +215,7 @@ class Uniswap(Exchange):
     RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
     DAI_EXCHANGE_ADDRESSES = {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
     EXCHANGE_FEE = 0.003
-    EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds
+    EXCHANGE_TIMEOUT = WEB3_TIMEOUT  # maximum waiting time in seconds
     TRANSFER_WEBSITE_URL = "https://uniswap.ninja/send"
     MAIN_WEBSITE_URL = "https://uniswap.io"
     TERMS_OF_SERVICE_URL = "https://uniswap.io"

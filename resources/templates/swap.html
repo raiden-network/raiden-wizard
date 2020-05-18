@@ -4,14 +4,7 @@
 </h2>
 
 <div class="hero">
-  Get
-  <span class="tooltip-item" id="{{ token.ticker }}">
-    {{ swap_amount_1 }}
-    <div class="tooltip">
-      <!-- Tool tip help is setup by setupTooltipText function-->
-    </div>
-  </span>
-  via a decentralized exchange<br />
+  Get {{ swap_amount_1 }} via a decentralized exchange<br />
   Choose an exchange of your choice to swap
 </div>
 
@@ -59,6 +52,19 @@
 
 <div class="action">
   <button type="submit" disabled>Confirm</button>
+</div>
+{% end %}
+
+{% block question %}
+<div class="question">
+  <span class="tooltip-item" id="{{ token.ticker }}">
+    <a target="_blank">
+      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
+    </a>
+    <div class="tooltip">
+      <!-- Tool tip help is setup by setupTooltipText function-->
+    </div>
+  </span>
 </div>
 {% end %}
 

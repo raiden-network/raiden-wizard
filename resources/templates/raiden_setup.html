@@ -24,6 +24,38 @@
 </div>
 {% end %}
 
+{% block question %}
+<div class="question">
+  <span class="tooltip-item">
+    <a target="_blank">
+      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
+    </a>
+    <div class="tooltip">
+      <ul>
+        <li> 
+          The Raiden Network is an off-chain scaling solution for performing ERC20-compliant 
+          token transfers on the Ethereum blockchain. It is Ethereum's version of 
+          Bitcoin's Lightning Network, enabling near-instant, low-fee, scalable, and privacy-preserving payments. 
+        </li>
+        <li>
+          The Raiden Network allows secure transfers of tokens between participants without the need for global consensus. 
+          This is achieved using digitally signed and hash-locked transfers, called balance proofs, 
+          fully collateralized by previously setup on-chain deposits.
+        </li>
+        <li>
+          Payment channels allow for practically unlimited, bidirectional transfers between two participants, 
+          as long as the net sum of their transfers does not exceed the deposited tokens
+        </li>
+        <li>
+          These transfers can be performed instantaneously and without any involvement of the actual blockchain itself,
+          except for an initial one-time on-chain creation and an eventual closing of the channel. 
+        </li>
+      </ul>
+    </div>
+  </span>
+</div>
+{% end %}
+
 {% block page_header_scripts %}
 <script type="text/javascript">
 

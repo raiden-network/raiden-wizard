@@ -2,43 +2,7 @@
 <h2>Fund your Raiden Account with ETH</h2>
 
 <div class="hero">
-  We generated a Raiden Account for you 
-  <span class="tooltip-item">
-    <a target="_blank">
-      <img class="icon-link" src="{{ static_url('images/info.svg') }}" alt="Info" />
-    </a>
-    <div class="tooltip">
-      <ul>
-        <li>
-          Raiden accounts are Ethereum accounts defined by a pair of keys, a
-          private key and public key.
-        </li>
-        <li>
-          Every private key/address pair is encoded in a keyfile. Keyfiles are
-          JSON text files which you can open and view in any text editor.
-        </li>
-        <li>You need to download and store this keyfile somewhere safe.</li>
-        <li>
-          The critical component of the keyfile, your account's private key, is
-          always encrypted, and it is encrypted with the password you entered
-          when you created the account.
-        </li>
-        <li>
-          You can restore your account and with this keyfile and the password
-          via Metamask.
-        </li>
-        <li>
-          The break up for the requirement of 0.11 ETH when using the wizard 
-          for the first time for fixed amounts to swap 10 RDN and 3 DAI is as follows:
-          <ol>
-            <li>0.025 ETH for closing 3 channels sum to 0.075 ETH</li>
-            <li>0.025 ETH are required for Exchanging RDN and DAI amounts</li>
-            <li>0.01 ETH required as transaction fee</li>
-          </ol> 
-        </li>
-      </ul>
-    </div>
-  </span>
+  We generated a Raiden Account for you
 </div>
 
 <div class="info-panel">
@@ -80,6 +44,47 @@
   </button>
 </div>
 
+{% end %}
+
+{% block question %}
+<div class="question">
+  <span class="tooltip-item">
+    <a target="_blank">
+      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
+    </a>
+    <div class="tooltip">
+      <ul>
+        <li>
+          Raiden accounts are Ethereum accounts defined by a pair of keys, a
+          private key and public key.
+        </li>
+        <li>
+          Every private key/address pair is encoded in a keyfile. Keyfiles are
+          JSON text files which you can open and view in any text editor.
+        </li>
+        <li>You need to download and store this keyfile somewhere safe.</li>
+        <li>
+          The critical component of the keyfile, your account's private key, is
+          always encrypted, and it is encrypted with the password you entered
+          when you created the account.
+        </li>
+        <li>
+          You can restore your account and with this keyfile and the password
+          via Metamask.
+        </li>
+        <li>
+          The break up for the requirement of 0.11 ETH when using the wizard 
+          for the first time for fixed amounts to swap 10 RDN and 3 DAI is as follows:
+          <ol>
+            <li>0.025 ETH for closing 3 channels sum to 0.075 ETH</li>
+            <li>0.025 ETH are required for Exchanging RDN and DAI amounts</li>
+            <li>0.01 ETH required as transaction fee</li>
+          </ol> 
+        </li>
+      </ul>
+    </div>
+  </span>
+</div>
 {% end %}
 
 {% block page_header_scripts %}

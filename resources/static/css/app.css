@@ -593,15 +593,14 @@ div.spinner {
   color: #fff;
   position: absolute;
   z-index: 50;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   visibility: hidden;
   opacity: 0;
   -webkit-transition: opacity 0.3s;
   transition: opacity 0.3s;
   width: 400px;
-  margin-left: -200px;
-  top: 100%;
+  margin-left: -250px;
   padding: 15px;
   background-color: #3c3c3c;
   border-radius: 10px;
@@ -679,6 +678,13 @@ div.spinner {
   border-bottom-right-radius: 24px;
   border-bottom-left-radius: 24px;
   border-bottom: none;
+}
+
+.question {
+  width: 200px;
+  position: fixed;
+  bottom: 30px;
+  right: 45px;
 }
 
 .video-wrapper {

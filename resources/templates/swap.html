@@ -49,22 +49,20 @@
 <div class="action">
   <button type="submit" disabled>Confirm</button>
 </div>
-{% end %}
-
-{% block question %}
+{% end %} {% block question %}
 <div class="question">
   <span class="tooltip-item" id="{{ token.ticker }}">
     <a target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
+      <img
+        class="icon-link big"
+        src="{{ static_url('images/question.png') }}"
+        alt="Questions"
+      />
     </a>
-    <div class="tooltip">
-      <!-- Tool tip help is setup by setupTooltipText function-->
-    </div>
+    <div class="tooltip"></div>
   </span>
 </div>
-{% end %}
-
-{% block page_header_scripts %}
+{% end %} {% block page_header_scripts %}
 <script type="text/javascript">
   const API_COST_ESTIMATION_ENDPOINT =
     "/api/cost-estimation/{{ configuration_file.file_name }}";
@@ -77,15 +75,16 @@
 
   const tokenTips = {
     RDN: [
-      `RDN tokens are required to pay for the Path finding and Monitoring Services which helps you
-      finding short or cheap routes and going offline safely.`,
-      `A minimum of 10 RDN tokens would be required to pay for these services though you could go higher.`,
+      `The Raiden Network consists of a few services in order to increase the security and reliability of the network.`,
+      `RDN tokens are required to pay for path finding and monitoring service providers. These tokens need to be deposited into the User Deposit Contract. By clicking confirm the tokens will be bought and deposited instantly on your behalf.`,
+      `A minimum of 10 RDN is recommended to get started and be able to play around for a while.`,
+      `Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>`,
     ],
     DAI: [
-      `Since Raiden offers users to join the DAI token network to make micropayments
-      we need to fund the raiden account with DAI tokens`,
-      `We recommend you to fund with minimum of 2 DAI and if you require more you 
-      could come back and refund yourself`,
+      `The Raiden Client offers to join the DAI token network. You can make payments in DAI tokens`,
+      `DAI is a stable coin which is pegged to the USD. This means that one DAI is roughly worth one USD.`,
+      `A minimum of 3 DAI is recommended to get started and be able to play around for a while.`,
+      `Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>`,
     ],
   };
 
@@ -221,10 +220,10 @@
   }
 
   window.addEventListener("load", function () {
-    if (TOKEN_TICKER === 'RDN') {
-      setProgressStep(3, 'Fund Account with RDN');
-    } else if (TOKEN_TICKER === 'DAI') {
-      setProgressStep(4, 'Fund Account with DAI');
+    if (TOKEN_TICKER === "RDN") {
+      setProgressStep(3, "Fund Account with RDN");
+    } else if (TOKEN_TICKER === "DAI") {
+      setProgressStep(4, "Fund Account with DAI");
     }
 
     amountMenus.kyber = document.querySelector("#amount-menu-kyber");

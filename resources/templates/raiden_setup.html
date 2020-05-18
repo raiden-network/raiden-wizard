@@ -1,101 +1,105 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="hero">
   Provide your Infura ID to run your node&nbsp;
-  <a href="https://infura.io/product" target="_blank">
-      <img class="icon-link" src="{{ static_url('images/info.svg') }}" alt="Info" />
-  </a>
 </div>
 
 <div class="info-panel">
   <div>
-    <input type="text" name="endpoint" placeholder="Your Infura ID (or Infura endpoint URL)" />
+    <input
+      type="text"
+      name="endpoint"
+      placeholder="Your Infura ID (or Infura endpoint URL)"
+    />
   </div>
   <div class="error-box">
-    <span class="error" hidden>You need to provide a valid Infura Project ID</span>
+    <span class="error" hidden
+      >You need to provide a valid Infura Project ID</span
+    >
   </div>
 </div>
 
 <div class="action">
   <button type="submit" disabled>Confirm</button>
 </div>
-{% end %}
-
-{% block question %}
+{% end %} {% block question %}
 <div class="question">
   <span class="tooltip-item">
     <a target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
+      <img
+        class="icon-link big"
+        src="{{ static_url('images/question.png') }}"
+        alt="Questions"
+      />
     </a>
     <div class="tooltip">
       <ul>
-        <li> 
-          The Raiden Network is an off-chain scaling solution for performing ERC20-compliant 
-          token transfers on the Ethereum blockchain. It is Ethereum's version of 
-          Bitcoin's Lightning Network, enabling near-instant, low-fee, scalable, and privacy-preserving payments. 
+        <li>
+          Raiden is an off chain scaling solution for the Ethereum Blockchain.
+          The Raiden Wizard as well as Raiden need to connect to an Ethereum
+          node.
         </li>
         <li>
-          The Raiden Network allows secure transfers of tokens between participants without the need for global consensus. 
-          This is achieved using digitally signed and hash-locked transfers, called balance proofs, 
-          fully collateralized by previously setup on-chain deposits.
+          The
+          <a href="https://infura.io/product" target="_blank"
+            >Infura API suite</a
+          >
+          provides instant access over HTTPS and WebSockets to Ethereum.
         </li>
         <li>
-          Payment channels allow for practically unlimited, bidirectional transfers between two participants, 
-          as long as the net sum of their transfers does not exceed the deposited tokens
+          If you have not done yet, please create a project at Infura to connect
+          to the Ethereum Mainnet. You can find your Infura project ID under
+          your project's settings. For more help, look
+          <a href="https://infura.io/docs/" target="_blank">here</a>.
         </li>
         <li>
-          These transfers can be performed instantaneously and without any involvement of the actual blockchain itself,
-          except for an initial one-time on-chain creation and an eventual closing of the channel. 
+          Do you need additional help? See
+          <a href="https://gitter.im/raiden-network/raiden" target="_blank"
+            >Raiden Gitter Chat</a
+          >
         </li>
       </ul>
     </div>
   </span>
 </div>
-{% end %}
-
-{% block page_header_scripts %}
+{% end %} {% block page_header_scripts %}
 <script type="text/javascript">
+  window.addEventListener("load", function () {
+    setProgressStep(1, "Connect to the Ethereum Blockchain");
 
+    const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
+    const infura_project_input = document.querySelector("input[name=endpoint]");
+    const error_display = document.querySelector("span.error");
+    const submit_button = document.querySelector("button");
 
- window.addEventListener("load", function() {
-   setProgressStep(1, 'Connect to the Ethereum Blockchain');
+    function checkIdNotEmpty(evt) {
+      const error_message = "Please enter your Infura ID.";
 
-   const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
-   const infura_project_input = document.querySelector("input[name=endpoint]");
-   const error_display = document.querySelector("span.error");
-   const submit_button = document.querySelector("button");
+      if (!evt.target.value) {
+        error_display.textContent = error_message;
+        error_display.hidden = false;
+        submit_button.disabled = true;
+      } else {
+        error_display.hidden = true;
+        submit_button.disabled = false;
+      }
+    }
 
-   function checkIdNotEmpty(evt) {
-     const error_message = "Please enter your Infura ID.";
+    function submitConfiguration(evt) {
+      WEBSOCKET.send(
+        JSON.stringify({
+          method: "setup",
+          endpoint: infura_project_input.value,
+          network: "{{ network_name }}",
+          account_file: "{{ account_file }}",
+        })
+      );
 
-     if (!evt.target.value) {
-       error_display.textContent = error_message;
-       error_display.hidden = false;
-       submit_button.disabled = true;
-     }
-     else {
-       error_display.hidden = true;
-       submit_button.disabled = false;
-     }
-   }
+      toggleView();
+    }
 
-   function submitConfiguration(evt) {
-     WEBSOCKET.send(JSON.stringify({
-         method: "setup",
-         endpoint: infura_project_input.value,
-         network: "{{ network_name }}",
-         account_file: "{{ account_file }}"
-     }));
-
-     toggleView();
-   }
-
-
-   // Attaching event handlers
-   infura_project_input.addEventListener("input", checkIdNotEmpty);
-   submit_button.addEventListener("click", submitConfiguration);
-
- });
+    // Attaching event handlers
+    infura_project_input.addEventListener("input", checkIdNotEmpty);
+    submit_button.addEventListener("click", submitConfiguration);
+  });
 </script>
 {% end %}

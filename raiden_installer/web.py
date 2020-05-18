@@ -357,7 +357,8 @@ class AsyncTaskHandler(WebSocketHandler):
                 elif service_token_balance.as_wei > 0:
 
                     self._send_status_update(
-                        f"Making deposit of {service_token_balance.formatted} to the User Deposit Contract"
+                        f"Making deposit of {service_token_balance.formatted} to the "
+                        "User Deposit Contract"
                     )
                     self._send_status_update(f"This might take a few minutes")
                     transaction_receipt = deposit_service_tokens(
@@ -384,7 +385,9 @@ class AsyncTaskHandler(WebSocketHandler):
                     redirect_url = self.reverse_url("launch", configuration_file.file_name)
                     next_page = "You are ready to launch Raiden! ..."
 
-                self._send_summary(["Congratulations! Swap Successful!", next_page], icon=token_ticker)
+                self._send_summary(
+                    ["Congratulations! Swap Successful!", next_page], icon=token_ticker
+                )
                 time.sleep(5)
                 self._send_redirect(redirect_url)
             else:
@@ -408,7 +411,7 @@ class AsyncTaskHandler(WebSocketHandler):
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             account = configuration_file.account
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-            self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash= tx_hash)
+            self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash=tx_hash)
 
             transaction_found = False
             iteration_cycle = 0

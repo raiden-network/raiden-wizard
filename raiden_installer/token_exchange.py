@@ -61,7 +61,9 @@ class Exchange:
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         raise NotImplementedError
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if transaction_costs is None:
+            transaction_costs = dict()
         raise NotImplementedError
 
     def is_listing_token(self, ticker: TokenTicker):
@@ -153,7 +155,8 @@ class Kyber(Exchange):
         log.debug("Gas Limit", gas_with_margin=gas_with_margin, max_gas_limit=max_gas_limit)
         if max_gas_limit < gas_with_margin:
             log.debug(
-                f"calculated gas was higher than block's gas limit {max_gas_limit}. Using this limit."
+                f"calculated gas was higher than block's gas limit {max_gas_limit}. "
+                "Using this limit."
             )
 
         gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
@@ -169,7 +172,9 @@ class Kyber(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if transaction_costs is None:
+            transaction_costs = dict()
         if self.network.name not in self.SUPPORTED_NETWORKS:
             raise ExchangeError(
                 f"{self.name} does not list {token_amount.ticker} on {self.network.name}"
@@ -279,10 +284,11 @@ class Uniswap(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
-        if transaction_costs:
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if transaction_costs is not None:
             costs = transaction_costs
         else:
+            transaction_costs = dict()
             costs = self.calculate_transaction_costs(token_amount, account)
 
         if costs is None:

@@ -363,6 +363,16 @@
         })
       }
 
+      function setProgressStep(step, title) {
+        const progressContainer = document.querySelector('.progress');
+        progressContainer.classList.add('is-visible');
+        const titleText = document.createTextNode(title);
+        const headline = progressContainer.querySelector('h2');
+        headline.appendChild(titleText);
+        const progressItems = progressContainer.querySelectorAll('.circle');
+        progressItems[step].classList.add('active');
+      }
+
       window.addEventListener("load", function() {
         let link_buttons = document.querySelectorAll("button.link-button");
 
@@ -387,6 +397,34 @@
     </div>
     <section class="content">
       <div class="container">
+        <div class="progress">
+          <div class="steps">
+            <div class="circle">
+              <img src="{{ static_url('images/wallet.svg') }}" alt="Wallet" />
+            </div>
+            <div class="divider"></div>
+            <div class="circle">
+              <img src="{{ static_url('images/connect.svg') }}" alt="Connect" />
+            </div>
+            <div class="divider"></div>
+            <div class="circle">
+              <img src="{{ static_url('images/eth.png') }}" alt="ETH" />
+            </div>
+            <div class="divider"></div>
+            <div class="circle">
+              <img src="{{ static_url('images/rdn.png') }}" alt="RDN" />
+            </div>
+            <div class="divider"></div>
+            <div class="circle">
+              <img src="{{ static_url('images/dai.png') }}" alt="DAI" />
+            </div>
+            <div class="divider"></div>
+            <div class="circle">
+              <img class="rounded" src="{{ static_url('images/raiden-ball.jpg') }}" alt="Launch Raiden" />
+            </div>
+          </div>
+          <h2></h2>
+        </div>
         {% block content %} {% end %}
       </div>
       <div id="background-task-tracker" hidden>

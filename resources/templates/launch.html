@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Launch Raiden</h2>
-
 <div class="hero">
   Your Raiden Account is funded with the following coins
 </div>
@@ -77,6 +75,7 @@
  }
 
  window.addEventListener("load", async function() {
+   setProgressStep(5, 'Launch Raiden');
    main();
  });
 </script>

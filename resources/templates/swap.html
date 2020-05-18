@@ -1,8 +1,4 @@
 {% extends "base.html" %} {% block content %}
-<h2>
-  Swap ETH for {{ token.ticker }}
-</h2>
-
 <div class="hero">
   Get
   <span class="tooltip-item" id="{{ token.ticker }}">
@@ -219,6 +215,12 @@
   }
 
   window.addEventListener("load", function () {
+    if (TOKEN_TICKER === 'RDN') {
+      setProgressStep(3, 'Fund Account with RDN');
+    } else if (TOKEN_TICKER === 'DAI') {
+      setProgressStep(4, 'Fund Account with DAI');
+    }
+
     amountMenus.kyber = document.querySelector("#amount-menu-kyber");
     amountMenus.uniswap = document.querySelector("#amount-menu-uniswap");
 

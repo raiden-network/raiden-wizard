@@ -17,10 +17,13 @@ $colors: (
     button-border: #28a5c8,
     button-inactive-border: rgba(40, 165, 200, .3),
     tooltip-bg: #3c3c3c,
+    progress-bg: #323232,
+    progress-active: #28a5c8,
 );
 
 $dimensions: (
     full-column-width: 60vw,
+    progress-column-width: 45vw,
 );
 
 @mixin button() {
@@ -131,6 +134,7 @@ h1 {
 
 h2 {
     font-size: 36px;
+    line-height: 43px;
 }
 
 ul {
@@ -343,9 +347,9 @@ section.content {
         justify-content: center;
         align-items: center;
         justify-self: center;
-        min-height: 400px;
+        min-height: 480px;
 
-        grid-template-rows: 80px 120px minmax(120px, auto) 80px;
+        grid-template-rows: 160px 120px minmax(120px, auto) 80px;
 
         div {
             justify-self: center;
@@ -360,6 +364,62 @@ section.content {
             img {
                 width: auto;
                 height: 105px;
+            }
+        }
+
+        .progress {
+            display: none;
+            
+            &.is-visible {
+                display: block;
+            }
+            
+            .steps {
+                margin-left: auto;
+                margin-right: auto;
+                margin-bottom: 30px;
+                width: dimension(progress-column-width);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+
+                .circle {
+                    background-color: color(progress-bg);
+                    border-radius: 50%;
+                    width: 45px;
+                    height: 45px;
+                    padding: 10px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    align-content: center;
+
+                    img {
+                        display: inline-block;
+                        max-width:100%;
+                        max-height:100%;
+                        opacity: 0.2;
+
+                        &.rounded {
+                            border-radius: 50%;
+                        }
+                    }
+
+                    &.active {
+                        background-color: color(progress-active);
+
+                        img {
+                            opacity: 1;
+
+                        }
+                    }
+                }
+
+                .divider {
+                    flex: 1;
+                    height: 4px;
+                    background-color: color(progress-bg);
+                }
             }
         }
 

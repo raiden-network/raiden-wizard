@@ -32,7 +32,7 @@ def temporary_passphrase_file(passphrase):
         passfile.flush()
         yield passphrase_file_path
     finally:
-        for i in range(5):
+        for _ in range(5):
             passfile.seek(0)
             passfile.write(os.urandom(1024).hex())
             passfile.flush()

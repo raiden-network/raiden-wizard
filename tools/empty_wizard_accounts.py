@@ -130,6 +130,7 @@ class AccountDrainer:
                 f"\tUDC: {udc_balance}\n"
             )
             self.accounts_with_balance.append(address)
+            self.accounts_with_balance = list(set(self.accounts_with_balance))
 
     def unlock_accounts_with_balance(self):
         known_passwords = set()
@@ -174,11 +175,13 @@ class AccountDrainer:
 
     def work_left(self):
         if any(not self.udc_empty(address) for address in self.accounts_with_balance):
+            print(f"Draining UDC")
             return True
         for address in self.accounts_with_balance:
             if address.lower() == self.receiver.lower():
                 continue
             if self.has_any_balance_left(address):
+                print(f"continuing to drain {address}:")
                 return True
         return False
 

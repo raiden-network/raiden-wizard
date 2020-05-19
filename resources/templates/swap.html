@@ -106,7 +106,7 @@
     req.onload = function () {
       if (this.status == 200) {
         const res = JSON.parse(this.response);
-        const text = document.createTextNode(`Costs roughly ${res.formatted}`);
+        const text = document.createTextNode(`Approximately ${res.formatted} as per exchange`);
         placeholder.remove();
         estimationElement.appendChild(text);
       }

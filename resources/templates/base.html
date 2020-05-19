@@ -113,22 +113,25 @@
         }
 
         const videoWrapper = document.querySelector('.video-wrapper');
+        const tracker = document.querySelector("#background-task-tracker");
         video.src = LAUNCH_VIDEO_URL;
         video.autoplay = 'true';
         video.type = 'video/mp4';
         video.addEventListener('ended', () => {
           video.remove();
           videoWrapper.classList.remove('is-visible');
+          tracker.classList.remove('video-tracker');
           video = undefined;
         });
         video.addEventListener('loadeddata', loadedCallback);
         videoWrapper.classList.add('is-visible');
         videoWrapper.appendChild(video);
+
+        tracker.classList.add('video-tracker');
       }
 
       function launchRaiden(configuration_file_name) {
         const onVideoLoaded = () => {
-          console.log('loaded!')
           let message = {method: "launch", configuration_file_name: configuration_file_name}
           WEBSOCKET.send(JSON.stringify(message));
           toggleView();
@@ -282,12 +285,6 @@
             break;
           case "redirect":
             next_view = function() {
-              if (video) {
-                video.addEventListener('ended', () => {
-                  forceNavigation(message.redirect_url);
-                });
-                return;
-              }
               forceNavigation(message.redirect_url);
             }
           case "summary":
@@ -321,8 +318,10 @@
           message_list_elem.appendChild(li);
         }
 
-        if (next_view) {
+        if (next_view && !video) {
           setTimeout(next_view, waiting_time);
+        } else if (next_view && video) {
+          video.addEventListener('ended', next_view);
         }
       }
 

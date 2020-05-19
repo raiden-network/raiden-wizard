@@ -33,6 +33,8 @@
       var MAIN_VIEW_INTERVAL;
       var RUNNING_TIMERS = new Array();
 
+      let video;
+
       async function connectWeb3() {
         let has_web3 = Boolean(window.ethereum || window.web3);
         if (has_web3) {
@@ -99,8 +101,13 @@
       }
 
       function showLaunchVideo(loadedCallback) {
-        const video = document.createElement('video');
+        if (video) {
+          video.remove();
+        }
+
+        video = document.createElement('video');
         if (!video.canPlayType('video/mp4')) {
+          video = undefined;
           loadedCallback();
           return;
         }
@@ -112,6 +119,7 @@
         video.addEventListener('ended', () => {
           video.remove();
           videoWrapper.classList.remove('is-visible');
+          video = undefined;
         });
         video.addEventListener('loadeddata', loadedCallback);
         videoWrapper.classList.add('is-visible');
@@ -120,6 +128,7 @@
 
       function launchRaiden(configuration_file_name) {
         const onVideoLoaded = () => {
+          console.log('loaded!')
           let message = {method: "launch", configuration_file_name: configuration_file_name}
           WEBSOCKET.send(JSON.stringify(message));
           toggleView();
@@ -273,6 +282,12 @@
             break;
           case "redirect":
             next_view = function() {
+              if (video) {
+                video.addEventListener('ended', () => {
+                  forceNavigation(message.redirect_url);
+                });
+                return;
+              }
               forceNavigation(message.redirect_url);
             }
           case "summary":

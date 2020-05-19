@@ -1,15 +1,16 @@
 from re import search
+from time import time
 from urllib.parse import urlparse
 
 import requests
 import structlog
+from hexbytes import HexBytes
+from web3.eth import Eth
+from web3.exceptions import BlockNotFound
+
 from web3 import HTTPProvider, Web3
 from web3.gas_strategies.time_based import construct_time_based_gas_price_strategy
-from web3.middleware import (
-    construct_sign_and_send_raw_middleware,
-    geth_poa_middleware,
-    simple_cache_middleware,
-)
+from web3.middleware import construct_sign_and_send_raw_middleware, simple_cache_middleware
 from web3.types import Wei
 
 from raiden_installer.account import Account
@@ -18,10 +19,18 @@ from raiden_installer.network import Network
 
 log = structlog.get_logger()
 
+EXTRA_DATA_LENGTH = 66  # 32 bytes hex encoded + `0x` prefix
+WEB3_BLOCK_NOT_FOUND_RETRY_COUNT = 3
+
 
 def make_web3_provider(url: str, account: Account) -> Web3:
     w3 = Web3(HTTPProvider(url))
     w3.middleware_onion.add(simple_cache_middleware)
+    if is_infura(w3):
+        # Infura sometimes erroneously returns `null` for existing (but very recent) blocks.
+        # Work around this by retrying those requests.
+        # See docstring for details.
+        Eth.getBlock = make_patched_web3_get_block(Eth.getBlock)  # type: ignore
 
     def gas_price_strategy_eth_gas_station_or_with_margin(web3: Web3, transaction_params):
         # FIXME: This is a temporary fix to speed up gas price generation
@@ -46,7 +55,7 @@ def make_web3_provider(url: str, account: Account) -> Web3:
 
     if account.passphrase is not None:
         w3.middleware_onion.add(construct_sign_and_send_raw_middleware(account.private_key))
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    w3.middleware_onion.inject(make_sane_poa_middleware, layer=0)
 
     return w3
 
@@ -96,3 +105,69 @@ class Infura(EthereumRPCProvider):
     @staticmethod
     def is_valid_project_id(id_string: str) -> bool:
         return len(id_string) == 32 and Infura.is_valid_project_id_or_endpoint(id_string)
+
+
+def make_sane_poa_middleware(make_request, web3: Web3):  # pylint: disable=unused-argument
+    """ Simpler geth_poa_middleware that doesn't break with ``null`` responses. """
+
+    def middleware(method, params):
+        response = make_request(method, params)
+        result = response.get("result")
+        is_get_block_poa = (
+            method.startswith("eth_getBlockBy")
+            and result is not None
+            and len(result["extraData"]) != EXTRA_DATA_LENGTH
+        )
+        if is_get_block_poa:
+            extra_data = result.pop("extraData")
+            response["result"] = {**result, "proofOfAuthorityData": HexBytes(extra_data)}
+        return response
+
+    return middleware
+
+
+def make_patched_web3_get_block(original_func):
+    """ Patch Eth.getBlock() to retry in case of ``BlockNotFound``
+
+    Infura sometimes erroneously returns a `null` response for
+    ``eth_getBlockByNumber`` and ``eth_getBlockByHash`` for existing blocks.
+
+    This generates a wrapper method that tries to perform the request up to
+    ``WEB3_BLOCK_NOT_FOUND_RETRY_COUNT`` times.
+
+    If no result is returned after the final retry the last ``BlockNotFound`` exception is
+    re-raised.
+
+    See:
+      - https://github.com/raiden-network/raiden/issues/3201
+      - https://github.com/INFURA/infura/issues/43
+    """
+
+    def patched_web3_get_block(  # type: ignore
+        self, block_identifier, full_transactions: bool = False
+    ):
+        last_ex = None
+        for remaining_retries in range(WEB3_BLOCK_NOT_FOUND_RETRY_COUNT, 0, -1):
+            try:
+                return original_func(self, block_identifier, full_transactions)
+            except BlockNotFound as ex:
+                log.warning(
+                    "Block not found, retrying",
+                    remaining_retries=remaining_retries - 1,
+                    block_identifier=block_identifier,
+                )
+                last_ex = ex
+                # Short delay
+                time.sleep(0.1)
+        if last_ex is not None:
+            raise last_ex
+
+    return patched_web3_get_block
+
+
+def is_infura(web3: Web3) -> bool:
+    return (
+        isinstance(web3.provider, HTTPProvider)
+        and web3.provider.endpoint_uri is not None
+        and "infura.io" in web3.provider.endpoint_uri
+    )

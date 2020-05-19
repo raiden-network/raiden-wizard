@@ -4,11 +4,10 @@
 </div>
 
 <div class="info-panel">
-  <div>
+  <div class="wallet-download" id="keystore-download">
     You need to download the Raiden Account<br />
     <a
       id="keystore"
-      href="{{ reverse_url('keystore', configuration_file.file_name, keystore) }}"
       download
     >
       <img
@@ -141,14 +140,9 @@
     makeWeb3Transaction(web3, transaction_data);
   }
 
-  function checkWeb3Available(balance) {
+  function checkWeb3Available() {
     let has_web3 = Boolean(window.ethereum || window.web3);
-    let button_send_eth = document.getElementById("btn-web3-eth");
     let noWeb3Text = document.getElementById("no-web3");
-
-    button_send_eth.disabled = has_web3
-      ? has_web3 && hasEnoughEthToStartSwaps(balance)
-      : true;
     if (has_web3) {
       console.log("Inside has_web3 true");
       noWeb3Text.style.display = "none";
@@ -175,7 +169,11 @@
   }
 
   function sendEthButtonlogic(balance) {
-    const has_web3 = checkWeb3Available(balance);
+    const has_web3 = checkWeb3Available();
+    let button_send_eth = document.getElementById("btn-web3-eth");
+    button_send_eth.disabled = has_web3
+      ? has_web3 && hasEnoughEthToStartSwaps(balance)
+      : true;
     if (!has_web3) {
       return;
     }
@@ -196,10 +194,19 @@
     let balance = await getBalances(
       "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
     );
+    let config = await getConfigurationFileData(
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
+    );
+    if (!balance.ETH.as_wei && config._initial_funding_txhash) {
+        return trackTransaction(config._initial_funding_txhash, "{{ configuration_file.file_name }}");
+    }
     if (balance.ETH.as_wei) {
       sendEthButtonlogic(balance);
     } else {
+      let keystore_div = document.getElementById("keystore-download");
+      keystore_div.classList.add("is-visible");
       let keystore_button = document.getElementById("keystore");
+      keystore_button.href = "{{ reverse_url('keystore', configuration_file.file_name, keystore) }}";
       keystore_button.onclick = function () {
         sendEthButtonlogic(balance);
       };

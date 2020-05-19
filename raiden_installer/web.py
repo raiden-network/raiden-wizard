@@ -9,17 +9,19 @@ from urllib.parse import urlparse
 
 import tornado.ioloop
 import wtforms
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, decode_hex
 from ethtoken.abi import EIP20_ABI
 from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
+from web3.exceptions import TimeExhausted
 from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
+from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError, temporary_passphrase_file
@@ -98,9 +100,14 @@ class FundingOptionsForm(Form):
 
 
 class AsyncTaskHandler(WebSocketHandler):
-    def _send_status_update(self, message_text):
-        self.write_message(json.dumps({"type": "status-update", "text": [message_text]}))
-        log.info(message_text)
+    def _send_status_update(self, message_text, icon=None):
+        if not isinstance(message_text, list):
+            message_text = [message_text]
+        body = {"type": "status-update", "text": message_text}
+        if icon:
+            body["icon"] = icon
+        self.write_message(json.dumps(body))
+        log.info(" ".join(message_text))
 
     def _send_error_message(self, error_message):
         self.write_message(json.dumps({"type": "error-message", "text": [error_message]}))
@@ -115,6 +122,8 @@ class AsyncTaskHandler(WebSocketHandler):
         log.info(f"Redirecting to {redirect_url}")
 
     def _send_summary(self, text, **kw):
+        if not isinstance(text, list):
+            text = [text]
         message = {"type": "summary", "text": text}
         icon = kw.get("icon")
         if icon:
@@ -122,6 +131,8 @@ class AsyncTaskHandler(WebSocketHandler):
         self.write_message(message)
 
     def _send_txhash_message(self, text, tx_hash):
+        if not isinstance(text, list):
+            text = [text]
         message = {"type": "hash", "text": text, "tx_hash": tx_hash}
         self.write_message(message)
         log.info(f"Waiting for confirmation of txhash {tx_hash}")
@@ -403,31 +414,49 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_redirect(redirect_url)
 
     def _run_track_transaction(self, **kw):
-        POLLING_INTERVAL = 10
         configuration_file_name = kw.get("configuration_file_name")
         tx_hash = kw.get("tx_hash")
-        time_elapsed = 0
+        time_start = time.time()
         try:
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+            configuration_file._initial_funding_txhash = tx_hash
+            configuration_file.save()
             account = configuration_file.account
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
             self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash=tx_hash)
 
             transaction_found = False
-            iteration_cycle = 0
 
-            while not transaction_found and iteration_cycle < 30:
+            while (
+                (not transaction_found)
+                and (time.time() - time_start < WEB3_TIMEOUT)
+            ):
                 try:
-                    w3.eth.getTransactionReceipt(tx_hash)
+                    tx_receipt = w3.eth.waitForTransactionReceipt(
+                        decode_hex(tx_hash), timeout=WEB3_TIMEOUT
+                    )
+                    assert tx_receipt.get("blockNumber", 0) > 0
                     transaction_found = True
-                except Exception:
-                    time.sleep(2)
+                except TimeExhausted:
+                    pass
 
-            while not w3.eth.getTransactionReceipt(tx_hash):
-                time.sleep(POLLING_INTERVAL)
-                time_elapsed += POLLING_INTERVAL
+            if not transaction_found:
+                self._send_status_update(
+                    [f"Not confirmed after {int(time.time() - time_start)} seconds!"], icon="error"
+                )
+                self._send_txhash_message(
+                    "Funding took too long! "
+                    "Click the link below and restart the wizard, "
+                    "once it was confirmed:",
+                    tx_hash=tx_hash,
+                )
+                time.sleep(10)
+                sys.exit(1)
 
-                self._send_status_update(f"Not confirmed after {time_elapsed} seconds...")
+            else:
+                configuration_file._initial_funding_txhash = None
+                configuration_file.save()
+
             self._send_status_update("Transaction confirmed")
             service_token = configuration_file.settings.service_token
             self._send_redirect(
@@ -507,6 +536,22 @@ class AccountDetailHandler(BaseRequestHandler):
                 ):
                     filename = os.path.basename(file)
                     break
+
+        w3 = make_web3_provider(
+            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
+        )
+        required = RequiredAmounts.for_network(configuration_file.network.name)
+        eth_balance = configuration_file.account.get_ethereum_balance(w3)
+        log.info(f"Checking balance {eth_balance} > {required.eth}")
+        if eth_balance < required.eth:
+            log.info(f"funding tx {configuration_file._initial_funding_txhash}")
+            if configuration_file._initial_funding_txhash is not None:
+                return self.render(
+                    "account.html", configuration_file=configuration_file, keystore=filename,
+                )
+        else:
+            configuration_file._initial_funding_txhash = None
+            configuration_file.save()
 
         if PASSPHRASE is not None:
             self.render("account.html", configuration_file=configuration_file, keystore=filename)
@@ -658,6 +703,7 @@ class ConfigurationItemAPIHandler(APIHandler):
                     "service_token": serialize_balance(service_token_balance),
                     "transfer_token": serialize_balance(transfer_token_balance),
                 },
+                "_initial_funding_txhash": configuration_file._initial_funding_txhash,
             }
         )
 

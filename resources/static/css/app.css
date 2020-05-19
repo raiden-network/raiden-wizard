@@ -260,6 +260,14 @@ ul.account-info span.highlighted, ul.account-info span.data-value {
   margin-bottom: 0.25em;
 }
 
+.wallet-download {
+  display: none;
+}
+
+.wallet-download.is-visible {
+  display: block;
+}
+
 span.private {
   display: inline-block;
   width: 75%;
@@ -290,7 +298,7 @@ span.private {
 }
 
 .tx-received::after {
-  content: 'Your Raiden account is Funded with ETH!';
+  content: 'Your raiden account is Funded with ETH!';
 }
 
 #no-web3 {
@@ -526,18 +534,11 @@ section.content div.container div.ack-prompt {
   line-height: 21px;
   max-width: 630px;
   margin: auto;
-  font-size: 70%;
-  text-align: center;
-}
-
-section.content div.container div.ack-prompt i {
-  color: #28a5c8;
-  cursor: pointer;
+  font-size: 50%;
 }
 
 #background-task-tracker {
   margin-top: 25vh;
-  margin-bottom: 70px;
 }
 
 #background-task-tracker ul.messages {
@@ -545,7 +546,7 @@ section.content div.container div.ack-prompt i {
   line-height: 28px;
   list-style-type: none;
   margin: 0;
-  padding: 30px 0px 30px 0px;
+  padding: 30px 0px 100px 0px;
   text-align: center;
 }
 
@@ -557,20 +558,6 @@ section.content div.container div.ack-prompt i {
 #background-task-tracker img {
   height: 105px;
   width: auto;
-}
-
-#background-task-tracker.video-tracker {
-  z-index: 120;
-  width: 100%;
-  margin: 0;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-
-#background-task-tracker.video-tracker .spinner {
-  display: none;
 }
 
 div.spinner {
@@ -685,14 +672,15 @@ div.spinner {
   color: #fff;
   position: absolute;
   z-index: 50;
-  bottom: 100%;
+  top: 100%;
   left: 50%;
   visibility: hidden;
   opacity: 0;
   -webkit-transition: opacity 0.3s;
   transition: opacity 0.3s;
   width: 400px;
-  margin-left: -250px;
+  margin-left: -200px;
+  top: 100%;
   padding: 15px;
   background-color: #3c3c3c;
   border-radius: 10px;
@@ -716,13 +704,6 @@ div.spinner {
 .tooltip.is-visible {
   visibility: visible;
   opacity: 1;
-}
-
-.question {
-  width: 200px;
-  position: fixed;
-  bottom: 30px;
-  right: 45px;
 }
 
 .menu-item {
@@ -793,8 +774,7 @@ div.spinner {
 }
 
 .video-wrapper video {
-  height: 80%;
+  height: 100%;
   width: 100%;
-  z-index: 130;
 }
 /*# sourceMappingURL=app.css.map */

@@ -299,6 +299,13 @@ ul.account-info {
     }
 }
 
+.wallet-download {
+   display: none;
+   &.is-visible {
+      display: block;
+   }
+}
+
 span.private {
     display: inline-block;
     width: 75%;

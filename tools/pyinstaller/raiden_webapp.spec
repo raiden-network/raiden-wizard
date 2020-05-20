@@ -57,7 +57,7 @@ exe = EXE(
     a.datas,
     [],
     name="raiden_wizard",
-    debug=True,
+    debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,

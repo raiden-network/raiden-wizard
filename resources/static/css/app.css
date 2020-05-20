@@ -290,7 +290,7 @@ span.private {
 }
 
 .tx-received::after {
-  content: 'Your raiden account is Funded with ETH!';
+  content: 'Your Raiden account is Funded with ETH!';
 }
 
 #no-web3 {
@@ -526,7 +526,13 @@ section.content div.container div.ack-prompt {
   line-height: 21px;
   max-width: 630px;
   margin: auto;
-  font-size: 50%;
+  font-size: 70%;
+  text-align: center;
+}
+
+section.content div.container div.ack-prompt i {
+  color: #28a5c8;
+  cursor: pointer;
 }
 
 #background-task-tracker {
@@ -679,15 +685,14 @@ div.spinner {
   color: #fff;
   position: absolute;
   z-index: 50;
-  top: 100%;
+  bottom: 100%;
   left: 50%;
   visibility: hidden;
   opacity: 0;
   -webkit-transition: opacity 0.3s;
   transition: opacity 0.3s;
   width: 400px;
-  margin-left: -200px;
-  top: 100%;
+  margin-left: -250px;
   padding: 15px;
   background-color: #3c3c3c;
   border-radius: 10px;
@@ -711,6 +716,13 @@ div.spinner {
 .tooltip.is-visible {
   visibility: visible;
   opacity: 1;
+}
+
+.question {
+  width: 200px;
+  position: fixed;
+  bottom: 30px;
+  right: 45px;
 }
 
 .menu-item {

@@ -114,8 +114,9 @@
 
         const videoWrapper = document.querySelector('.video-wrapper');
         const tracker = document.querySelector("#background-task-tracker");
-        video.src = LAUNCH_VIDEO_URL;
+
         video.autoplay = 'true';
+        video.playsinline = 'true';
         video.type = 'video/mp4';
         video.addEventListener('ended', () => {
           video.remove();
@@ -123,11 +124,27 @@
           tracker.classList.remove('video-tracker');
           video = undefined;
         });
-        video.addEventListener('loadeddata', loadedCallback);
-        videoWrapper.classList.add('is-visible');
-        videoWrapper.appendChild(video);
 
-        tracker.classList.add('video-tracker');
+        const req = new XMLHttpRequest();
+        req.open('GET', LAUNCH_VIDEO_URL, true);
+        req.responseType = 'blob';
+
+        req.onload = function() {
+          if (this.status === 200) {
+              var videoBlob = this.response;
+              var videoSrc = URL.createObjectURL(videoBlob);
+              video.src = videoSrc;
+              videoWrapper.classList.add('is-visible');
+              videoWrapper.appendChild(video);
+              tracker.classList.add('video-tracker');
+              loadedCallback();
+          }
+        };
+        req.onerror = function() {
+          video = undefined;
+          loadedCallback();
+        };
+        req.send();
       }
 
       function launchRaiden(configuration_file_name) {

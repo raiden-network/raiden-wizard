@@ -330,7 +330,7 @@ span.private {
 }
 
 .tx-received::after {
-    content: 'Your raiden account is Funded with ETH!';
+    content: 'Your Raiden account is Funded with ETH!';
 }
 
 #no-web3 {
@@ -503,7 +503,8 @@ section.content {
             text-align: center;
 
             i {
-                color: color(text-blue)
+                color: color(text-blue);
+                cursor: pointer;
             }
         }
     }

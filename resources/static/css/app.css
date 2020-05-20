@@ -290,7 +290,7 @@ span.private {
 }
 
 .tx-received::after {
-  content: 'Your raiden account is Funded with ETH!';
+  content: 'Your Raiden account is Funded with ETH!';
 }
 
 #no-web3 {
@@ -532,6 +532,7 @@ section.content div.container div.ack-prompt {
 
 section.content div.container div.ack-prompt i {
   color: #28a5c8;
+  cursor: pointer;
 }
 
 #background-task-tracker {

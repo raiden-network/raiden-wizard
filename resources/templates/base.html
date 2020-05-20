@@ -336,10 +336,8 @@
           message_list_elem.appendChild(li);
         }
 
-        if (next_view && !video) {
+        if (next_view) {
           setTimeout(next_view, waiting_time);
-        } else if (next_view && video) {
-          video.addEventListener('ended', next_view);
         }
       }
 

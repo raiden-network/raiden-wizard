@@ -6,7 +6,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from raiden_installer.account import Account
-from raiden_installer.constants import GAS_LIMIT_MARGIN
+from raiden_installer.constants import GAS_LIMIT_MARGIN, WEB3_TIMEOUT
 from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from raiden_installer.network import Network
 from raiden_installer.tokens import EthereumAmount, TokenAmount, TokenTicker, Wei
@@ -61,7 +61,9 @@ class Exchange:
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         raise NotImplementedError
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if transaction_costs is None:
+            transaction_costs = dict()
         raise NotImplementedError
 
     def is_listing_token(self, ticker: TokenTicker):
@@ -153,7 +155,8 @@ class Kyber(Exchange):
         log.debug("Gas Limit", gas_with_margin=gas_with_margin, max_gas_limit=max_gas_limit)
         if max_gas_limit < gas_with_margin:
             log.debug(
-                f"calculated gas was higher than block's gas limit {max_gas_limit}. Using this limit."
+                f"calculated gas was higher than block's gas limit {max_gas_limit}. "
+                "Using this limit."
             )
 
         gas_cost = EthereumAmount(Wei(gas * gas_price.as_wei))
@@ -169,7 +172,9 @@ class Kyber(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if transaction_costs is None:
+            transaction_costs = dict()
         if self.network.name not in self.SUPPORTED_NETWORKS:
             raise ExchangeError(
                 f"{self.name} does not list {token_amount.ticker} on {self.network.name}"
@@ -215,7 +220,7 @@ class Uniswap(Exchange):
     RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
     DAI_EXCHANGE_ADDRESSES = {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
     EXCHANGE_FEE = 0.003
-    EXCHANGE_TIMEOUT = 20 * 60  # maximum waiting time in seconds
+    EXCHANGE_TIMEOUT = WEB3_TIMEOUT  # maximum waiting time in seconds
     TRANSFER_WEBSITE_URL = "https://uniswap.ninja/send"
     MAIN_WEBSITE_URL = "https://uniswap.io"
     TERMS_OF_SERVICE_URL = "https://uniswap.io"
@@ -279,10 +284,11 @@ class Uniswap(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=dict()):
-        if transaction_costs:
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if transaction_costs is not None:
             costs = transaction_costs
         else:
+            transaction_costs = dict()
             costs = self.calculate_transaction_costs(token_amount, account)
 
         if costs is None:

@@ -260,6 +260,14 @@ ul.account-info span.highlighted, ul.account-info span.data-value {
   margin-bottom: 0.25em;
 }
 
+.wallet-download {
+  display: none;
+}
+
+.wallet-download.is-visible {
+  display: block;
+}
+
 span.private {
   display: inline-block;
   width: 75%;

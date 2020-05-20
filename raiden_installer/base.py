@@ -47,6 +47,7 @@ class RaidenConfigurationFile:
         self.enable_monitoring = kw.get("enable_monitoring", self.settings.monitoring_enabled)
         self.routing_mode = kw.get("routing_mode", self.settings.routing_mode)
         self.services_version = self.settings.services_version
+        self._initial_funding_txhash = kw.get("_initial_funding_txhash")
 
     @property
     def path_finding_service_url(self):
@@ -63,6 +64,7 @@ class RaidenConfigurationFile:
             "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,
             "routing-mode": self.routing_mode,
             "enable-monitoring": self.enable_monitoring,
+            "_initial_funding_txhash": self._initial_funding_txhash,
         }
 
         # If the config is for a demo-env we'll need to add/overwrite some settings
@@ -131,6 +133,7 @@ class RaidenConfigurationFile:
                 network=Network.get_by_name(network_name),
                 routing_mode=data["routing-mode"],
                 enable_monitoring=data["enable-monitoring"],
+                _initial_funding_txhash=data.get("_initial_funding_txhash"),
             )
 
     @classmethod

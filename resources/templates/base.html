@@ -320,7 +320,8 @@
         }
 
         if (message.text) {
-          console.log(message.text)
+          console.log(message);
+          console.log(message.text);
           message.text.forEach(element => {
            let li = document.createElement("li");
            li.textContent = element;

@@ -62,7 +62,6 @@ pycparser==2.19
 pycryptodome==3.8.2
 pyelftools==0.25
 Pygments==2.4.2
-PyInstaller==3.5
 pyparsing==2.4.2
 pyrsistent==0.16.0
 pytest==5.0.1

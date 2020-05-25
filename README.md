@@ -2,7 +2,7 @@
 
 #### The Raiden Wizard provides a quick and easy way for installing Raiden and running a Raiden node.
 
-![Raiden Wizard Icon](https://drive.google.com/uc?export=view&id=18cSDcjYvPoIDASNhI4GUJ3pQZ_uRx0WR)
+![Raiden Wizard Icon](https://github.com/raiden-network/raiden-wizard/blob/master/resources/static/icons/raiden_wizard_icon.png?raw=true)
 
 
 ## Download the Raiden Wizard

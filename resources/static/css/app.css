@@ -148,13 +148,6 @@ div.transfer-data-display {
   grid-auto-flow: column;
 }
 
-div.transfer-data-display div.qr-code {
-  background-color: white;
-  padding: 1vh;
-  height: 256px;
-  width: 256px;
-}
-
 ul.action-list li {
   height: 60px;
 }

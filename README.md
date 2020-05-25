@@ -9,9 +9,7 @@
 
 You can download the Raiden Wizard for either macOS or Linux.
 
-[macOS download](https://github.com/raiden-network/raiden-installer/releases/download/v0.100.5-dev0/raiden_wizard.macOS.zip)
-
-[Linux download](https://github.com/raiden-network/raiden-installer/releases/download/v0.100.5-dev0/raiden_wizard.linux-gnu.zip)
+[Release Page](https://github.com/raiden-network/raiden-installer/releases/)
 
 ## Installation Instructions
 

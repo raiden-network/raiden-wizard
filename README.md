@@ -2,16 +2,14 @@
 
 #### The Raiden Wizard provides a quick and easy way for installing Raiden and running a Raiden node.
 
-![Raiden Wizard Icon](https://drive.google.com/uc?export=view&id=18cSDcjYvPoIDASNhI4GUJ3pQZ_uRx0WR)
+![Raiden Wizard Icon](https://github.com/raiden-network/raiden-wizard/blob/master/resources/static/icons/raiden_wizard_icon.png?raw=true)
 
 
 ## Download the Raiden Wizard
 
 You can download the Raiden Wizard for either macOS or Linux.
 
-[macOS download](https://github.com/raiden-network/raiden-installer/releases/download/v0.100.5-dev0/raiden_wizard.macOS.zip)
-
-[Linux download](https://github.com/raiden-network/raiden-installer/releases/download/v0.100.5-dev0/raiden_wizard.linux-gnu.zip)
+[Release Page](https://github.com/raiden-network/raiden-installer/releases/)
 
 ## Installation Instructions
 

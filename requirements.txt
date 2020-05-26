@@ -8,6 +8,7 @@ autopep8==1.4.4
 backcall==0.1.0
 base58==2.0.0
 beautifulsoup4==4.8.0
+bitarray==1.2.2
 black==19.3b0
 certifi==2019.6.16
 cffi==1.12.3
@@ -18,7 +19,7 @@ cytoolz==0.10.1
 decorator==4.4.0
 entrypoints==0.3
 eth-abi==2.1.1
-eth-account==0.4.0
+eth-account==0.5.2
 eth-hash==0.2.0
 eth-keyfile==0.5.1
 eth-keys==0.2.4
@@ -30,7 +31,7 @@ idna==2.8
 importlib-metadata==0.19
 ipdb==0.12
 ipfshttpclient==0.4.13.2
-ipython==7.6.1
+ipython==7.14.0
 ipython-genutils==0.2.0
 itsdangerous==1.1.0
 jedi==0.15.1
@@ -49,7 +50,7 @@ patchelf-wrapper==1.0.4
 pexpect==4.7.0
 pickleshare==0.7.5
 pluggy==0.12.0
-prompt-toolkit==1.0.14
+prompt-toolkit==3.0.5
 protobuf==3.11.3
 psutil==5.6.6
 ptyprocess==0.6.0
@@ -64,7 +65,7 @@ Pygments==2.4.2
 pyparsing==2.4.2
 pyrsistent==0.16.0
 pytest==5.0.1
-raiden-contracts==0.37.0-b3
+raiden-contracts==0.37.0
 regex==2019.6.8
 requests==2.22.0
 rlp==1.1.0
@@ -83,7 +84,7 @@ typing-extensions==3.7.4.2
 urllib3==1.25.3
 varint==1.0.2
 wcwidth==0.1.7
-web3==5.7.0
+web3==5.10.0
 websockets==8.1
 whaaaaat==0.5.2
 WTForms==2.2.1

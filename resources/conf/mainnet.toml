@@ -1,6 +1,6 @@
 network = "mainnet"
 client_release_channel = "testing"
-client_release_version = "v0.200.0-rc8"
+client_release_version = "v0.200.0-rc9"
 services_version = "test"
 ethereum_amount_required = 125e15
 ethereum_amount_required_after_swap = 75e14

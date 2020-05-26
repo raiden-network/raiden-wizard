@@ -12,7 +12,7 @@ ENV PATH="/venv/bin:$PATH"
 ADD ./requirements.txt /tmp
 WORKDIR /tmp
 
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt && pip install "PyInstaller==3.5"
 
 ADD . /raiden-wizard
 WORKDIR /raiden-wizard

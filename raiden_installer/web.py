@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import tornado.ioloop
 import wtforms
 from eth_utils import to_checksum_address, decode_hex
-from ethtoken.abi import EIP20_ABI
 from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
@@ -42,7 +41,9 @@ from raiden_installer.transactions import (
     mint_tokens,
 )
 from raiden_installer.utils import check_eth_node_responsivity, wait_for_transaction
+from raiden_contracts.contract_manager import contracts_precompiled_path, ContractManager
 
+EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 PORT = 8080
 PASSPHRASE = None

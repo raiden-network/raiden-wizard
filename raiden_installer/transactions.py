@@ -1,5 +1,4 @@
 from eth_utils import to_checksum_address
-from ethtoken.abi import EIP20_ABI
 from web3 import Web3
 
 from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
@@ -7,6 +6,8 @@ from raiden_contracts.contract_manager import ContractManager, contracts_precomp
 from raiden_installer.account import Account
 from raiden_installer.tokens import Erc20Token, TokenAmount, Wei
 from raiden_installer.utils import get_contract_address, send_raw_transaction, wait_for_transaction
+
+EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
 
 GAS_REQUIRED_FOR_DEPOSIT: int = 200_000
 GAS_REQUIRED_FOR_APPROVE: int = 70_000

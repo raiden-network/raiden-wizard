@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Any, Dict
 
@@ -8,6 +9,21 @@ from raiden_contracts.contract_manager import get_contracts_deployment_info
 from raiden_installer import log
 from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.tokens import EthereumAmount, Wei
+
+
+def recover_ld_library_env_path():
+    """This works around an issue that `webbrowser.open` fails inside a
+    PyInstaller binary.
+    See: https://github.com/pyinstaller/pyinstaller/issues/3668
+    """
+    lp_key = "LD_LIBRARY_PATH"
+    lp_orig = os.environ.get(lp_key + "_ORIG")
+    if lp_orig is not None:
+        os.environ[lp_key] = lp_orig
+    else:
+        lp = os.environ.get(lp_key)
+        if lp is not None:
+            os.environ.pop(lp_key)
 
 
 def get_contract_address(chain_id, contract_name):

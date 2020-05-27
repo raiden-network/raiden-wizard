@@ -24,4 +24,4 @@ If you are interested in contributing to the Raiden Wizard, a good start is to:
 Read our [contributing guide](https://github.com/raiden-network/raiden-installer/blob/master/CONTRIBUTING.md)
 
 ---
-The Raiden Wizard is experimental alpha software meant to be tested exclusively on the Görli testnet. Please be aware that we cannot be held liable for any damages whatsoever or any loss of funds you may incur when using the code/or software. Use it at your own risk.
+The Raiden Wizard is experimental alpha software. Please be aware that we cannot be held liable for any damages whatsoever or any loss of funds you may incur when using the code/or software. Use it at your own risk.

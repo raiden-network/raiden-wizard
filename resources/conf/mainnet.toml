@@ -1,7 +1,7 @@
 network = "mainnet"
-client_release_channel = "testing"
-client_release_version = "v0.200.0-rc9"
-services_version = "test"
+client_release_channel = "mainnet"
+client_release_version = "v1.0.0"
+services_version = "mainnet"
 ethereum_amount_required = 125e15
 ethereum_amount_required_after_swap = 75e14
 routing_mode = "local"

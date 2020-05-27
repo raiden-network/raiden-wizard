@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import tornado.ioloop
 import wtforms
-from eth_utils import to_checksum_address, decode_hex
+from eth_utils import decode_hex, to_checksum_address
 from tornado.escape import json_decode
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
@@ -18,6 +18,7 @@ from web3.exceptions import TimeExhausted
 from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
+from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_installer import default_settings, get_resource_folder_path, log, network_settings
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.constants import WEB3_TIMEOUT
@@ -40,8 +41,11 @@ from raiden_installer.transactions import (
     get_total_token_owned,
     mint_tokens,
 )
-from raiden_installer.utils import check_eth_node_responsivity, wait_for_transaction
-from raiden_contracts.contract_manager import contracts_precompiled_path, ContractManager
+from raiden_installer.utils import (
+    check_eth_node_responsivity,
+    recover_ld_library_env_path,
+    wait_for_transaction,
+)
 
 EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
@@ -428,10 +432,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
             transaction_found = False
 
-            while (
-                (not transaction_found)
-                and (time.time() - time_start < WEB3_TIMEOUT)
-            ):
+            while (not transaction_found) and (time.time() - time_start < WEB3_TIMEOUT):
                 try:
                     tx_receipt = w3.eth.waitForTransactionReceipt(
                         decode_hex(tx_hash), timeout=WEB3_TIMEOUT
@@ -824,6 +825,7 @@ if __name__ == "__main__":
 
     if not DEBUG:
         log.info("Should open automatically in browser...")
+        recover_ld_library_env_path()
         webbrowser.open_new(local_url)
 
     tornado.ioloop.IOLoop.current().start()

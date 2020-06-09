@@ -756,18 +756,25 @@ class CostEstimationAPIHandler(APIHandler):
             ex_currency_amt["currency"], configuration_file.network
         )
         token_amount = TokenAmount(ex_currency_amt["target_amount"], currency)
-        exchange_costs = exchange.calculate_transaction_costs(token_amount, account)
-        total_cost = exchange_costs["total"]
-        self.render_json(
-            {
-                "exchange": exchange.name,
-                "currency": currency.ticker,
-                "target_amount": ex_currency_amt["target_amount"],
-                "as_wei": total_cost.as_wei,
-                "formatted": total_cost.formatted,
-                "utc_seconds": int(time.time()),
-            }
-        )
+        try:
+            exchange_costs = exchange.calculate_transaction_costs(token_amount, account)
+            total_cost = exchange_costs["total"]
+            self.render_json(
+                {
+                    "exchange": exchange.name,
+                    "currency": currency.ticker,
+                    "target_amount": ex_currency_amt["target_amount"],
+                    "as_wei": total_cost.as_wei,
+                    "formatted": total_cost.formatted,
+                    "utc_seconds": int(time.time()),
+                }
+            )
+        except ExchangeError as ex:
+            log.error("There was an error preparing the exchange", exc_info=ex)
+            self.set_status(
+                status_code=409,
+                reason=str(ex),
+            )
 
 
 class GasPriceHandler(APIHandler):

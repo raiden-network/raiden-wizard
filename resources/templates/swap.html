@@ -110,6 +110,12 @@
         placeholder.remove();
         estimationElement.appendChild(text);
       }
+      else {
+        const error = document.createTextNode(`Swap not possible at the moment.`);
+        placeholder.remove();
+        estimationElement.appendChild(error);
+        button.setAttribute("disabled", true);
+      }
     };
 
     req.open("POST", API_COST_ESTIMATION_ENDPOINT, true);

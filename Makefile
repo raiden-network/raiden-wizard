@@ -1,6 +1,8 @@
 help:
 	@echo "bundle-docker - create standalone executable with PyInstaller via a docker container"
 
+clean:
+	rm -r build/ dist/
 
 bundle-docker:
 	docker build -t pyinstallerbuilder -f tools/docker/build.Dockerfile .

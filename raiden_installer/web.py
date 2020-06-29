@@ -153,6 +153,7 @@ class AsyncTaskHandler(WebSocketHandler):
             "unlock": self._run_unlock,
             "create_wallet": self._run_create_wallet,
             "swap": self._run_swap,
+            "udc_deposit": self._run_udc_deposit,
             "track_transaction": self._run_track_transaction,
         }.get(method)
 
@@ -370,42 +371,10 @@ class AsyncTaskHandler(WebSocketHandler):
                 if total_service_token_balance < required.service_token:
                     raise ExchangeError("Exchange was not successful")
 
-                elif service_token_balance.as_wei > 0:
+                elif token_ticker == service_token.ticker and service_token_balance.as_wei > 0:
+                    self._run_udc_deposit(configuration_file_name=configuration_file_name)
 
-                    self._send_status_update(
-                        f"Making deposit of {service_token_balance.formatted} to the "
-                        "User Deposit Contract"
-                    )
-                    self._send_status_update(f"This might take a few minutes")
-                    transaction_receipt = deposit_service_tokens(
-                        w3=w3,
-                        account=account,
-                        token=service_token,
-                        amount=service_token_balance.as_wei,
-                    )
-                    wait_for_transaction(w3, transaction_receipt)
-                    service_token_deposited = get_token_deposit(
-                        w3=w3, account=account, token=service_token
-                    )
-                    self._send_status_update(
-                        f"Total amount deposited at UDC: {service_token_deposited.formatted}"
-                    )
-
-                if transfer_token_balance < required.transfer_token:
-                    redirect_url = self.reverse_url(
-                        "swap", configuration_file.file_name, transfer_token.ticker
-                    )
-                    next_page = "Moving on to exchanging DAI ..."
-
-                else:
-                    redirect_url = self.reverse_url("launch", configuration_file.file_name)
-                    next_page = "You are ready to launch Raiden! ..."
-
-                self._send_summary(
-                    ["Congratulations! Swap Successful!", next_page], icon=token_ticker
-                )
-                time.sleep(5)
-                self._send_redirect(redirect_url)
+                self._redirect_transfer_swap(configuration_file, transfer_token_balance, required)
             else:
                 for key, error_list in form.errors.items():
                     error_message = f"{key}: {'/'.join(error_list)}"
@@ -414,6 +383,89 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_error_message(str(exc))
             redirect_url = self.reverse_url("swap", configuration_file.file_name, token_ticker)
             next_page = f"Try again to exchange {token_ticker}..."
+            self._send_summary(["Transaction failed", str(exc), next_page], icon="error")
+            time.sleep(5)
+            self._send_redirect(redirect_url)
+
+    def _redirect_transfer_swap(self, configuration_file, transfer_token_balance, required):
+
+        if transfer_token_balance < required.transfer_token:
+            redirect_url = self.reverse_url(
+                "swap", configuration_file.file_name, transfer_token_balance.ticker
+            )
+            next_page = "Moving on to exchanging DAI ..."
+            token_ticker = required.service_token.ticker
+        else:
+            redirect_url = self.reverse_url("launch", configuration_file.file_name)
+            next_page = "You are ready to launch Raiden! ..."
+            token_ticker = required.transfer_token.ticker
+        self._send_summary(
+            ["Congratulations! Swap Successful!", next_page], icon=token_ticker
+        )
+        time.sleep(5)
+        self._send_redirect(redirect_url)
+
+    def _run_udc_deposit(self, **kw):
+        try:
+            configuration_file_name = kw.get("configuration_file_name")
+        except (ValueError, KeyError, TypeError) as exc:
+            self._send_error_message(f"Invalid request: {exc}")
+            return
+        try:
+            configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+            network_name = configuration_file.network.name
+            required = RequiredAmounts.for_network(network_name)
+            settings = network_settings[network_name]
+            swap_amounts = SwapAmounts.from_settings(settings)
+            service_token = Erc20Token.find_by_ticker(
+                    required.service_token.ticker, network_name
+            )
+            account = configuration_file.account
+            try_unlock(account)
+            w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+            service_token_balance = get_token_balance(w3, account, service_token)
+            service_token_deposited = get_token_deposit(w3, account, service_token)
+            swap_amount_1 = swap_amounts.service_token_1
+
+            if service_token_deposited < required.service_token:
+                if service_token_balance >= swap_amount_1:
+                    deposit = swap_amount_1 - service_token_deposited
+                else:
+                    deposit = service_token_balance
+
+                self._send_status_update(
+                    f"Making deposit of {deposit.formatted} to the "
+                    "User Deposit Contract"
+                )
+                self._send_status_update(f"This might take a few minutes")
+                transaction_receipt = deposit_service_tokens(
+                    w3=w3,
+                    account=account,
+                    token=service_token,
+                    amount=deposit.as_wei,
+                )
+                wait_for_transaction(w3, transaction_receipt)
+                service_token_deposited = get_token_deposit(
+                    w3=w3, account=account, token=service_token
+                )
+                self._send_status_update(
+                    f"Total amount deposited at UDC: {service_token_deposited.formatted}"
+                )
+            else:
+                self._send_status_update(
+                    f"Service token deposited at UDC: {service_token_deposited.formatted} is enough"
+                )
+                time.sleep(5)
+            if kw.get("from") == "web":
+                transfer_token = Erc20Token.find_by_ticker(
+                    required.transfer_token.ticker, network_name
+                )
+                transfer_token_balance = get_token_balance(w3, account, transfer_token)
+                self._redirect_transfer_swap(configuration_file, transfer_token_balance, required)
+        except (json.decoder.JSONDecodeError, KeyError, ExchangeError, ValueError) as exc:
+            self._send_error_message(str(exc))
+            redirect_url = self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+            next_page = f"Try again to exchange {service_token.ticker}..."
             self._send_summary(["Transaction failed", str(exc), next_page], icon="error")
             time.sleep(5)
             self._send_redirect(redirect_url)

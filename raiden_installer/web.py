@@ -371,7 +371,7 @@ class AsyncTaskHandler(WebSocketHandler):
                 if total_service_token_balance < required.service_token:
                     raise ExchangeError("Exchange was not successful")
 
-                elif token_ticker == service_token.ticker and service_token_balance.as_wei > 0:
+                elif token_ticker == service_token.ticker and service_token_balance > required.service_token:
                     self._run_udc_deposit(configuration_file_name=configuration_file_name)
 
                 self._redirect_transfer_swap(configuration_file, transfer_token_balance, required)

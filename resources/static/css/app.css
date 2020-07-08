@@ -304,6 +304,76 @@ section.content {
   padding: 50px 0;
 }
 
+section.content .progress {
+  display: none;
+}
+
+section.content .progress.is-visible {
+  display: block;
+}
+
+section.content .progress .steps {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 30px;
+  width: 45vw;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+
+section.content .progress .steps .circle {
+  background-color: #323232;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  padding: 10px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -ms-flex-line-pack: center;
+      align-content: center;
+}
+
+section.content .progress .steps .circle img {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%;
+  opacity: 0.2;
+}
+
+section.content .progress .steps .circle img.rounded {
+  border-radius: 50%;
+}
+
+section.content .progress .steps .circle.active {
+  background-color: #28a5c8;
+}
+
+section.content .progress .steps .circle.active img {
+  opacity: 1;
+}
+
+section.content .progress .steps .divider {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  height: 4px;
+  background-color: #323232;
+}
+
 section.content div.container {
   display: -ms-grid;
   display: grid;
@@ -344,76 +414,6 @@ section.content div.container h1 {
 section.content div.container h1 img {
   width: auto;
   height: 105px;
-}
-
-section.content div.container .progress {
-  display: none;
-}
-
-section.content div.container .progress.is-visible {
-  display: block;
-}
-
-section.content div.container .progress .steps {
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 30px;
-  width: 45vw;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-pack: justify;
-      -ms-flex-pack: justify;
-          justify-content: space-between;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-}
-
-section.content div.container .progress .steps .circle {
-  background-color: #323232;
-  border-radius: 50%;
-  width: 45px;
-  height: 45px;
-  padding: 10px;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-pack: center;
-      -ms-flex-pack: center;
-          justify-content: center;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-  -ms-flex-line-pack: center;
-      align-content: center;
-}
-
-section.content div.container .progress .steps .circle img {
-  display: inline-block;
-  max-width: 100%;
-  max-height: 100%;
-  opacity: 0.2;
-}
-
-section.content div.container .progress .steps .circle img.rounded {
-  border-radius: 50%;
-}
-
-section.content div.container .progress .steps .circle.active {
-  background-color: #28a5c8;
-}
-
-section.content div.container .progress .steps .circle.active img {
-  opacity: 1;
-}
-
-section.content div.container .progress .steps .divider {
-  -webkit-box-flex: 1;
-      -ms-flex: 1;
-          flex: 1;
-  height: 4px;
-  background-color: #323232;
 }
 
 section.content div.container div.hero {
@@ -537,8 +537,7 @@ section.content div.container div.ack-prompt i {
 }
 
 #background-task-tracker {
-  margin-top: 25vh;
-  margin-bottom: 70px;
+  margin: 70px 0;
 }
 
 #background-task-tracker ul.messages {

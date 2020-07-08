@@ -342,6 +342,62 @@ section.content {
     margin: 0 auto;
     padding: 50px 0;
 
+    .progress {
+        display: none;
+        
+        &.is-visible {
+            display: block;
+        }
+        
+        .steps {
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 30px;
+            width: dimension(progress-column-width);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .circle {
+                background-color: color(progress-bg);
+                border-radius: 50%;
+                width: 45px;
+                height: 45px;
+                padding: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                align-content: center;
+
+                img {
+                    display: inline-block;
+                    max-width:100%;
+                    max-height:100%;
+                    opacity: 0.2;
+
+                    &.rounded {
+                        border-radius: 50%;
+                    }
+                }
+
+                &.active {
+                    background-color: color(progress-active);
+
+                    img {
+                        opacity: 1;
+
+                    }
+                }
+            }
+
+            .divider {
+                flex: 1;
+                height: 4px;
+                background-color: color(progress-bg);
+            }
+        }
+    }
+
     div.container {
         display: grid;
         justify-content: center;
@@ -364,62 +420,6 @@ section.content {
             img {
                 width: auto;
                 height: 105px;
-            }
-        }
-
-        .progress {
-            display: none;
-            
-            &.is-visible {
-                display: block;
-            }
-            
-            .steps {
-                margin-left: auto;
-                margin-right: auto;
-                margin-bottom: 30px;
-                width: dimension(progress-column-width);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-
-                .circle {
-                    background-color: color(progress-bg);
-                    border-radius: 50%;
-                    width: 45px;
-                    height: 45px;
-                    padding: 10px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    align-content: center;
-
-                    img {
-                        display: inline-block;
-                        max-width:100%;
-                        max-height:100%;
-                        opacity: 0.2;
-
-                        &.rounded {
-                            border-radius: 50%;
-                        }
-                    }
-
-                    &.active {
-                        background-color: color(progress-active);
-
-                        img {
-                            opacity: 1;
-
-                        }
-                    }
-                }
-
-                .divider {
-                    flex: 1;
-                    height: 4px;
-                    background-color: color(progress-bg);
-                }
             }
         }
 
@@ -511,8 +511,7 @@ section.content {
 }
 
 #background-task-tracker {
-    margin-top: 25vh;
-    margin-bottom: 70px;
+    margin: 70px 0;
 
     ul.messages {
         color: color(text-standard);

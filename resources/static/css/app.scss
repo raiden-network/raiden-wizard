@@ -461,6 +461,43 @@ section.content {
                     }
                 }
             }
+
+            .network-selection {
+                font-weight: 600;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                margin-top: 30px;
+
+                .select-wrapper {
+                    position: relative;
+                    margin-left: 50px;
+                    select {
+                        height: 100%;
+                        border-radius: 15px;
+                        border: none;
+                        box-shadow: none;
+                        background-color: color(button-hover-bg);
+                        color: color(text-standard);
+                        border-radius: 29px;
+                        font-weight: 400;
+                        font-size: 18px;
+                        padding: 0 30px 0 10px;
+                        -webkit-appearance: none;
+                        -moz-appearance: none;
+                        appearance: none;
+                    }
+                }
+                .select-wrapper:after {
+                    content: '▼';
+                    color: color(text-standard);
+                    right: 10px;
+                    top: 25%;
+                    font-size: 14px;
+                    position: absolute;
+                    pointer-events: none;
+                  }
+            }
         }
 
         div.info-panel {

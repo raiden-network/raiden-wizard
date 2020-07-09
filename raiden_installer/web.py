@@ -142,6 +142,14 @@ class AsyncTaskHandler(WebSocketHandler):
         self.write_message(message)
         log.info(f"Waiting for confirmation of txhash {tx_hash}")
 
+    def _send_next_step(self, message_text, title, step):
+        if not isinstance(message_text, list):
+            message_text = [message_text]
+        body = {"type": "next-step", "text": message_text, "title": title, "step": step}
+        self.write_message(json.dumps(body))
+        log.info(" ".join(message_text))
+        log.info(f"Update progress to step {step}: {title}")
+
     def on_message(self, message):
         data = json.loads(message)
 
@@ -154,6 +162,7 @@ class AsyncTaskHandler(WebSocketHandler):
             "create_wallet": self._run_create_wallet,
             "swap": self._run_swap,
             "track_transaction": self._run_track_transaction,
+            "fund": self._run_funding,
         }.get(method)
 
         return action and action(**data)
@@ -161,7 +170,14 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_close(self, **kw):
         sys.exit()
 
-    def _run_funding(self, configuration_file: RaidenConfigurationFile):
+    def _run_funding(self, **kw):
+        try:
+            configuration_file_name = kw.get("configuration_file_name")
+            configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        except Exception as exc:
+            self._send_error_message(str(exc))
+            return
+
         network = configuration_file.network
         settings = network_settings[network.name]
 
@@ -183,15 +199,27 @@ class AsyncTaskHandler(WebSocketHandler):
             service_token = Erc20Token.find_by_ticker(
                 settings.service_token.ticker, settings.network
             )
-            self._send_status_update(f"Minting {service_token.ticker}")
-            mint_tokens(w3, account, service_token)
+            self._send_next_step(
+                f"Minting {service_token.ticker}",
+                f"Fund Account with {service_token.ticker}",
+                3,
+            )
+            transaction_receipt = mint_tokens(w3, account, service_token)
+            wait_for_transaction(w3, transaction_receipt)
 
         if settings.transfer_token.mintable:
             transfer_token = Erc20Token.find_by_ticker(
                 settings.transfer_token.ticker, settings.network
             )
-            self._send_status_update(f"Minting {transfer_token.ticker}")
-            mint_tokens(w3, account, transfer_token)
+            self._send_next_step(
+                f"Minting {transfer_token.ticker}",
+                f"Fund Account with {transfer_token.ticker}",
+                4,
+            )
+            transaction_receipt = mint_tokens(w3, account, transfer_token)
+            wait_for_transaction(w3, transaction_receipt)
+
+        self._send_redirect(self.reverse_url("launch", configuration_file_name))
 
     def _run_unlock(self, **kw):
         passphrase = kw.get("passphrase")
@@ -246,12 +274,13 @@ class AsyncTaskHandler(WebSocketHandler):
                 enable_monitoring=form.data["use_rsb"],
             )
             conf_file.save()
+            
+            self._send_redirect(self.reverse_url("account", conf_file.file_name))
 
-            if network.FAUCET_AVAILABLE:
-                self._run_funding(configuration_file=conf_file)
-                self._send_redirect(self.reverse_url("launch", conf_file.file_name))
-            else:
-                self._send_redirect(self.reverse_url("account", conf_file.file_name))
+            # if network.FAUCET_AVAILABLE:
+            #     self._run_funding(configuration_file=conf_file)
+            #     self._send_redirect(self.reverse_url("launch", conf_file.file_name))#todo
+            # else:
         else:
             self._send_error_message(f"Failed to create account. Error: {form.errors}")
 

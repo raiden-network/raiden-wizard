@@ -299,6 +299,9 @@
             spinner_elem.classList.add("complete");
             next_view = toggleView;
             break;
+          case "next-step":
+            setProgressStep(message.step, message.title);
+            break;
           case "redirect":
             next_view = function() {
               forceNavigation(message.redirect_url);
@@ -396,8 +399,12 @@
         progressContainer.classList.add('is-visible');
         const titleText = document.createTextNode(title);
         const headline = progressContainer.querySelector('h2');
+        while (headline.firstChild) {
+          headline.firstChild.remove();
+        }
         headline.appendChild(titleText);
         const progressItems = progressContainer.querySelectorAll('.circle');
+        progressItems.forEach((item) => item.classList.remove('active'));
         progressItems[step].classList.add('active');
       }
 

@@ -1,6 +1,6 @@
 network = "goerli"
 client_release_channel = "testing"
-client_release_version = "v0.200.0-rc2"
+client_release_version = "v1.1.0"
 services_version = "test"
 ethereum_amount_required = 2e16
 

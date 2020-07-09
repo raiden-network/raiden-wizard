@@ -245,7 +245,7 @@ class TokensV37(Enum):
         ticker="RDN",
         wei_ticker="REI",
         addresses={
-            "goerli": "0xc116edAD88cda44E703ef1fc59766268E4aa187B",
+            "goerli": "0x5Fc523e13fBAc2140F056AD7A96De2cC0C4Cc63A",
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
         },
     )

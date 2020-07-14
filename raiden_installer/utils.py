@@ -50,7 +50,7 @@ def estimate_gas(w3, account, contract_function, *args, **kw):
 def send_raw_transaction(w3, account, contract_function, *args, **kw):
     transaction_params = {
         "chainId": int(w3.net.version),
-        "nonce": w3.eth.getTransactionCount(account.address),
+        "nonce": w3.eth.getTransactionCount(account.address, "pending"),
         "gasPrice": kw.pop("gas_price", (w3.eth.generateGasPrice())),
         "gas": kw.pop("gas", None),
     }

@@ -64,7 +64,8 @@
      let balance = configuration_data.balance;
 
      let eth_balance = (balance.ETH && balance.ETH.formatted) || "ETH N/A";
-     let rdn_balance = (balance.RDN && balance.RDN.formatted) || "RDN N/A";
+     let service_token_balance = 
+      (balance.service_token && balance.service_token.formatted) || "N/A";
 
      account_element.classList.add("account");
      network_element.classList.add("network");
@@ -72,7 +73,7 @@
 
      account_element.textContent = configuration_data.account;
      network_element.textContent = configuration_data.network;
-     balance_element.textContent = "Balance: " + eth_balance + " / " + rdn_balance;
+     balance_element.textContent = "Balance: " + eth_balance + " / " + service_token_balance;
 
      launch_button.textContent = "Launch";
 

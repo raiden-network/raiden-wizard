@@ -5,7 +5,7 @@ services_version = "test"
 ethereum_amount_required = 2e16
 
 [service_token]
-ticker = "RDN"
+ticker = "SVT"
 amount_required = 6e18
 swap_amount_1 = 10e18
 swap_amount_2 = 20e18

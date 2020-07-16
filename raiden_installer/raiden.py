@@ -423,7 +423,7 @@ class RaidenRelease(RaidenClient):
 
 class RaidenTestnetRelease(RaidenClient):
     BINARY_NAME_FORMAT = "raiden-testnet-{release}"
-    FILE_NAME_PATTERN = r"raiden-v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)(?P<extra>.+)"
+    FILE_NAME_PATTERN = r"raiden-v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)(?P<extra>.*)"
 
     @property
     def version(self):

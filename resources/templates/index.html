@@ -30,6 +30,18 @@
 
   <div>The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps</div>
 
+  {% if not configuration_file %}
+  <div class="network-selection">
+    <span>Select network:</span>
+    <div class="select-wrapper">
+      <select id="network-name-select">
+        <option value="mainnet">Ethereum Mainnet</option>
+        <option value="goerli">Görli Testnet</option>
+      </select>
+    </div>
+  </div>
+  {% end %}
+
   <div class="ack-prompt">
     <input type="checkbox" name="ack-wizard" />
     <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
@@ -44,7 +56,7 @@
     Launch
   </button>
   {% else %}
-  <button class="link-button" data-link-url="{{ reverse_url('create_wallet', 'mainnet') }}" id="setup-button" disabled>
+  <button class="link-button" id="setup-button" disabled>
     Start
   </button>
   {% end %}
@@ -86,9 +98,21 @@
 {% block page_header_scripts %}
 <script type="text/javascript">
  window.addEventListener("load", function() {
-   let checkboxes = document.querySelectorAll("input[type=checkbox]");
-   let button = document.querySelector("button.link-button");
+   const checkboxes = document.querySelectorAll("input[type=checkbox]");
+   const button = document.querySelector("button.link-button");
    checkAcknowledgements(checkboxes, button);
+
+   const setupButton = document.getElementById("setup-button");
+   if (setupButton) {
+     const networkNameSelect = document.getElementById("network-name-select");
+     const setupUrlFormat = decodeURI("{{ reverse_url('create_wallet', '§') }}");
+     const updateSetupButton = function() {
+       const setupUrl = setupUrlFormat.replace("§", networkNameSelect.value);
+       setupButton.setAttribute("data-link-url", setupUrl);
+     };
+     updateSetupButton();
+     networkNameSelect.onchange = updateSetupButton;
+   }
  });
 </script>
 {% end %}

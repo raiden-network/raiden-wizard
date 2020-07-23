@@ -11,3 +11,7 @@ bundle-docker:
 	mkdir -p dist/
 	docker cp builder:/raiden-wizard/raiden_wizard_linux.tar.gz dist/raiden_wizard_linux.tar.gz
 	docker rm builder
+
+build-mac: clean
+	pyinstaller --noconfirm --clean tools/pyinstaller/raiden_webapp.spec
+	tar -czf raiden_wizard_macOS-1.0.x.tar.gz dist/raiden_wizard

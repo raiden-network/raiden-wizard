@@ -28,10 +28,10 @@ class Settings:
     client_release_channel: str
     client_release_version: str
     services_version: str
-    ethereum_amount_required: int
-    ethereum_amount_required_after_swap: int
     service_token: TokenSettings
     transfer_token: TokenSettings
+    ethereum_amount_required: int
+    ethereum_amount_required_after_swap: int = 0
     routing_mode: str = "pfs"
     monitoring_enabled: bool = True
     # matrix_server and pfs address are only used if client_release_channel = "demo_env"
@@ -63,6 +63,6 @@ def _get_settings(network):
     return Settings(**configuration_data)
 
 
-_NETWORKS = ["mainnet"]
+_NETWORKS = ["mainnet", "goerli"]
 network_settings = {network: _get_settings(network) for network in _NETWORKS}
 default_settings = network_settings["mainnet"]

@@ -219,8 +219,7 @@
             message_list.removeChild(message_list.firstChild);
           }
           tracker_elem.hidden = false;
-        }
-        else {
+        } else {
           runMainView();
           container.classList.remove("hidden");
           tracker_elem.hidden = true;
@@ -299,6 +298,9 @@
             spinner_elem.classList.remove("spinner");
             spinner_elem.classList.add("complete");
             next_view = toggleView;
+            break;
+          case "next-step":
+            setProgressStep(message.step, message.title);
             break;
           case "redirect":
             next_view = function() {
@@ -397,8 +399,12 @@
         progressContainer.classList.add('is-visible');
         const titleText = document.createTextNode(title);
         const headline = progressContainer.querySelector('h2');
+        while (headline.firstChild) {
+          headline.firstChild.remove();
+        }
         headline.appendChild(titleText);
         const progressItems = progressContainer.querySelectorAll('.circle');
+        progressItems.forEach((item) => item.classList.remove('active'));
         progressItems[step].classList.add('active');
       }
 
@@ -437,35 +443,35 @@
       <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
     </div>
     <section class="content">
-      <div class="container">
-        <div class="progress">
-          <div class="steps">
-            <div class="circle">
-              <img src="{{ static_url('images/wallet.svg') }}" alt="Wallet" />
-            </div>
-            <div class="divider"></div>
-            <div class="circle">
-              <img src="{{ static_url('images/connect.svg') }}" alt="Connect" />
-            </div>
-            <div class="divider"></div>
-            <div class="circle">
-              <img src="{{ static_url('images/eth.png') }}" alt="ETH" />
-            </div>
-            <div class="divider"></div>
-            <div class="circle">
-              <img src="{{ static_url('images/rdn.png') }}" alt="RDN" />
-            </div>
-            <div class="divider"></div>
-            <div class="circle">
-              <img src="{{ static_url('images/dai.png') }}" alt="DAI" />
-            </div>
-            <div class="divider"></div>
-            <div class="circle">
-              <img class="rounded" src="{{ static_url('images/raiden-ball.jpg') }}" alt="Launch Raiden" />
-            </div>
+      <div class="progress">
+        <div class="steps">
+          <div class="circle">
+            <img src="{{ static_url('images/wallet.svg') }}" alt="Wallet" />
           </div>
-          <h2></h2>
+          <div class="divider"></div>
+          <div class="circle">
+            <img src="{{ static_url('images/connect.svg') }}" alt="Connect" />
+          </div>
+          <div class="divider"></div>
+          <div class="circle">
+            <img src="{{ static_url('images/eth.png') }}" alt="ETH" />
+          </div>
+          <div class="divider"></div>
+          <div class="circle">
+            <img src="{{ static_url('images/rdn.png') }}" alt="RDN" />
+          </div>
+          <div class="divider"></div>
+          <div class="circle">
+            <img src="{{ static_url('images/dai.png') }}" alt="DAI" />
+          </div>
+          <div class="divider"></div>
+          <div class="circle">
+            <img class="rounded" src="{{ static_url('images/raiden-ball.jpg') }}" alt="Launch Raiden" />
+          </div>
         </div>
+        <h2></h2>
+      </div>
+      <div class="container">
         {% block content %} {% end %}
       </div>
       <div id="background-task-tracker" hidden>

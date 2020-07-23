@@ -1,11 +1,11 @@
 network = "goerli"
 client_release_channel = "testing"
-client_release_version = "v0.200.0-rc2"
+client_release_version = "v1.1.0"
 services_version = "test"
 ethereum_amount_required = 2e16
 
 [service_token]
-ticker = "RDN"
+ticker = "SVT"
 amount_required = 6e18
 swap_amount_1 = 10e18
 swap_amount_2 = 20e18

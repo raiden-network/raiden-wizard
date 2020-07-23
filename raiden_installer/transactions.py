@@ -67,7 +67,6 @@ def deposit_service_tokens(w3: Web3, account: Account, token: Erc20Token, amount
 def approve(w3, account, allowed_address, allowance: Wei, token: Erc20Token):
     token_proxy = _make_token_proxy(w3=w3, token=token)
     old_allowance = token_proxy.functions.allowance(account.address, allowed_address).call()
-    nonce = w3.eth.getTransactionCount(account.address)
 
     if old_allowance > 0:
         send_raw_transaction(
@@ -77,9 +76,7 @@ def approve(w3, account, allowed_address, allowance: Wei, token: Erc20Token):
             allowed_address,
             0,
             gas=GAS_REQUIRED_FOR_APPROVE,
-            nonce=nonce,
         )
-        nonce += 1
 
     transaction_receipt = send_raw_transaction(
         w3,
@@ -88,7 +85,6 @@ def approve(w3, account, allowed_address, allowance: Wei, token: Erc20Token):
         allowed_address,
         allowance,
         gas=GAS_REQUIRED_FOR_APPROVE,
-        nonce=nonce,
     )
 
     wait_for_transaction(w3, transaction_receipt)

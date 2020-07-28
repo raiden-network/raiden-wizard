@@ -405,7 +405,7 @@ section.content {
         justify-self: center;
         min-height: 480px;
 
-        grid-template-rows: 160px 120px minmax(120px, auto) 80px;
+        grid-template-rows: 160px minmax(120px, auto) minmax(120px, auto) 80px;
 
         div {
             justify-self: center;

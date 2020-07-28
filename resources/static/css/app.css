@@ -386,8 +386,8 @@ section.content div.container {
   -ms-grid-column-align: center;
       justify-self: center;
   min-height: 480px;
-  -ms-grid-rows: 160px 120px minmax(120px, auto) 80px;
-      grid-template-rows: 160px 120px minmax(120px, auto) 80px;
+  -ms-grid-rows: 160px minmax(120px, auto) minmax(120px, auto) 80px;
+      grid-template-rows: 160px minmax(120px, auto) minmax(120px, auto) 80px;
 }
 
 section.content div.container div {

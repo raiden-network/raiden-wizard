@@ -112,9 +112,18 @@ if __name__ == "__main__":
     app = Application(
         [
             url(r"/", IndexHandler, name="index"),
-            url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
-            url(r"/setup/goerli/(.*)", SetupHandler, name="setup"),
-            url(r"/create_wallet/goerli", WalletCreationHandler, name="create_wallet"),
+            url(r"/configurations", ConfigurationListHandler, name="configuration-list"), url(
+                r"/setup/goerli/(.*)",
+                SetupHandler,
+                {"network_name": "goerli"},
+                name="setup"
+            ),
+            url(
+                r"/create_wallet/goerli",
+                WalletCreationHandler,
+                {"network_name": "goerli"},
+                name="create_wallet"
+            ),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),

@@ -165,7 +165,7 @@ class AsyncTaskHandler(WebSocketHandler):
             account = Account.create(passphrase=PASSPHRASE)
 
             self._send_redirect(
-                self.reverse_url("setup", network_name, account.keystore_file_path)
+                self.reverse_url("setup", account.keystore_file_path)
             )
 
     def _run_setup(self, **kw):
@@ -242,6 +242,9 @@ class AsyncTaskHandler(WebSocketHandler):
 
 
 class BaseRequestHandler(RequestHandler):
+    def initialize(self, **kw):
+        self.network_name = kw.get("network_name", None)
+
     def render(self, template_name, **context_data):
         configuration_file = context_data.get("configuration_file")
         if configuration_file:
@@ -273,19 +276,19 @@ class IndexHandler(BaseRequestHandler):
 
 
 class SetupHandler(BaseRequestHandler):
-    def get(self, network_name, account_file):
+    def get(self, account_file):
         file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
         self.render(
             "raiden_setup.html",
             configuration_file_names=file_names,
-            network_name=network_name,
+            network_name=self.network_name,
             account_file=account_file,
         )
 
 
 class WalletCreationHandler(BaseRequestHandler):
-    def get(self, network_name):
-        self.render("account_password.html", network_name=network_name)
+    def get(self):
+        self.render("account_password.html", network_name=self.network_name)
 
 
 class AccountDetailHandler(BaseRequestHandler):

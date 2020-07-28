@@ -331,8 +331,18 @@ if __name__ == "__main__":
         [
             url(r"/", IndexHandler, name="index"),
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
-            url(r"/setup/mainnet/(.*)", SetupHandler, name="setup"),
-            url(r"/create_wallet/mainnet", WalletCreationHandler, name="create_wallet"),
+            url(
+                r"/setup/mainnet/(.*)",
+                SetupHandler,
+                {"network_name": "mainnet"},
+                name="setup"
+            ),
+            url(
+                r"/create_wallet/mainnet",
+                WalletCreationHandler,
+                {"network_name": "mainnet"},
+                name="create_wallet"
+            ),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),

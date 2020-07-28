@@ -69,13 +69,7 @@ class PasswordForm(Form):
 
 
 class AsyncTaskHandler(WebSocketHandler):
-    def __init__(
-        self,
-        application: Application,
-        request: HTTPServerRequest,
-        **kw
-    ):
-        super().__init__(application, request, **kw)
+    def initialize(self):
         self.actions = {
             "close": self._run_close,
             "launch": self._run_launch,

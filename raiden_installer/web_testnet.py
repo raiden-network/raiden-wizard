@@ -35,13 +35,8 @@ RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 
 class TestnetAsyncTaskHandler(AsyncTaskHandler):
-    def __init__(
-        self,
-        application: Application,
-        request: HTTPServerRequest,
-        **kw
-    ) -> None:
-        super().__init__(application, request, **kw)
+    def initialize(self):
+        super().initialize()
         self.actions.update({
             "fund": self._run_funding
         })

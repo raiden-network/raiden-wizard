@@ -65,13 +65,8 @@ class TokenExchangeForm(Form):
 
 
 class MainAsyncTaskHandler(AsyncTaskHandler):
-    def __init__(
-        self,
-        application: Application,
-        request: HTTPServerRequest,
-        **kw
-    ):
-        super().__init__(application, request, **kw)
+    def initialize(self):
+        super().initialize()
         self.actions.update({
             "swap": self._run_swap,
             "track_transaction": self._run_track_transaction,

@@ -95,6 +95,12 @@
     "{{ ethereum_required.formatted }}";
   const FAUCET_AVAILABLE = "{{ network.FAUCET_AVAILABLE }}";
   let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
+  const SWAP_URL = 
+  {% if network.name == 'mainnet' %}
+    "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
+  {% else %}
+    "";
+  {% end %}
 
   function runFunding(configurationFileName) {
     let message = {method: "fund", configuration_file_name: configurationFileName}
@@ -205,7 +211,7 @@
       const action = document.querySelector(".action");
       action.classList.add("tx-received");
       setTimeout(function () {
-        forceNavigation("{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}");
+        forceNavigation(SWAP_URL);
       }, 2000);
     } else {
       updateNeededEth(balance);

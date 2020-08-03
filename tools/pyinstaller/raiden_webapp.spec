@@ -19,8 +19,10 @@ RESOURCE_FOLDER = os.path.abspath(os.path.join(ROOT_FOLDER, "resources"))
 
 HOOKS_FOLDER = os.path.join(PWD, "hooks")
 
+ENTRY_SCRIPT = os.getenv("RAIDEN_INSTALLER_BUILD_ENTRY_SCRIPT", "web.py")
+
 a = Analysis(
-    [os.path.join(ROOT_FOLDER, "raiden_installer", "web.py")],
+    [os.path.join(ROOT_FOLDER, "raiden_installer", ENTRY_SCRIPT)],
     pathex=[os.path.join(ROOT_FOLDER, "raiden_installer")],
     binaries=[],
     datas=[(RESOURCE_FOLDER, "resources")],

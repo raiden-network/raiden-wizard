@@ -17,6 +17,10 @@ RUN pip install -r requirements.txt && pip install "PyInstaller==3.5"
 ADD . /raiden-wizard
 WORKDIR /raiden-wizard
 
+ARG RAIDEN_INSTALLER_BUILD_ENTRY_SCRIPT=web.py
+
+ENV RAIDEN_INSTALLER_BUILD_ENTRY_SCRIPT=${RAIDEN_INSTALLER_BUILD_ENTRY_SCRIPT}
+
 # build pyinstaller package
 RUN pyinstaller --noconfirm --clean tools/pyinstaller/raiden_webapp.spec
 

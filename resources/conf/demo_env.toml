@@ -1,16 +1,15 @@
 network = "goerli"
 client_release_channel = "demo_env"
-client_release_version = "v0.200.0-rc7"
+client_release_version = "v1.1.1"
 services_version = "test"
 ethereum_amount_required = 2e16
 # Special networking for Demoenvs
 routing_mode = "pfs"
-matrix_server = "https://t02.testtransport.raiden.network"
-pathfinding_service_address = "https://pfs.t02.testtransport.raiden.network"
-
+matrix_server = "https://transport.demo001.env.raiden.network"
+pathfinding_service_address = "https://pfs.demo001.env.raiden.network"
 
 [service_token]
-ticker = "RDN"
+ticker = "SVT"
 amount_required = 6e18
 swap_amount_1 = 10e18
 swap_amount_2 = 20e18

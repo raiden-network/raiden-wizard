@@ -110,16 +110,9 @@ if __name__ == "__main__":
     app = Application(
         [
             url(r"/", IndexHandler, name="index"),
-            url(r"/configurations", ConfigurationListHandler, name="configuration-list"), url(
-                r"/setup/goerli/(.*)",
-                SetupHandler,
-                name="setup"
-            ),
-            url(
-                r"/create_wallet/goerli",
-                WalletCreationHandler,
-                name="create_wallet"
-            ),
+            url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
+            url(r"/setup/(.*)", SetupHandler, name="setup"),
+            url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
             url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
             url(r"/launch/(.*)", LaunchHandler, name="launch"),
@@ -137,7 +130,7 @@ if __name__ == "__main__":
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
         template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
-        installer_settings_name="goerli"
+        installer_settings_name="demo_env"
     )
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD_TESTNET") + 1000) % 2 ** 16 - 1 = 2640

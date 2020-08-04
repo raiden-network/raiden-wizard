@@ -65,12 +65,14 @@ class RaidenConfigurationFile:
         }
 
         # If the config is for a demo-env we'll need to add/overwrite some settings
-        if self.settings.client_release_channel == "demo_env":  # noqa
-            base_config.update({"matrix-server": self.settings.matrix_server})  # noqa
-            base_config["routing-mode"] = "pfs"
-            base_config[
-                "pathfinding-service-address"
-            ] = self.settings.pathfinding_service_address  # noqa
+        if self.settings.client_release_channel == "demo_env":
+            base_config.update(
+                {
+                    "matrix-server": self.settings.matrix_server,
+                    "routing-mode": "pfs",
+                    "pathfinding-service-address": self.settings.pathfinding_service_address,
+                }
+            )
 
         return base_config
 

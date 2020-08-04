@@ -418,6 +418,25 @@
         document.location = url;
       }
 
+      function setUpTogglePassword() {
+        const eye = document.getElementById("eye");
+        if (!eye) {
+          return
+        }
+        const passphrase = document.querySelector("input[name=passphrase]") ||
+        document.querySelector("input[name=passphrase1]");
+        function togglePassword(evt) {
+          if(passphrase.type === "password") {
+            passphrase.type = "text";
+            eye.src = "{{ static_url('images/eye_open.svg') }}";
+          } else {
+            passphrase.type = "password";
+            eye.src = "{{ static_url('images/eye.svg') }}";
+          }
+        }
+        eye.addEventListener("click", togglePassword);
+      }
+
       window.addEventListener('beforeunload', beforeunloadHandler);
 
       window.addEventListener("load", function() {
@@ -431,6 +450,7 @@
 
         setupModal();
         setupTooltips();
+        setUpTogglePassword();
       });
     </script>
 

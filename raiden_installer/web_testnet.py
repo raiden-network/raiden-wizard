@@ -4,11 +4,10 @@ import sys
 import webbrowser
 
 import tornado.ioloop
-from tornado.httputil import HTTPServerRequest
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPServer, url
 
-from raiden_installer import get_resource_folder_path, log, network_settings
+from raiden_installer import get_resource_folder_path, log
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import make_web3_provider
 from raiden_installer.shared_handlers import (
@@ -58,7 +57,6 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
             return
 
         network = configuration_file.network
-        settings = network_settings[network.name]
 
         if not network.FAUCET_AVAILABLE:
             self._send_error_message(
@@ -75,10 +73,10 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
         self._send_status_update(f"Account funded with {balance.formatted}")
 
         service_token = Erc20Token.find_by_ticker(
-            settings.service_token.ticker, settings.network
+            self.installer_settings.service_token.ticker, self.installer_settings.network
         )
 
-        if settings.service_token.mintable:
+        if self.installer_settings.service_token.mintable:
             self._send_next_step(
                 f"Minting {service_token.ticker}",
                 f"Fund Account with {service_token.ticker}",
@@ -92,9 +90,9 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
         if service_token_balance.as_wei > 0:
             self._run_udc_deposit(w3, account, service_token, service_token_balance)
 
-        if settings.transfer_token.mintable:
+        if self.installer_settings.transfer_token.mintable:
             transfer_token = Erc20Token.find_by_ticker(
-                settings.transfer_token.ticker, settings.network
+                self.installer_settings.transfer_token.ticker, self.installer_settings.network
             )
             self._send_next_step(
                 f"Minting {transfer_token.ticker}",
@@ -115,13 +113,11 @@ if __name__ == "__main__":
             url(r"/configurations", ConfigurationListHandler, name="configuration-list"), url(
                 r"/setup/goerli/(.*)",
                 SetupHandler,
-                {"network_name": "goerli"},
                 name="setup"
             ),
             url(
                 r"/create_wallet/goerli",
                 WalletCreationHandler,
-                {"network_name": "goerli"},
                 name="create_wallet"
             ),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
@@ -141,6 +137,7 @@ if __name__ == "__main__":
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
         template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
+        installer_settings_name="goerli"
     )
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD_TESTNET") + 1000) % 2 ** 16 - 1 = 2640

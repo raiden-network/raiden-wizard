@@ -7,7 +7,7 @@ import toml
 from eth_utils import to_checksum_address
 from xdg import XDG_DATA_HOME
 
-from raiden_installer import log, network_settings
+from raiden_installer import available_settings, log
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, make_web3_provider
 from raiden_installer.network import Network
@@ -33,25 +33,22 @@ class RaidenConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
     def __init__(
-        self, account_filename: str, network: Network, ethereum_client_rpc_endpoint: str, **kw
+        self, account_filename: str, settings_name: str, ethereum_client_rpc_endpoint: str, **kw
     ):
         if 'passphrase' in kw:
             self.account = Account(account_filename, passphrase=kw.get('passphrase'))
         else:
             self.account = Account(account_filename)
         self.account_filename = account_filename
-        self.network = network
-        self.settings = network_settings[network.name]
+        self.settings_name = settings_name
+        self.settings = available_settings[settings_name]
+        self.network = Network.get_by_name(self.settings.network)
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
         self.enable_monitoring = kw.get("enable_monitoring", self.settings.monitoring_enabled)
         self.routing_mode = kw.get("routing_mode", self.settings.routing_mode)
         self.services_version = self.settings.services_version
         self._initial_funding_txhash = kw.get("_initial_funding_txhash")
-
-    @property
-    def path_finding_service_url(self):
-        return f"https://pfs-{self.network.name}.services-{self.services_version}.raiden.network"
 
     @property
     def configuration_data(self):
@@ -83,7 +80,7 @@ class RaidenConfigurationFile:
 
     @property
     def file_name(self):
-        return f"config-{self.account.address}-{self.network.name}.toml"
+        return f"config-{self.account.address}-{self.settings_name}.toml"
 
     @property
     def path(self):
@@ -120,7 +117,7 @@ class RaidenConfigurationFile:
     def load(cls, file_path: Path):
         file_name, _ = os.path.splitext(os.path.basename(file_path))
 
-        _, _, network_name = file_name.split("-")
+        _, _, settings_name = file_name.split("-")
 
         with file_path.open() as config_file:
             data = toml.load(config_file)
@@ -130,7 +127,7 @@ class RaidenConfigurationFile:
             return cls(
                 account_filename=keystore_file_path,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
-                network=Network.get_by_name(network_name),
+                settings_name=settings_name,
                 routing_mode=data["routing-mode"],
                 enable_monitoring=data["enable-monitoring"],
                 _initial_funding_txhash=data.get("_initial_funding_txhash"),

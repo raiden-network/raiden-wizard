@@ -20,7 +20,7 @@ import psutil
 import requests
 from requests.exceptions import ConnectionError
 
-from raiden_installer import default_settings, log, network_settings
+from raiden_installer import Settings, default_settings, log
 
 
 @contextmanager
@@ -393,8 +393,7 @@ class RaidenClient:
         return cls._make_release(response.json())
 
     @staticmethod
-    def get_client(network_name=None):
-        settings = network_settings[network_name] if network_name else default_settings
+    def get_client(settings: Settings):
         raiden_class = {
             "testing": RaidenTestnetRelease,
             "mainnet": RaidenRelease,
@@ -516,12 +515,12 @@ class RaidenNightly(RaidenClient):
 class RaidenDemoEnv(RaidenTestnetRelease):
     @property
     def routing_mode(self):
-        return settings.routing_mode  # noqa
+        return default_settings.routing_mode  # noqa
 
     @property
     def matrix_server(self):
-        return settings.matrix_server  # noqa
+        return default_settings.matrix_server  # noqa
 
     @property
     def pathfinding_service_address(self):
-        return settings.pathfinding_service_address  # noqa
+        return default_settings.pathfinding_service_address  # noqa

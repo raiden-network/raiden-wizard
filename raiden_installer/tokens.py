@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import default_settings, network_settings, log
+from raiden_installer import default_settings
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -276,10 +276,6 @@ class RequiredAmounts:
                 Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
             ),
         )
-
-    @staticmethod
-    def for_network(network_name):
-        return RequiredAmounts.from_settings(network_settings[network_name])
 
 
 @dataclass

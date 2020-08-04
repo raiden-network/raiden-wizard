@@ -8,14 +8,13 @@ import tornado.ioloop
 import wtforms
 from eth_utils import decode_hex
 from tornado.escape import json_decode
-from tornado.httputil import HTTPServerRequest
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPServer, url
 from tornado.websocket import WebSocketHandler
 from web3.exceptions import TimeExhausted
 from wtforms_tornado import Form
 
-from raiden_installer import get_resource_folder_path, log, network_settings
+from raiden_installer import get_resource_folder_path, log
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.ethereum_rpc import make_web3_provider
@@ -135,7 +134,7 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
                 self._send_status_update(f"Swap complete. {token_balance.formatted} available")
                 self._send_status_update(f"Actual costs: {actual_total_costs}")
 
-                required = RequiredAmounts.for_network(network_name)
+                required = RequiredAmounts.from_settings(self.installer_settings)
                 service_token = Erc20Token.find_by_ticker(
                     required.service_token.ticker, network_name
                 )
@@ -239,14 +238,12 @@ class SwapHandler(BaseRequestHandler):
         uniswap = Uniswap(w3=w3)
         token = Erc20Token.find_by_ticker(token_ticker, configuration_file.network.name)
 
-        network = configuration_file.network
-        settings = network_settings[network.name]
-        swap_amounts = SwapAmounts.from_settings(settings)
-        if token_ticker == settings.service_token.ticker:
+        swap_amounts = SwapAmounts.from_settings(self.installer_settings)
+        if token_ticker == self.installer_settings.service_token.ticker:
             swap_amount_1 = swap_amounts.service_token_1
             swap_amount_2 = swap_amounts.service_token_2
             swap_amount_3 = swap_amounts.service_token_3
-        elif token_ticker == settings.transfer_token.ticker:
+        elif token_ticker == self.installer_settings.transfer_token.ticker:
             swap_amount_1 = swap_amounts.transfer_token_1
             swap_amount_2 = swap_amounts.transfer_token_2
             swap_amount_3 = swap_amounts.transfer_token_3
@@ -270,7 +267,7 @@ class CostEstimationAPIHandler(APIHandler):
         account = configuration_file.account
         try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        required = RequiredAmounts.for_network(configuration_file.network.name)
+        required = RequiredAmounts.from_settings(self.installer_settings)
 
         kyber = Kyber(w3=w3)
         uniswap = Uniswap(w3=w3)
@@ -334,13 +331,11 @@ if __name__ == "__main__":
             url(
                 r"/setup/mainnet/(.*)",
                 SetupHandler,
-                {"network_name": "mainnet"},
                 name="setup"
             ),
             url(
                 r"/create_wallet/mainnet",
                 WalletCreationHandler,
-                {"network_name": "mainnet"},
                 name="create_wallet"
             ),
             url(r"/account/(.*)", AccountDetailHandler, name="account"),
@@ -362,6 +357,7 @@ if __name__ == "__main__":
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
         template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
+        installer_settings_name="mainnet"
     )
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD") + 1000) % 2 ** 16 - 1 = 1994

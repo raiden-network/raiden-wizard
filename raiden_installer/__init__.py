@@ -63,6 +63,6 @@ def _get_settings(network):
     return Settings(**configuration_data)
 
 
-_NETWORKS = ["mainnet", "goerli"]
-network_settings = {network: _get_settings(network) for network in _NETWORKS}
-default_settings = network_settings["mainnet"]
+_SETTINGS = ["mainnet", "goerli"]
+available_settings = {network: _get_settings(network) for network in _SETTINGS}
+default_settings = available_settings["mainnet"]

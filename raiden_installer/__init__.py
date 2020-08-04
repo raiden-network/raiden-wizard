@@ -65,4 +65,3 @@ def _get_settings(settings_name):
 
 _SETTINGS = ["mainnet", "demo_env"]
 available_settings = {settings_name: _get_settings(settings_name) for settings_name in _SETTINGS}
-default_settings = available_settings["mainnet"]

@@ -20,7 +20,7 @@ import psutil
 import requests
 from requests.exceptions import ConnectionError
 
-from raiden_installer import Settings, default_settings, log
+from raiden_installer import Settings, log
 
 
 @contextmanager

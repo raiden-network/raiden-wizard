@@ -15,7 +15,7 @@ from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_installer import available_settings, default_settings, log
+from raiden_installer import available_settings, log
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
@@ -33,7 +33,6 @@ EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("Stan
 PASSPHRASE: Optional[str] = None
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
-DEFAULT_NETWORK = Network.get_default()
 
 
 def try_unlock(account):
@@ -42,10 +41,7 @@ def try_unlock(account):
 
 
 class QuickSetupForm(Form):
-    network = wtforms.HiddenField("Network", default=DEFAULT_NETWORK.name)
-    use_rsb = wtforms.HiddenField(
-        "Use Raiden Service Bundle", default=default_settings.monitoring_enabled
-    )
+    network = wtforms.HiddenField("Network")
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -194,8 +190,8 @@ class AsyncTaskHandler(WebSocketHandler):
                 account.keystore_file_path,
                 self.installer_settings_name,
                 ethereum_rpc_provider.url,
-                routing_mode="pfs" if form.data["use_rsb"] else "local",
-                enable_monitoring=form.data["use_rsb"],
+                routing_mode=self.installer_settings.routing_mode,
+                enable_monitoring=self.installer_settings.monitoring_enabled,
             )
             conf_file.save()
 

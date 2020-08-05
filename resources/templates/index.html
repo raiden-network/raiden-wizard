@@ -48,11 +48,20 @@
 
   <div class="action">
     {% if configuration_file %}
-      <button class="link-button" data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}" disabled>
+      <button
+        class="link-button"
+        data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}"
+        {% if network.name == "mainnet" %}disabled{% end %}
+      >
         Launch
       </button>
     {% else %}
-      <button class="link-button" id="setup-button" data-link-url="{{ reverse_url('create_wallet') }}" disabled>
+      <button
+        class="link-button"
+        id="setup-button"
+        data-link-url="{{ reverse_url('create_wallet') }}"
+        {% if network.name == "mainnet" %}disabled{% end %}
+      >
         Start
       </button>
     {% end %}
@@ -95,17 +104,10 @@
 
 {% block page_header_scripts %}
   <script type="text/javascript">
-    const NETWORK = "{{ network.name }}";
-
     window.addEventListener("load", function() {
       const button = document.querySelector("button.link-button");
-
-      if (NETWORK === "mainnet") {
-        const checkboxes = document.querySelectorAll("input[type=checkbox]");
-        checkAcknowledgements(checkboxes, button);
-      } else {
-        button.disabled = false;
-      }
+      const checkboxes = document.querySelectorAll("input[type=checkbox]");
+      checkAcknowledgements(checkboxes, button);
     });
   </script>
 {% end %}

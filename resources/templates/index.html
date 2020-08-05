@@ -28,14 +28,22 @@
     </div>
   </div>
 
-  <div>The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps</div>
 
+  {% if network.name == "mainnet" %}
+  <div>
+    The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps
+  </div>
   <div class="ack-prompt">
     <input type="checkbox" name="ack-wizard" />
     <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
       I accept the <i>terms and conditions</i>
     </label>
   </div>
+  {% else %}
+  <div>
+    The Wizard allows you to try out Raiden on a testnet by generating and funding a Raiden account for you
+  </div>
+  {% end %}
 </div>
 
 <div class="action">
@@ -50,6 +58,7 @@
   {% end %}
 </div>
 
+{% if network.name == "mainnet" %}
 <div class="modal" data-modal="disclaimer">
   <img src="{{ static_url('images/close.svg') }}" class="modal__close" alt="Closes the modal">
   <h2>Disclaimer<h2>
@@ -82,13 +91,21 @@
   </div>
 </div>
 {% end %}
+{% end %}
 
 {% block page_header_scripts %}
 <script type="text/javascript">
+ const NETWORK = "{{ network.name }}";
+
  window.addEventListener("load", function() {
-   const checkboxes = document.querySelectorAll("input[type=checkbox]");
    const button = document.querySelector("button.link-button");
-   checkAcknowledgements(checkboxes, button);
+
+   if (NETWORK === "mainnet") {
+    const checkboxes = document.querySelectorAll("input[type=checkbox]");
+    checkAcknowledgements(checkboxes, button);
+   } else {
+     button.disabled = false;
+   }
  });
 </script>
 {% end %}

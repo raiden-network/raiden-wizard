@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 
 from raiden_installer.account import Account
-from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
+from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.tokens import EthereumAmount, TokenAmount, Erc20Token, Wei
@@ -70,13 +70,10 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         self.ethereum_client_rpc_endpoint = "http://localhost:8545"
 
         self.configuration_file = RaidenConfigurationFile(
-            account=self.account,
+            account_filename=self.account.keystore_file_path,
             network=self.network,
             ethereum_client_rpc_endpoint=self.ethereum_client_rpc_endpoint,
         )
-
-        passphrase_file = PassphraseFile(self.configuration_file.passphrase_file_path)
-        passphrase_file.store(self.account.passphrase)
 
     def test_can_save_configuration(self):
         self.configuration_file.save()
@@ -89,7 +86,6 @@ class RaidenConfigurationTestCase(unittest.TestCase):
 
     def tearDown(self):
         for config in RaidenConfigurationFile.get_available_configurations():
-            config.passphrase_file_path.unlink()
             config.path.unlink()
 
 

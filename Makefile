@@ -1,5 +1,7 @@
 help:
 	@echo "bundle-docker - create standalone executable with PyInstaller via a docker container"
+	@echo "test - run tests"
+	@echo "coverage - check code coverage quickly with the default Python"
 
 clean:
 	rm -r build/ dist/
@@ -26,3 +28,11 @@ build-mac: clean
 	RAIDEN_INSTALLER_BUILD_ENTRY_SCRIPT="web_testnet.py" pyinstaller --noconfirm --clean tools/pyinstaller/raiden_webapp.spec
 	tar -czf raiden_wizard_goerli_macOS-1.0.x.tar.gz dist/raiden_wizard
 	rm dist/raiden_wizard
+
+test:
+	pytest -rs tests
+
+coverage:
+	coverage run --source raiden_installer -m pytest tests
+	coverage report -m
+	coverage html

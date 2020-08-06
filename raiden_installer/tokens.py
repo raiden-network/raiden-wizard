@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import default_settings, network_settings, log
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -60,11 +59,13 @@ class Erc20Token(Currency):
 
     @property
     def address(self) -> str:
-        network = self.network or default_settings.network.lower()
+        if self.network is None:
+            raise TokenError(f"Network is not set for {self.ticker}")
+
         try:
-            return self.addresses[network]
+            return self.addresses[self.network]
         except KeyError:
-            raise TokenError(f"{self.ticker} is not deployed on {network}")
+            raise TokenError(f"{self.ticker} is not deployed on {self.network}")
 
     @staticmethod
     def find_by_ticker(ticker, network=None):
@@ -276,10 +277,6 @@ class RequiredAmounts:
                 Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
             ),
         )
-
-    @staticmethod
-    def for_network(network_name):
-        return RequiredAmounts.from_settings(network_settings[network_name])
 
 
 @dataclass

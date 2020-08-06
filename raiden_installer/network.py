@@ -3,8 +3,6 @@ import uuid
 
 import requests
 
-from raiden_installer import default_settings
-
 
 class FundingError(Exception):
     pass
@@ -57,10 +55,6 @@ class Network:
             "kovan": Kovan,
         }.get(name, Network)
         return network_class()
-
-    @staticmethod
-    def get_default():
-        return Network.get_by_name(default_settings.network)
 
 
 class Mainnet(Network):

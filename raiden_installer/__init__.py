@@ -49,8 +49,8 @@ def get_resource_folder_path():
     return os.path.join(root_folder, "resources")
 
 
-def _get_settings(network):
-    configuration_file = os.path.join(get_resource_folder_path(), "conf", f"{network}.toml")
+def _get_settings(settings_name):
+    configuration_file = os.path.join(get_resource_folder_path(), "conf", f"{settings_name}.toml")
     configuration_data = toml.load(configuration_file)
 
     service_token_settings = TokenSettings(**configuration_data["service_token"])
@@ -63,6 +63,5 @@ def _get_settings(network):
     return Settings(**configuration_data)
 
 
-_NETWORKS = ["mainnet", "goerli"]
-network_settings = {network: _get_settings(network) for network in _NETWORKS}
-default_settings = network_settings["mainnet"]
+_SETTINGS = ["mainnet", "demo_env"]
+available_settings = {settings_name: _get_settings(settings_name) for settings_name in _SETTINGS}

@@ -9,14 +9,13 @@ from urllib.parse import urlparse
 
 import wtforms
 from eth_utils import to_checksum_address
-from tornado.httputil import HTTPServerRequest
 from tornado.web import Application, HTTPError, RequestHandler
 from tornado.websocket import WebSocketHandler
 from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_installer import default_settings, log
+from raiden_installer import available_settings, log
 from raiden_installer.base import Account, RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
@@ -34,7 +33,6 @@ EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("Stan
 PASSPHRASE: Optional[str] = None
 
 AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
-DEFAULT_NETWORK = Network.get_default()
 
 
 def try_unlock(account):
@@ -43,10 +41,7 @@ def try_unlock(account):
 
 
 class QuickSetupForm(Form):
-    network = wtforms.HiddenField("Network", default=DEFAULT_NETWORK.name)
-    use_rsb = wtforms.HiddenField(
-        "Use Raiden Service Bundle", default=default_settings.monitoring_enabled
-    )
+    network = wtforms.HiddenField("Network")
     endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
 
     def validate_network(self, field):
@@ -70,6 +65,8 @@ class PasswordForm(Form):
 
 class AsyncTaskHandler(WebSocketHandler):
     def initialize(self):
+        self.installer_settings_name = self.settings.get("installer_settings_name")
+        self.installer_settings = available_settings[self.installer_settings_name]
         self.actions = {
             "close": self._run_close,
             "launch": self._run_launch,
@@ -191,10 +188,10 @@ class AsyncTaskHandler(WebSocketHandler):
 
             conf_file = RaidenConfigurationFile(
                 account.keystore_file_path,
-                network,
+                self.installer_settings_name,
                 ethereum_rpc_provider.url,
-                routing_mode="pfs" if form.data["use_rsb"] else "local",
-                enable_monitoring=form.data["use_rsb"],
+                routing_mode=self.installer_settings.routing_mode,
+                enable_monitoring=self.installer_settings.monitoring_enabled,
             )
             conf_file.save()
 
@@ -205,8 +202,7 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_launch(self, **kw):
         configuration_file_name = kw.get("configuration_file_name")
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        network_name = configuration_file.network.name
-        raiden_client = RaidenClient.get_client(network_name)
+        raiden_client = RaidenClient.get_client(self.installer_settings)
 
         if not raiden_client.is_installed:
             self._send_status_update(f"Downloading and installing raiden {raiden_client.release}")
@@ -243,15 +239,12 @@ class AsyncTaskHandler(WebSocketHandler):
 
 class BaseRequestHandler(RequestHandler):
     def initialize(self, **kw):
-        self.network_name = kw.get("network_name", None)
+        installer_settings_name = self.settings.get("installer_settings_name")
+        self.installer_settings = available_settings[installer_settings_name]
 
     def render(self, template_name, **context_data):
-        configuration_file = context_data.get("configuration_file")
-        if configuration_file:
-            network = configuration_file.network
-        else:
-            network = Network.get_by_name(default_settings.network)
-        required = RequiredAmounts.for_network(network.name)
+        network = Network.get_by_name(self.installer_settings.network)
+        required = RequiredAmounts.from_settings(self.installer_settings)
         context_data.update(
             {
                 "network": network,
@@ -281,14 +274,14 @@ class SetupHandler(BaseRequestHandler):
         self.render(
             "raiden_setup.html",
             configuration_file_names=file_names,
-            network_name=self.network_name,
+            network_name=self.installer_settings.network,
             account_file=account_file,
         )
 
 
 class WalletCreationHandler(BaseRequestHandler):
     def get(self):
-        self.render("account_password.html", network_name=self.network_name)
+        self.render("account_password.html", network_name=self.installer_settings.network)
 
 
 class AccountDetailHandler(BaseRequestHandler):
@@ -310,7 +303,7 @@ class AccountDetailHandler(BaseRequestHandler):
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
-        required = RequiredAmounts.for_network(configuration_file.network.name)
+        required = RequiredAmounts.from_settings(self.installer_settings)
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
         log.info(f"Checking balance {eth_balance} > {required.eth}")
         if eth_balance < required.eth:
@@ -414,7 +407,8 @@ class ConfigurationItemAPIHandler(APIHandler):
         try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
 
-        required = RequiredAmounts.for_network(network)
+        settings = available_settings[configuration_file.settings_name]
+        required = RequiredAmounts.from_settings(settings)
         service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network)
         transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network)
 

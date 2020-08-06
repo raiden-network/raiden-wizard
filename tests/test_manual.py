@@ -25,8 +25,20 @@ TEST_ACCOUNT_PRIVATE_KEY = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PRIVATE_KEY"
 TEST_ACCOUNT_PASSPHRASE = os.getenv("TEST_RAIDEN_INSTALLER_ACCOUNT_PASSPHRASE", "manual_testing")
 
 
-GOERLI_SERVICE_TOKEN_SETTINGS = TokenSettings(ticker="RDN", amount_required=int(6e18))
-ROPSTEN_SERVICE_TOKEN_SETTINGS = TokenSettings(ticker="RDN", amount_required=int(6e18))
+GOERLI_SERVICE_TOKEN_SETTINGS = TokenSettings(
+    ticker="SVT",
+    amount_required=int(6e18),
+    swap_amount_1=10e18,
+    swap_amount_2=20e18,
+    swap_amount_3=50e18,
+)
+ROPSTEN_SERVICE_TOKEN_SETTINGS = TokenSettings(
+    ticker="RDN",
+    amount_required=int(6e18),
+    swap_amount_1=10e18,
+    swap_amount_2=20e18,
+    swap_amount_3=50e18,
+)
 
 
 class TestAccount(Account):
@@ -56,6 +68,7 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         TestAccount.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
         self.account = TestAccount.create(TEST_ACCOUNT_PASSPHRASE)
+        self.w3 = self._get_web3()
 
     def _get_network(self):
         return Network.get_by_name(default_settings.network)

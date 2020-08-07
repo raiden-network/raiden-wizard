@@ -1,7 +1,7 @@
 import glob
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 import toml
 from eth_utils import to_checksum_address
@@ -33,7 +33,7 @@ class RaidenConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
     def __init__(
-        self, account_filename: str, settings_name: str, ethereum_client_rpc_endpoint: str, **kw
+        self, account_filename: Union[Path, str], settings_name: str, ethereum_client_rpc_endpoint: str, **kw
     ):
         if 'passphrase' in kw:
             self.account = Account(account_filename, passphrase=kw.get('passphrase'))
@@ -126,6 +126,10 @@ class RaidenConfigurationFile:
             keystore_file_path = Account.find_keystore_file_path(
                 data["address"], Path(data["keystore-path"])
             )
+            if keystore_file_path is None:
+                raise ValueError(
+                    f"{data['keystore-path']} does not contain the account file for config {file_path}"
+                )
             return cls(
                 account_filename=keystore_file_path,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],

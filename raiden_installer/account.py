@@ -8,15 +8,15 @@ import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
 from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 
 from raiden_installer import log
-from raiden_installer.tokens import ETH, TokenAmount, Wei
 from raiden_installer.constants import WEB3_TIMEOUT
+from raiden_installer.tokens import ETH, TokenAmount, Wei
 
 
 def make_random_string(length=32):
@@ -26,7 +26,7 @@ def make_random_string(length=32):
 class Account:
     DEFAULT_KEYSTORE_FOLDER: Optional[Path] = None
 
-    def __init__(self, keystore_file_path: Path, passphrase: Optional[str] = None):
+    def __init__(self, keystore_file_path: Union[Path, str], passphrase: Optional[str] = None):
         self.passphrase = passphrase
         self.keystore_file_path = Path(keystore_file_path)
         self.content = self._get_content()
@@ -126,14 +126,13 @@ class Account:
         return [cls(keystore_file_path=Path(f)) for f in keystore_glob]
 
     @classmethod
-    def find_keystore_file_path(cls, address, keystore_path):
-
+    def find_keystore_file_path(cls, address: str, keystore_path: Path) -> Optional[Path]:
         try:
             files = os.listdir(keystore_path)
         except OSError as ex:
             msg = "Unable to list the specified directory"
             log.error("OsError", msg=msg, path=keystore_path, ex=ex)
-            return
+            return None
 
         for f in files:
             full_path = keystore_path.joinpath(f)
@@ -159,3 +158,5 @@ class Account:
                         if isinstance(ex, json.decoder.JSONDecodeError):
                             msg = "The account file is not valid JSON format"
                         log.warning(msg, path=full_path, ex=ex)
+
+        return None

@@ -6,9 +6,9 @@ from pathlib import Path
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import make_web3_provider
+from raiden_installer.network import Network
 
-TESTING_KEYSTORE_FOLDER = Path(
-    tempfile.gettempdir()).joinpath("raiden-wizard-testing")
+TESTING_KEYSTORE_FOLDER = Path(tempfile.gettempdir()).joinpath("raiden-wizard-testing")
 
 
 class AccountBaseTestCase(unittest.TestCase):
@@ -84,6 +84,11 @@ class AccountTestCase(AccountBaseTestCase):
     def test_can_get_web3_provider(self):
         web3_provider = make_web3_provider("http://localhost:8545", self.account)
         self.assertIsNotNone(web3_provider)
+
+    def test_cannot_run_funding_on_mainnet(self):
+        network = Network.get_by_name("mainnet")
+        with self.assertRaises(NotImplementedError):
+            network.fund(self.account)
 
 
 class LockedAccountTestCase(AccountBaseTestCase):

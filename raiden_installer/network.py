@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import uuid
 
@@ -40,13 +42,13 @@ class Network:
         return [Network.get_by_name(n) for n in Network.get_network_names()]
 
     @staticmethod
-    def get_by_chain_id(chain_id):
+    def get_by_chain_id(chain_id: int) -> Network:
         return Network.get_by_name(
             [name for name, cid in Network.CHAIN_ID_MAPPING.items() if cid == chain_id].pop()
         )
 
     @staticmethod
-    def get_by_name(name):
+    def get_by_name(name: str) -> Network:
         network_class = {
             "mainnet": Mainnet,
             "ropsten": Ropsten,

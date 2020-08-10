@@ -3,8 +3,26 @@ import unittest
 from pathlib import Path
 
 from raiden_installer.account import Account
-from raiden_installer.base import RaidenConfigurationFile
+from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
 from raiden_installer.network import Network
+
+TESTING_KEYSTORE_FOLDER = Path(tempfile.gettempdir()).joinpath("raiden-wizard-testing")
+
+class PassphraseFileTestCase(unittest.TestCase):
+    def setUp(self):
+        self.file_path = TESTING_KEYSTORE_FOLDER.joinpath("passphrase")
+        self.passphrase_file = PassphraseFile(self.file_path)
+    
+    def test_store_and_retrieve_passphrase(self):
+        password = "test_password"
+        self.passphrase_file.store(password)
+        self.assertEqual(self.passphrase_file.retrieve(), password)
+
+    def tearDown(self):
+        try:
+            self.file_path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 class RaidenConfigurationTestCase(unittest.TestCase):

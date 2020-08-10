@@ -63,13 +63,6 @@ class EthereumRPCProvider:
     def __init__(self, url):
         self.url = url
 
-    @staticmethod
-    def make_from_url(url):
-        try:
-            return Infura(url)
-        except ValueError:
-            return EthereumRPCProvider(url)
-
 
 class Infura(EthereumRPCProvider):
     URL_PATTERN = "https://{network_name}.infura.io:443/v3/{project_id}"

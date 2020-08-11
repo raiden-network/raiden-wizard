@@ -27,7 +27,7 @@ from raiden_installer import Settings, log
 def temporary_passphrase_file(passphrase):
     fd, passphrase_file_path = tempfile.mkstemp()
     try:
-        passfile = open(fd, 'w')
+        passfile = open(fd, "w")
         passfile.write(passphrase)
         passfile.flush()
         yield passphrase_file_path
@@ -182,7 +182,6 @@ class RaidenClient:
         return f"{self.major}.{self.minor}.{self.revision}"
 
     def install(self, force=False):
-
         if self.install_path.exists() and not force:
             raise RuntimeError(f"{self.install_path} already exists")
 
@@ -195,10 +194,6 @@ class RaidenClient:
 
         action(BytesIO(download.content), self.install_path)
         os.chmod(self.install_path, 0o770)
-
-    def uninstall(self):
-        if self.install_path.exists():
-            self.install_path.unlink()
 
     def launch(self, configuration_file, passphrase_file):
         proc = subprocess.Popen(
@@ -334,20 +329,12 @@ class RaidenClient:
         return fr"{cls.FILE_NAME_PATTERN}-{cls.FILE_NAME_SUFFIX}"
 
     @classmethod
-    def get_latest_release(cls):
-        return max(cls.get_available_releases())
-
-    @classmethod
     @functools.lru_cache()
     def get_available_releases(cls):
         response = requests.get(cls.RELEASE_INDEX_URL)
         response.raise_for_status()
 
         return sorted(cls._make_releases(response), reverse=True)
-
-    @classmethod
-    def get_installed_releases(cls):
-        return [release for release in cls.get_available_releases() if release.is_installed]
 
     @classmethod
     def _make_release(cls, release_data):
@@ -401,15 +388,6 @@ class RaidenClient:
             "demo_env": RaidenTestnetRelease,
         }[settings.client_release_channel]
         return raiden_class.make_by_tag(settings.client_release_version)
-
-    @staticmethod
-    def get_all_releases():
-        release_channels = [RaidenRelease, RaidenTestnetRelease, RaidenNightly]
-        all_releases = {}
-        for channel in release_channels:
-            for raiden in channel.get_available_releases():
-                all_releases[raiden.release] = raiden
-        return all_releases
 
 
 class RaidenRelease(RaidenClient):

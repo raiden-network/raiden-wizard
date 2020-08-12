@@ -23,9 +23,20 @@ def make_random_string(length=32):
     return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
-class Account:
-    DEFAULT_KEYSTORE_FOLDER: Optional[Path] = None
+def find_keystore_folder_path() -> Path:  # pragma: no cover
+    home = Path.home()
 
+    if sys.platform == "darwin":
+        return home.joinpath("Library", "Ethereum", "keystore")
+    elif sys.platform in ("win32", "cygwin"):
+        return home.joinpath("AppData", "Roaming", "Ethereum", "keystore")
+    elif os.name == "posix":
+        return home.joinpath(".ethereum", "keystore")
+    else:
+        raise RuntimeError("Unsupported Operating System")
+
+
+class Account:
     def __init__(self, keystore_file_path: Union[Path, str], passphrase: Optional[str] = None):
         self.passphrase = passphrase
         self.keystore_file_path = Path(keystore_file_path)
@@ -82,7 +93,7 @@ class Account:
         return os.urandom(32)
 
     @classmethod
-    def create(cls, passphrase=None):
+    def create(cls, keystore_folder_path: Path, passphrase=None):
         if passphrase is None:
             passphrase = make_random_string()
 
@@ -91,7 +102,7 @@ class Account:
         )
         uid = uuid.uuid4()
 
-        keystore_file_path = Path(cls.find_keystore_folder_path()).joinpath(
+        keystore_file_path = Path(keystore_folder_path).joinpath(
             f"UTC--{time_stamp}Z--{uid}"
         )
 
@@ -105,24 +116,8 @@ class Account:
         return cls(keystore_file_path, passphrase=passphrase)
 
     @classmethod
-    def find_keystore_folder_path(cls) -> Path:
-        if cls.DEFAULT_KEYSTORE_FOLDER:
-            return cls.DEFAULT_KEYSTORE_FOLDER
-
-        home = Path.home()
-
-        if sys.platform == "darwin":
-            return home.joinpath("Library", "Ethereum", "keystore")
-        elif sys.platform in ("win32", "cygwin"):
-            return home.joinpath("AppData", "Roaming", "Ethereum", "keystore")
-        elif os.name == "posix":
-            return home.joinpath(".ethereum", "keystore")
-        else:
-            raise RuntimeError("Unsupported Operating System")
-
-    @classmethod
-    def get_user_accounts(cls):
-        keystore_glob = glob.glob(str(cls.find_keystore_folder_path().joinpath("UTC--*")))
+    def get_user_accounts(cls, keystore_folder_path: Path):
+        keystore_glob = glob.glob(str(keystore_folder_path.joinpath("UTC--*")))
         return [cls(keystore_file_path=Path(f)) for f in keystore_glob]
 
     @classmethod

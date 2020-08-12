@@ -66,8 +66,8 @@ class TestAccount(Account):
 @unittest.skipIf(INFURA_PROJECT_ID is None, "missing configuration for infura")
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        TestAccount.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
-        self.account = TestAccount.create(TEST_ACCOUNT_PASSPHRASE)
+        DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
+        self.account = TestAccount.create(DEFAULT_KEYSTORE_FOLDER, TEST_ACCOUNT_PASSPHRASE)
         self.w3 = self._get_web3()
 
     def _get_network(self):

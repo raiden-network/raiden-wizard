@@ -1,17 +1,16 @@
 #!/usr/bin/env python
 
 import os
-import unittest
 import tempfile
 import time
+import unittest
 from pathlib import Path
 
 from raiden_installer.account import Account
-from raiden_installer.ethereum_rpc import make_web3_provider, Infura
+from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
-from raiden_installer.tokens import EthereumAmount, Wei, Erc20Token
+from raiden_installer.tokens import Erc20Token, EthereumAmount, Wei
 from raiden_installer.transactions import mint_tokens
-
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 
@@ -23,8 +22,8 @@ class IntegrationTestCase(unittest.TestCase):
     def setUp(self):
         assert INFURA_PROJECT_ID
 
-        Account.DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
-        self.account = Account.create("test_raiden_integration")
+        DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
+        self.account = Account.create(DEFAULT_KEYSTORE_FOLDER, "test_raiden_integration")
         self.network = Network.get_by_name(self.__class__.NETWORK_NAME)
         self.infura = Infura.make(self.network, INFURA_PROJECT_ID)
         self.w3 = make_web3_provider(self.infura.url, self.account)

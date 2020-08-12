@@ -13,10 +13,8 @@ TESTING_KEYSTORE_FOLDER = Path(tempfile.gettempdir()).joinpath("raiden-wizard-te
 
 class AccountBaseTestCase(unittest.TestCase):
     def setUp(self):
-        Account.DEFAULT_KEYSTORE_FOLDER = TESTING_KEYSTORE_FOLDER
-
         self.passphrase = "test_password"
-        self.account = Account.create(self.passphrase)
+        self.account = Account.create(TESTING_KEYSTORE_FOLDER, self.passphrase)
 
     def tearDown(self):
         try:
@@ -30,7 +28,7 @@ class AccountTestCase(AccountBaseTestCase):
         self.assertIsNotNone(self.account.address)
 
     def test_load_user_accounts(self):
-        accounts = Account.get_user_accounts()
+        accounts = Account.get_user_accounts(TESTING_KEYSTORE_FOLDER)
         self.assertEqual(len(accounts), 1)
         self.assertEqual(accounts[0].address, self.account.address)
         self.assertEqual(accounts[0].keystore_file_path, self.account.keystore_file_path)
@@ -115,8 +113,7 @@ class LockedAccountTestCase(AccountBaseTestCase):
 
 class AccountCreationTestCase(unittest.TestCase):
     def setUp(self):
-        Account.DEFAULT_KEYSTORE_FOLDER = TESTING_KEYSTORE_FOLDER
-        self.account = Account.create()
+        self.account = Account.create(TESTING_KEYSTORE_FOLDER)
 
     def test_create_account_with_random_password(self):
         self.assertIsNotNone(self.account.passphrase)

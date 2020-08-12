@@ -16,7 +16,8 @@ from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_installer import available_settings, log
-from raiden_installer.base import Account, RaidenConfigurationFile
+from raiden_installer.account import Account, find_keystore_folder_path
+from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError, temporary_passphrase_file
@@ -159,7 +160,7 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_status_update("Generating new wallet file for Raiden")
             global PASSPHRASE
             PASSPHRASE = form.data["passphrase1"].strip()
-            account = Account.create(passphrase=PASSPHRASE)
+            account = Account.create(find_keystore_folder_path(), passphrase=PASSPHRASE)
 
             self._send_redirect(
                 self.reverse_url("setup", account.keystore_file_path)

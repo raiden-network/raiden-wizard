@@ -116,11 +116,6 @@ class Account:
         return cls(keystore_file_path, passphrase=passphrase)
 
     @classmethod
-    def get_user_accounts(cls, keystore_folder_path: Path):
-        keystore_glob = glob.glob(str(keystore_folder_path.joinpath("UTC--*")))
-        return [cls(keystore_file_path=Path(f)) for f in keystore_glob]
-
-    @classmethod
     def find_keystore_file_path(cls, address: str, keystore_path: Path) -> Optional[Path]:
         try:
             files = os.listdir(keystore_path)

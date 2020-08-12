@@ -27,12 +27,6 @@ class AccountTestCase(AccountBaseTestCase):
     def test_account_can_get_address(self):
         self.assertIsNotNone(self.account.address)
 
-    def test_load_user_accounts(self):
-        accounts = Account.get_user_accounts(TESTING_KEYSTORE_FOLDER)
-        self.assertEqual(len(accounts), 1)
-        self.assertEqual(accounts[0].address, self.account.address)
-        self.assertEqual(accounts[0].keystore_file_path, self.account.keystore_file_path)
-
     def test_finding_keystore_file_path(self):
         path = Account.find_keystore_file_path(self.account.address, TESTING_KEYSTORE_FOLDER)
         self.assertEqual(path, self.account.keystore_file_path)

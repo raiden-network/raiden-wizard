@@ -63,25 +63,20 @@ class EthereumRPCProvider:
     def __init__(self, url):
         self.url = url
 
-    @staticmethod
-    def make_from_url(url):
-        try:
-            return Infura(url)
-        except ValueError:
-            return EthereumRPCProvider(url)
-
 
 class Infura(EthereumRPCProvider):
     URL_PATTERN = "https://{network_name}.infura.io:443/v3/{project_id}"
-    ID_REGEX = "(^|(?<=(infura\.io\/v[\d]\/)))[\da-fA-F]{32}$"
+    ID_REGEX = r"(^|(?<=(infura\.io\/v[\d]\/)))[\da-fA-F]{32}$"
 
     def __init__(self, url):
         super().__init__(url)
         if not Infura.is_valid_project_id(self.project_id):
             raise ValueError(f"{url} is not a valid URL and/or infura project")
 
-        if self.network.name not in Network.get_network_names():
-            raise ValueError(f"{self.network.name} is no valid ethereum network")
+        try:
+            self.network
+        except KeyError:
+            raise ValueError(f"{url} contains an invalid ethereum network")
 
     @property
     def network(self):

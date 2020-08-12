@@ -1,6 +1,7 @@
 import unittest
 
-from raiden_installer.ethereum_rpc import Infura, make_web3_provider
+from raiden_installer.ethereum_rpc import Infura
+from raiden_installer.network import Network
 
 
 class EthereumRpcProviderTestCase(unittest.TestCase):
@@ -24,3 +25,19 @@ class EthereumRpcProviderTestCase(unittest.TestCase):
             self.assertTrue(Infura.is_valid_project_id_or_endpoint(project_id))
         for project_id in invalid:
             self.assertFalse(Infura.is_valid_project_id_or_endpoint(project_id))
+
+    def test_make_infura_provider(self):
+        project_id = "36b457de4c103495ada08dc0658db9c3"
+        network = Network.get_by_name("mainnet")
+        infura = Infura.make(network, project_id)
+        self.assertEqual(infura.url, f"https://{network.name}.infura.io:443/v3/{project_id}")
+        self.assertEqual(infura.project_id, project_id)
+        self.assertEqual(infura.network.name, network.name)
+
+    def test_cannot_create_infura_provider_with_invalid_project_id(self):
+        with self.assertRaises(ValueError):
+            Infura("https://mainnet.infura.io:443/v3/7a347de4c103495a4a88dc0658db9b2")
+
+    def test_cannot_create_infura_provider_with_invalid_network(self):
+        with self.assertRaises(ValueError):
+            Infura("https://invalidnetwork.infura.io:443/v3/36b457de4c103495ada08dc0658db9c3")

@@ -147,14 +147,3 @@ class RaidenConfigurationFile:
             raise ValueError(f"{file_path} is not a valid configuration file path")
 
         return cls.load(file_path)
-
-    @classmethod
-    def get_ethereum_rpc_endpoints(cls):
-        endpoints = []
-
-        config_glob = glob.glob(cls.FOLDER_PATH.joinpath("*.toml"))
-        for config_file_path in config_glob:
-            with open(config_file_path) as config_file:
-                data = toml.load(config_file)
-                endpoints.append(EthereumRPCProvider.make_from_url(data["eth-rpc-endpoint"]))
-        return endpoints

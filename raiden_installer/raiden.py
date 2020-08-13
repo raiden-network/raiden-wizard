@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Callable, Optional, Type, Union
+from typing import Callable, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 
@@ -45,8 +45,8 @@ def extract_version_modifier(release_name):
     if not release_name:
         return None
 
-    pattern = r".*(?P<release>(a|alpha|b|beta|rc))-?(?P<number>\d+)"
-    match = re.match(pattern, release_name)
+    pattern = r"(?P<release>(a|alpha|b|beta|rc))-?(?P<number>\d+)"
+    match = re.search(pattern, release_name)
 
     if not match:
         return None
@@ -80,7 +80,7 @@ class VersionData:
     major: str
     minor: str
     revision: str
-    extra: Optional[str]
+    extra: Optional[str] = None
 
 
 class RaidenClient:
@@ -148,36 +148,20 @@ class RaidenClient:
 
         return False
 
-    def __cmp__(self, other):
-        if self.__gt__(other):
-            return 1
-        elif self.__lt__(other):
-            return -1
-        else:
-            return 0
-
     @property
-    def FILE_NAME_PATTERN(self):
+    def FILE_NAME_PATTERN(self):  # pragma: no cover
         raise NotImplementedError
 
     @property
     def release(self):
+        release_modifier = self.version_data.extra or ""
         return ".".join(
             str(it) for it in (
                 self.version_data.major,
                 self.version_data.minor,
                 self.version_data.revision,
-                self.release_modifier
             ) if it
-        )
-
-    @property
-    def release_modifier(self):
-        return (
-            self.version_modifier
-            and self.version_modifier_number
-            and f"{self.version_modifier}{self.version_modifier_number}"
-        )
+        ) + release_modifier
 
     @property
     def version_modifier(self):
@@ -190,8 +174,8 @@ class RaidenClient:
         return version_modifier and version_modifier[1]
 
     @property
-    def version(self):
-        return f"{self.version_data.major}.{self.version_data.minor}.{self.version_data.revision}"
+    def version(self):  # pragma: no cover
+        raise NotImplementedError
 
     def install(self, force=False):
         if self.install_path.exists() and not force:
@@ -347,7 +331,7 @@ class RaidenClient:
     @classmethod
     def _make_release(cls, release_data):
         for asset_data in release_data.get("assets", []):
-            version_data = cls.get_version_data(asset_data["name"])
+            version_data = cls._get_version_data(asset_data["name"])
             if version_data:
                 return cls(
                     asset_data.get("browser_download_url"),
@@ -360,7 +344,7 @@ class RaidenClient:
         return [release for release in releases if release]
 
     @classmethod
-    def get_version_data(cls, release_name) -> Optional[VersionData]:
+    def _get_version_data(cls, release_name) -> Optional[VersionData]:
         regex = re.match(cls.get_file_pattern(), release_name)
         groups = regex and regex.groupdict()
         return VersionData(
@@ -414,13 +398,13 @@ class RaidenNightly(RaidenClient):
     FILE_NAME_PATTERN = (
         r"raiden-nightly-(?P<year>\d+)-(?P<month>\d+)-(?P<day>\d+)"
         r"T(?P<hour>\d+)-(?P<minute>\d+)-(?P<second>\d+)-"
-        r"v(?P<major>\d+)[.](?P<minor>\d+)[.](?P<revision>\w+)[.](?P<extra>.+)"
+        r"v(?P<major>\d+)\.(?P<minor>\d+)\.(?P<revision>\d+)(?P<extra>.*)"
     )
 
     def __init__(self, version_data: VersionData, release_datetime: datetime):
         download_url = self._get_download_url(version_data, release_datetime)
-        super().__init__(download_url, version_data)
         self.release_datetime = release_datetime
+        super().__init__(download_url, version_data)
 
     @property
     def version(self):
@@ -430,8 +414,8 @@ class RaidenNightly(RaidenClient):
     def release(self):
         formatted_date = self.release_datetime.strftime("%Y%m%d")
         return (
-            f"{self.version_data.major}.{self.version_data.minor}."
-            f"{self.version_data.revision}-{formatted_date}"
+            f"{self.version_data.major}.{self.version_data.minor}.{self.version_data.revision}"
+            f"{self.version_data.extra}-{formatted_date}"
         )
 
     def __eq__(self, other):
@@ -443,21 +427,13 @@ class RaidenNightly(RaidenClient):
     def __gt__(self, other):
         return self.release_datetime > other.release_datetime
 
-    def __cmp__(self, other):
-        if self.release_datetime > other.release_datetime:
-            return 1
-        elif self.release_datetime < other.release_datetime:
-            return -1
-        else:
-            return 0
-
     @classmethod
     def make_by_tag(cls, release_tag):
         log.info("Getting list of all nightly releases")
         return {r.release: r for r in cls.get_available_releases()}.get(release_tag)
 
     @staticmethod
-    def _make_release():
+    def _make_release():  # pragma: no cover
         raise NotImplementedError
 
     @classmethod
@@ -474,26 +450,33 @@ class RaidenNightly(RaidenClient):
 
         releases = []
         for file_key in all_keys:
-            result = re.search(cls.get_file_pattern(), file_key)
-            if result:
-                groups = result.groupdict()
-                version_data = VersionData(
-                    major=groups["major"],
-                    minor=groups["minor"],
-                    revision=groups["revision"],
-                    extra=groups.get("extra"),
-                )
-                release_datetime = datetime(
-                    year=int(groups["year"]),
-                    month=int(groups["month"]),
-                    day=int(groups["day"]),
-                    hour=int(groups["hour"]),
-                    minute=int(groups["minute"]),
-                    second=int(groups["second"]),
-                )
+            release_data = cls._get_release_data(file_key)
+            if release_data:
+                version_data, release_datetime = release_data
                 releases.append(cls(version_data, release_datetime))
 
         return releases
+
+    @classmethod
+    def _get_release_data(cls, file_key) -> Optional[Tuple[VersionData, datetime]]:
+        result = re.search(cls.get_file_pattern(), file_key)
+        groups = result and result.groupdict()
+        return (
+            VersionData(
+                major=groups["major"],
+                minor=groups["minor"],
+                revision=groups["revision"],
+                extra=groups.get("extra"),
+            ),
+            datetime(
+                year=int(groups["year"]),
+                month=int(groups["month"]),
+                day=int(groups["day"]),
+                hour=int(groups["hour"]),
+                minute=int(groups["minute"]),
+                second=int(groups["second"]),
+            )
+        ) if groups else None
 
     @classmethod
     def _get_download_url(cls, version_data: VersionData, release_datetime: datetime) -> str:

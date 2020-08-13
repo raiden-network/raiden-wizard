@@ -96,8 +96,6 @@ class TokenAmount(Generic[Eth_T]):
     @property
     def ticker(self) -> TokenTicker:
         ticker = self.currency.ticker
-        if ticker is None:
-            raise ValueError(f"No ticker defined for {self.currency.__class__.__name__}")
         return TokenTicker(ticker)
 
     @property
@@ -112,39 +110,39 @@ class TokenAmount(Generic[Eth_T]):
         return f"{self.value} {self.ticker}"
 
     def __add__(self, other):
-        if not self.__class__ == other.__class__:
-            raise ValueError(f"Can not add {self.formatted} and {other.formatted}")
+        if not self.currency == other.currency:
+            raise ValueError(f"Cannot add {self.formatted} and {other.formatted}")
 
-        return self.__class__(Wei(self.as_wei + other.as_wei), self.currency)
+        return TokenAmount(Wei(self.as_wei + other.as_wei), self.currency)
 
     def __sub__(self, other):
-        if not self.__class__ == other.__class__:
-            raise ValueError(f"Can not sub {self.formatted} and {other.formatted}")
+        if not self.currency == other.currency:
+            raise ValueError(f"Cannot sub {self.formatted} and {other.formatted}")
 
-        return self.__class__(Wei(self.as_wei - other.as_wei), self.currency)
+        return TokenAmount(Wei(self.as_wei - other.as_wei), self.currency)
 
     def __eq__(self, other):
         return self.currency == other.currency and self.as_wei == other.as_wei
 
     def __lt__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
         return self.as_wei < other.as_wei
 
     def __le__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
 
         return self.as_wei <= other.as_wei
 
     def __gt__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
         return self.as_wei > other.as_wei
 
     def __ge__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
 
         return self.as_wei >= other.as_wei
 

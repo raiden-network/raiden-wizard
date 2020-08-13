@@ -1,18 +1,17 @@
-import tempfile
 import unittest
-from pathlib import Path
+
+from tests.constants import TESTING_TEMP_FOLDER
 
 from raiden_installer.account import Account
-from raiden_installer.base import RaidenConfigurationFile, PassphraseFile
+from raiden_installer.base import PassphraseFile, RaidenConfigurationFile
 from raiden_installer.network import Network
 
-TESTING_KEYSTORE_FOLDER = Path(tempfile.gettempdir()).joinpath("raiden-wizard-testing")
 
 class PassphraseFileTestCase(unittest.TestCase):
     def setUp(self):
-        self.file_path = TESTING_KEYSTORE_FOLDER.joinpath("passphrase")
+        self.file_path = TESTING_TEMP_FOLDER.joinpath("passphrase")
         self.passphrase_file = PassphraseFile(self.file_path)
-    
+
     def test_store_and_retrieve_passphrase(self):
         password = "test_password"
         self.passphrase_file.store(password)
@@ -27,17 +26,16 @@ class PassphraseFileTestCase(unittest.TestCase):
 
 class RaidenConfigurationTestCase(unittest.TestCase):
     def setUp(self):
-        temp_folder_path = Path(tempfile.gettempdir())
-        RaidenConfigurationFile.FOLDER_PATH = temp_folder_path
+        RaidenConfigurationFile.FOLDER_PATH = TESTING_TEMP_FOLDER.joinpath("config")
 
-        self.account = Account.create(passphrase="test_raiden_config")
+        keystore_folder = TESTING_TEMP_FOLDER.joinpath("keystore")
+        self.account = Account.create(keystore_folder, passphrase="test_raiden_config")
         self.network = Network.get_by_name("goerli")
-        self.ethereum_client_rpc_endpoint = "http://localhost:8545"
 
         self.configuration_file = RaidenConfigurationFile(
-            account_filename=self.account.keystore_file_path,
-            network=self.network,
-            ethereum_client_rpc_endpoint=self.ethereum_client_rpc_endpoint,
+            self.account.keystore_file_path,
+            "demo_env",
+            "http://localhost:8545",
         )
 
     def test_can_save_configuration(self):
@@ -49,6 +47,18 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         all_configs = RaidenConfigurationFile.get_available_configurations()
         self.assertEqual(len(all_configs), 1)
 
+    def test_can_get_by_filename(self):
+        self.configuration_file.save()
+        try:
+            RaidenConfigurationFile.get_by_filename(self.configuration_file.file_name)
+        except ValueError:
+            self.fail("should load configuration by file name")
+
+    def test_cannot_get_by_not_existing_filename(self):
+        with self.assertRaises(ValueError):
+            RaidenConfigurationFile.get_by_filename("invalid")
+
     def tearDown(self):
         for config in RaidenConfigurationFile.get_available_configurations():
             config.path.unlink()
+        self.account.keystore_file_path.unlink()

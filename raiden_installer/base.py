@@ -35,10 +35,7 @@ class RaidenConfigurationFile:
     def __init__(
         self, account_filename: Union[Path, str], settings_name: str, ethereum_client_rpc_endpoint: str, **kw
     ):
-        if 'passphrase' in kw:
-            self.account = Account(account_filename, passphrase=kw.get('passphrase'))
-        else:
-            self.account = Account(account_filename)
+        self.account = Account(account_filename)
         self.account_filename = account_filename
         self.settings_name = settings_name
         self.settings = available_settings[settings_name]
@@ -54,7 +51,7 @@ class RaidenConfigurationFile:
     def configuration_data(self):
         base_config = {
             "environment-type": self.environment_type,
-            "keystore-path": str(self.account.__class__.find_keystore_folder_path()),
+            "keystore-path": str(self.account.keystore_file_path.parent),
             "address": to_checksum_address(self.account.address),
             "network-id": self.network.name,
             "accept-disclaimer": self.accept_disclaimer,

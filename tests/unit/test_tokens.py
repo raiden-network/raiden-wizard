@@ -1,6 +1,6 @@
 import unittest
 
-from raiden_installer import Settings, available_settings
+from raiden_installer import available_settings
 from raiden_installer.tokens import (
     Erc20Token,
     EthereumAmount,

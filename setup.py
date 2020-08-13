@@ -33,17 +33,17 @@ setup(
     long_description=long_description,
     author="Brainbot Labs Est.",
     author_email="contact@brainbot.li",
-    url="https://github.com/raiden-network/raiden-installer",
+    url="https://github.com/raiden-network/raiden-wizard",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
         "License :: OSI Approved :: MIT License",
     ],
     packages=find_packages(exclude=["tests"]),
     install_requires=list_requirements("requirements.txt"),
-    entry_point={
+    entry_points={
         "console_scripts": [
-            "raiden_web_installer=raiden_installer.web.app:main",
-            "raiden_cli_installer=raiden_installer.cli.app:main",
+            "raiden_installer=raiden_installer.web.app:main",
+            "raiden_installer_testnet=raiden_installer.web_testnet.app:main",
         ]
     },
 )

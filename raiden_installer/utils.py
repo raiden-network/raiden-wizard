@@ -11,7 +11,7 @@ from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.tokens import EthereumAmount, Wei
 
 
-def recover_ld_library_env_path():
+def recover_ld_library_env_path():  # pragma: no cover
     """This works around an issue that `webbrowser.open` fails inside a
     PyInstaller binary.
     See: https://github.com/pyinstaller/pyinstaller/issues/3668
@@ -31,9 +31,9 @@ def get_contract_address(chain_id, contract_name):
         network_contracts = get_contracts_deployment_info(chain_id)
         assert network_contracts
         return network_contracts["contracts"][contract_name]["address"]
-    except (TypeError, AssertionError) as exc:
+    except (TypeError, AssertionError, KeyError) as exc:
         log.warn(str(exc))
-        return "0x0"
+        raise ValueError(f"{contract_name} does not exist on chain id {chain_id}")
 
 
 def estimate_gas(w3, account, contract_function, *args, **kw):

@@ -1,38 +1,24 @@
 import json
-import os
 import sys
 import time
-import webbrowser
 
-import tornado.ioloop
 import wtforms
 from eth_utils import decode_hex
 from tornado.escape import json_decode
-from tornado.netutil import bind_sockets
-from tornado.web import Application, HTTPServer, url
-from tornado.websocket import WebSocketHandler
+from tornado.web import url
 from web3.exceptions import TimeExhausted
 from wtforms_tornado import Form
 
-from raiden_installer import get_resource_folder_path, log
+from raiden_installer import log
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.ethereum_rpc import make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.shared_handlers import (
-    AccountDetailHandler,
     APIHandler,
     AsyncTaskHandler,
     BaseRequestHandler,
-    ConfigurationItemAPIHandler,
-    ConfigurationListAPIHandler,
-    ConfigurationListHandler,
-    GasPriceHandler,
-    IndexHandler,
-    KeystoreHandler,
-    LaunchHandler,
-    SetupHandler,
-    WalletCreationHandler,
+    main,
     try_unlock,
 )
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
@@ -45,13 +31,9 @@ from raiden_installer.tokens import (
     Wei,
 )
 from raiden_installer.transactions import get_token_balance, get_total_token_owned
-from raiden_installer.utils import recover_ld_library_env_path, wait_for_transaction
-
-DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
+from raiden_installer.utils import wait_for_transaction
 
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
-
-RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 
 class TokenExchangeForm(Form):
@@ -323,47 +305,11 @@ class CostEstimationAPIHandler(APIHandler):
 
 
 if __name__ == "__main__":
-    log.info("Starting web server")
-    app = Application(
-        [
-            url(r"/", IndexHandler, name="index"),
-            url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
-            url(r"/setup/(.*)", SetupHandler, name="setup"),
-            url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
-            url(r"/account/(.*)", AccountDetailHandler, name="account"),
-            url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
-            url(r"/launch/(.*)", LaunchHandler, name="launch"),
-            url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
-            url(r"/ws", MainAsyncTaskHandler, name="websocket"),
-            url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail"),
-            url(
-                r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
-            ),
-            url(
-                r"/api/configuration/(.*)",
-                ConfigurationItemAPIHandler,
-                name="api-configuration-detail",
-            ),
-            url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
-        ],
-        debug=DEBUG,
-        static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
-        template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
-        installer_settings_name="mainnet"
-    )
+    additional_handlers = [
+        url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
+        url(r"/ws", MainAsyncTaskHandler, name="websocket"),
+        url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail")
+    ]
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD") + 1000) % 2 ** 16 - 1 = 1994
-    sockets = bind_sockets(1994, "localhost")
-    server = HTTPServer(app)
-    server.add_sockets(sockets)
-
-    _, port = sockets[0].getsockname()
-    local_url = f"http://localhost:{port}"
-    log.info(f"Installer page ready on {local_url}")
-
-    if not DEBUG:
-        log.info("Should open automatically in browser...")
-        recover_ld_library_env_path()
-        webbrowser.open_new(local_url)
-
-    tornado.ioloop.IOLoop.current().start()
+    main(1994, "mainnet", additional_handlers)

@@ -2,20 +2,23 @@ import json
 import os
 import sys
 import time
+import webbrowser
 from glob import glob
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
+import tornado.ioloop
 import wtforms
 from eth_utils import to_checksum_address
-from tornado.web import Application, HTTPError, RequestHandler
+from tornado.netutil import bind_sockets
+from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_installer import available_settings, log
+from raiden_installer import available_settings, get_resource_folder_path, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
@@ -28,7 +31,16 @@ from raiden_installer.transactions import (
     get_token_deposit,
     get_total_token_owned,
 )
-from raiden_installer.utils import check_eth_node_responsivity, wait_for_transaction
+from raiden_installer.utils import (
+    check_eth_node_responsivity,
+    recover_ld_library_env_path,
+    wait_for_transaction,
+)
+
+DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
+
+RESOURCE_FOLDER_PATH = get_resource_folder_path()
+
 
 EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
 PASSPHRASE: Optional[str] = None
@@ -443,3 +455,49 @@ class ConfigurationItemAPIHandler(APIHandler):
                 "_initial_funding_txhash": configuration_file._initial_funding_txhash,
             }
         )
+
+
+def main(port: int, settings_name: str, additional_handlers: list):
+    log.info("Starting web server")
+
+    handlers = [
+        url(r"/", IndexHandler, name="index"),
+        url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
+        url(r"/setup/(.*)", SetupHandler, name="setup"),
+        url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
+        url(r"/account/(.*)", AccountDetailHandler, name="account"),
+        url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
+        url(r"/launch/(.*)", LaunchHandler, name="launch"),
+        url(
+            r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
+        ),
+        url(
+            r"/api/configuration/(.*)",
+            ConfigurationItemAPIHandler,
+            name="api-configuration-detail",
+        ),
+        url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
+    ]
+
+    app = Application(
+        handlers + additional_handlers,
+        debug=DEBUG,
+        static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
+        template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
+        installer_settings_name=settings_name
+    )
+
+    sockets = bind_sockets(port, "localhost")
+    server = HTTPServer(app)
+    server.add_sockets(sockets)
+
+    _, socket_port = sockets[0].getsockname()
+    local_url = f"http://localhost:{socket_port}"
+    log.info(f"Installer page ready on {local_url}")
+
+    if not DEBUG:
+        log.info("Should open automatically in browser...")
+        recover_ld_library_env_path()
+        webbrowser.open_new(local_url)
+
+    tornado.ioloop.IOLoop.current().start()

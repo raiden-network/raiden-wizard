@@ -75,8 +75,8 @@ class Infura(EthereumRPCProvider):
 
         try:
             self.network
-        except KeyError:
-            raise ValueError(f"{url} contains an invalid ethereum network")
+        except KeyError as exc:
+            raise ValueError(f"{url} contains an invalid ethereum network") from exc
 
     @property
     def network(self):

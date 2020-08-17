@@ -64,8 +64,8 @@ class Erc20Token(Currency):
 
         try:
             return self.addresses[self.network]
-        except KeyError:
-            raise TokenError(f"{self.ticker} is not deployed on {self.network}")
+        except KeyError as exc:
+            raise TokenError(f"{self.ticker} is not deployed on {self.network}") from exc
 
     @staticmethod
     def find_by_ticker(ticker, network=None):

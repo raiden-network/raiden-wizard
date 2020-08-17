@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 
 from raiden_installer.account import Account
 from raiden_installer.network import Network

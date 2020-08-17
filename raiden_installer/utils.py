@@ -33,7 +33,7 @@ def get_contract_address(chain_id, contract_name):
         return network_contracts["contracts"][contract_name]["address"]
     except (TypeError, AssertionError, KeyError) as exc:
         log.warn(str(exc))
-        raise ValueError(f"{contract_name} does not exist on chain id {chain_id}")
+        raise ValueError(f"{contract_name} does not exist on chain id {chain_id}") from exc
 
 
 def estimate_gas(w3, account, contract_function, *args, **kw):
@@ -98,5 +98,5 @@ def check_eth_node_responsivity(url):
                 "Unauthorized to make requests to ethereum node."
                 "Maybe the Infura project ID is wrong?"
             )
-    except requests.RequestException as e:
-        raise ValueError(str(e) or "Unspecified Request Exception")
+    except requests.RequestException as exc:
+        raise ValueError(str(exc) or "Unspecified Request Exception") from exc

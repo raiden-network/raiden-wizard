@@ -73,7 +73,7 @@ class Goerli(Network):
             )
             response.raise_for_status()
         except Exception as exc:
-            raise FundingError(f"Failed to get funds from faucet: {exc}")
+            raise FundingError(f"Failed to get funds from faucet: {exc}") from exc
 
 
 class Ropsten(Network):
@@ -84,7 +84,7 @@ class Ropsten(Network):
             response = requests.get(f"https://faucet.ropsten.be/donate/{account.address}")
             response.raise_for_status()
         except Exception as exc:
-            raise FundingError(f"Failed to get funds from faucet: {exc}")
+            raise FundingError(f"Failed to get funds from faucet: {exc}") from exc
 
 
 class Rinkeby(Network):

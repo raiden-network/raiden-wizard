@@ -69,7 +69,7 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
         service_token_balance = get_token_balance(w3, account, service_token)
 
         if service_token_balance.as_wei > 0:
-            self._run_udc_deposit(w3, account, service_token, service_token_balance)
+            self._deposit_to_udc(w3, account, service_token, service_token_balance)
 
         if self.installer_settings.transfer_token.mintable:
             transfer_token = Erc20Token.find_by_ticker(

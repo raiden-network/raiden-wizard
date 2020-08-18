@@ -225,6 +225,37 @@
     tokenTips[TOKEN_TICKER].forEach(renderTokenTips);
   }
 
+  async function skipSwap() {
+    let balance = await getBalances(
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
+    );
+
+    if (TOKEN_TICKER === "RDN" && hasEnoughServiceTokenToLaunchRaiden(balance)) {
+      const FILE_NAME = "{{ configuration_file.file_name }}";
+      setTimeout(function() {
+        WEBSOCKET.send(
+          JSON.stringify({
+            method: "udc_deposit",
+            configuration_file_name: FILE_NAME
+          })
+        );
+        toggleView();
+      }, 5000);
+    } else if (TOKEN_TICKER === "DAI" && hasEnoughTransferTokenToLaunchRaiden(balance)) {
+      document.querySelector('.hero').innerHTML = 
+      `Funds of ${balance.transfer_token.formatted} already acquired <br/>
+      Moving on to launch Raiden`;
+      setTimeout(function() {
+        forceNavigation("{{ reverse_url('launch', configuration_file.file_name) }}");
+      }, 5000);
+
+    }
+  }
+
+  function main() {
+    skipSwap();
+  }
+
   window.addEventListener("load", function () {
     if (TOKEN_TICKER === "RDN") {
       setProgressStep(3, "Fund Account with RDN");
@@ -239,6 +270,9 @@
     setupSubmit();
     setupTooltipText();
     addCostsToButtons();
+
+    window.MAIN_VIEW_INTERVAL = 10000;
+    window.runMainView();
   });
 </script>
 {% end %}

@@ -1,0 +1,54 @@
+version: 2.1
+
+vars: 
+  - &cache_key raiden-wizard-{{ .Branch }}-{{ checksum "requirements.txt" }}
+
+executors:
+  python-executer:
+    working_directory: ~/src
+    docker:
+      - image: circleci/python:3.7
+
+jobs:
+  install:
+    executor: python-executer
+    steps:
+      - checkout
+      - restore_cache:
+          key: *cache_key
+      - run:
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - save_cache:
+          key: *cache_key
+          paths:
+            - "venv"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./*
+
+  test:
+    executor: python-executer 
+    steps:
+      - attach_workspace:
+          at: .
+      - run: 
+          command: |
+            . venv/bin/activate
+            pytest tests --junitxml=test-reports/pytest/test-results.xml
+      - store_test_results:
+          path: ./test-reports
+      - store_artifacts:
+          path: ./test-reports
+
+workflows:
+  version: 2
+  default_workflow:
+    jobs:
+      - install
+      - test:
+          requires:
+            - install

@@ -33,6 +33,8 @@ from raiden_installer.tokens import (
 from raiden_installer.transactions import get_token_balance, get_total_token_owned
 from raiden_installer.utils import wait_for_transaction
 
+SETTINGS = "mainnet"
+
 NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
 
 
@@ -312,4 +314,4 @@ if __name__ == "__main__":
     ]
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD") + 1000) % 2 ** 16 - 1 = 1994
-    main(1994, "mainnet", additional_handlers)
+    main(1994, SETTINGS, additional_handlers)

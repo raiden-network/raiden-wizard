@@ -18,7 +18,7 @@ from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_installer import available_settings, get_resource_folder_path, log
+from raiden_installer import load_settings, get_resource_folder_path, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
@@ -78,8 +78,7 @@ class PasswordForm(Form):
 
 class AsyncTaskHandler(WebSocketHandler):
     def initialize(self):
-        self.installer_settings_name = self.settings.get("installer_settings_name")
-        self.installer_settings = available_settings[self.installer_settings_name]
+        self.installer_settings = self.settings.get("installer_settings")
         self.actions = {
             "close": self._run_close,
             "launch": self._run_launch,
@@ -201,7 +200,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
             conf_file = RaidenConfigurationFile(
                 account.keystore_file_path,
-                self.installer_settings_name,
+                self.installer_settings,
                 ethereum_rpc_provider.url,
                 routing_mode=self.installer_settings.routing_mode,
                 enable_monitoring=self.installer_settings.monitoring_enabled,
@@ -252,8 +251,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
 class BaseRequestHandler(RequestHandler):
     def initialize(self, **kw):
-        installer_settings_name = self.settings.get("installer_settings_name")
-        self.installer_settings = available_settings[installer_settings_name]
+        self.installer_settings = self.settings.get("installer_settings")
 
     def render(self, template_name, **context_data):
         network = Network.get_by_name(self.installer_settings.network)
@@ -420,7 +418,7 @@ class ConfigurationItemAPIHandler(APIHandler):
         try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
 
-        settings = available_settings[configuration_file.settings_name]
+        settings = configuration_file.settings
         required = RequiredAmounts.from_settings(settings)
         service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network)
         transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network)
@@ -479,12 +477,14 @@ def main(port: int, settings_name: str, additional_handlers: list):
         url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
     ]
 
+    settings = load_settings(settings_name)
+
     app = Application(
         handlers + additional_handlers,
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
         template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
-        installer_settings_name=settings_name
+        installer_settings=settings
     )
 
     sockets = bind_sockets(port, "localhost")

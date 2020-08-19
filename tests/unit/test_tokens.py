@@ -1,6 +1,6 @@
 import unittest
 
-from raiden_installer import available_settings
+from raiden_installer import load_settings
 from raiden_installer.tokens import (
     Erc20Token,
     EthereumAmount,
@@ -113,7 +113,7 @@ class Erc20TokenTestCase(unittest.TestCase):
 
 class InstallerAmountsTestCase(unittest.TestCase):
     def setUp(self):
-        self.settings = available_settings["mainnet"]
+        self.settings = load_settings("mainnet")
         self.service_token = Erc20Token.find_by_ticker(
             self.settings.service_token.ticker,
             self.settings.network

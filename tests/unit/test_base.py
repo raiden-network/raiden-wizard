@@ -2,6 +2,7 @@ import unittest
 
 from tests.constants import TESTING_TEMP_FOLDER
 
+from raiden_installer import load_settings
 from raiden_installer.account import Account
 from raiden_installer.base import PassphraseFile, RaidenConfigurationFile
 from raiden_installer.network import Network
@@ -31,10 +32,11 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         keystore_folder = TESTING_TEMP_FOLDER.joinpath("keystore")
         self.account = Account.create(keystore_folder, passphrase="test_raiden_config")
         self.network = Network.get_by_name("goerli")
+        settings = load_settings("demo_env")
 
         self.configuration_file = RaidenConfigurationFile(
             self.account.keystore_file_path,
-            "demo_env",
+            settings,
             "http://localhost:8545",
         )
 

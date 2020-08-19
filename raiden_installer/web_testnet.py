@@ -11,6 +11,8 @@ from raiden_installer.tokens import Erc20Token, EthereumAmount
 from raiden_installer.transactions import get_token_balance, mint_tokens
 from raiden_installer.utils import wait_for_transaction
 
+SETTINGS = "demo_env"
+
 
 class TestnetAsyncTaskHandler(AsyncTaskHandler):
     def initialize(self):
@@ -90,4 +92,4 @@ if __name__ == "__main__":
     ]
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD_TESTNET") + 1000) % 2 ** 16 - 1 = 2640
-    main(2640, "demo_env", additional_handlers)
+    main(2640, SETTINGS, additional_handlers)

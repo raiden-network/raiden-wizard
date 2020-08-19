@@ -38,7 +38,9 @@ jobs:
       - run: 
           command: |
             . venv/bin/activate
-            pytest tests --junitxml=test-reports/pytest/test-results.xml
+            coverage run --source raiden_installer -m pytest tests --junitxml=test-reports/pytest/test-results.xml
+            coverage xml
+      - run: bash <(curl -s https://codecov.io/bash)
       - store_test_results:
           path: ./test-reports
       - store_artifacts:

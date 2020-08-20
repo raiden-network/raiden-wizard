@@ -1,6 +1,7 @@
 import os
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import structlog
@@ -24,6 +25,7 @@ class TokenSettings:
 
 @dataclass
 class Settings:
+    name: str  # basename (without file extension) of the corresponding toml file
     network: str
     client_release_channel: str
     client_release_version: str
@@ -49,7 +51,8 @@ def get_resource_folder_path():
     return os.path.join(root_folder, "resources")
 
 
-def _get_settings(settings_name):
+@lru_cache()
+def load_settings(settings_name):
     configuration_file = os.path.join(get_resource_folder_path(), "conf", f"{settings_name}.toml")
     configuration_data = toml.load(configuration_file)
 
@@ -60,8 +63,4 @@ def _get_settings(settings_name):
         dict(service_token=service_token_settings, transfer_token=transfer_token_settings)
     )
 
-    return Settings(**configuration_data)
-
-
-_SETTINGS = ["mainnet", "demo_env"]
-available_settings = {settings_name: _get_settings(settings_name) for settings_name in _SETTINGS}
+    return Settings(name=settings_name, **configuration_data)

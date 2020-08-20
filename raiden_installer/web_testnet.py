@@ -1,36 +1,17 @@
 import json
-import os
 import sys
-import webbrowser
 
-import tornado.ioloop
-from tornado.netutil import bind_sockets
-from tornado.web import Application, HTTPServer, url
+from tornado.web import url
 
-from raiden_installer import get_resource_folder_path, log
+from raiden_installer import log
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import make_web3_provider
-from raiden_installer.shared_handlers import (
-    AccountDetailHandler,
-    AsyncTaskHandler,
-    ConfigurationItemAPIHandler,
-    ConfigurationListAPIHandler,
-    ConfigurationListHandler,
-    GasPriceHandler,
-    IndexHandler,
-    KeystoreHandler,
-    LaunchHandler,
-    SetupHandler,
-    WalletCreationHandler,
-    try_unlock,
-)
+from raiden_installer.shared_handlers import AsyncTaskHandler, main, try_unlock
 from raiden_installer.tokens import Erc20Token, EthereumAmount
 from raiden_installer.transactions import get_token_balance, mint_tokens
-from raiden_installer.utils import recover_ld_library_env_path, wait_for_transaction
+from raiden_installer.utils import wait_for_transaction
 
-DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
-
-RESOURCE_FOLDER_PATH = get_resource_folder_path()
+SETTINGS = "demo_env"
 
 
 class TestnetAsyncTaskHandler(AsyncTaskHandler):
@@ -106,45 +87,9 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
 
 
 if __name__ == "__main__":
-    log.info("Starting web server")
-    app = Application(
-        [
-            url(r"/", IndexHandler, name="index"),
-            url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
-            url(r"/setup/(.*)", SetupHandler, name="setup"),
-            url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
-            url(r"/account/(.*)", AccountDetailHandler, name="account"),
-            url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
-            url(r"/launch/(.*)", LaunchHandler, name="launch"),
-            url(r"/ws", TestnetAsyncTaskHandler, name="websocket"),
-            url(
-                r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
-            ),
-            url(
-                r"/api/configuration/(.*)",
-                ConfigurationItemAPIHandler,
-                name="api-configuration-detail",
-            ),
-            url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
-        ],
-        debug=DEBUG,
-        static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
-        template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
-        installer_settings_name="demo_env"
-    )
+    additional_handlers = [
+        url(r"/ws", TestnetAsyncTaskHandler, name="websocket"),
+    ]
 
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD_TESTNET") + 1000) % 2 ** 16 - 1 = 2640
-    sockets = bind_sockets(2640, "localhost")
-    server = HTTPServer(app)
-    server.add_sockets(sockets)
-
-    _, port = sockets[0].getsockname()
-    local_url = f"http://localhost:{port}"
-    log.info(f"Installer page ready on {local_url}")
-
-    if not DEBUG:
-        log.info("Should open automatically in browser...")
-        recover_ld_library_env_path()
-        webbrowser.open_new(local_url)
-
-    tornado.ioloop.IOLoop.current().start()
+    main(2640, SETTINGS, additional_handlers)

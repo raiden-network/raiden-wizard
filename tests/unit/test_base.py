@@ -2,6 +2,7 @@ import unittest
 
 from tests.constants import TESTING_TEMP_FOLDER
 
+from raiden_installer import load_settings
 from raiden_installer.account import Account
 from raiden_installer.base import PassphraseFile, RaidenConfigurationFile
 from raiden_installer.network import Network
@@ -31,10 +32,11 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         keystore_folder = TESTING_TEMP_FOLDER.joinpath("keystore")
         self.account = Account.create(keystore_folder, passphrase="test_raiden_config")
         self.network = Network.get_by_name("goerli")
+        self.settings = load_settings("demo_env")
 
         self.configuration_file = RaidenConfigurationFile(
             self.account.keystore_file_path,
-            "demo_env",
+            self.settings,
             "http://localhost:8545",
         )
 
@@ -44,7 +46,7 @@ class RaidenConfigurationTestCase(unittest.TestCase):
 
     def test_can_create_configuration(self):
         self.configuration_file.save()
-        all_configs = RaidenConfigurationFile.get_available_configurations()
+        all_configs = RaidenConfigurationFile.get_available_configurations(self.settings)
         self.assertEqual(len(all_configs), 1)
 
     def test_can_get_by_filename(self):
@@ -58,7 +60,13 @@ class RaidenConfigurationTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             RaidenConfigurationFile.get_by_filename("invalid")
 
+    def test_cannot_get_config_for_different_settings(self):
+        self.configuration_file.save()
+        settings = load_settings("mainnet")
+        all_configs = RaidenConfigurationFile.get_available_configurations(settings)
+        self.assertEqual(len(all_configs), 0)
+
     def tearDown(self):
-        for config in RaidenConfigurationFile.get_available_configurations():
+        for config in RaidenConfigurationFile.get_available_configurations(self.settings):
             config.path.unlink()
         self.account.keystore_file_path.unlink()

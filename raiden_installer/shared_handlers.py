@@ -2,20 +2,23 @@ import json
 import os
 import sys
 import time
+import webbrowser
 from glob import glob
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
 
+import tornado.ioloop
 import wtforms
 from eth_utils import to_checksum_address
-from tornado.web import Application, HTTPError, RequestHandler
+from tornado.netutil import bind_sockets
+from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_installer import available_settings, log
+from raiden_installer import get_resource_folder_path, load_settings, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
@@ -28,7 +31,16 @@ from raiden_installer.transactions import (
     get_token_deposit,
     get_total_token_owned,
 )
-from raiden_installer.utils import check_eth_node_responsivity, wait_for_transaction
+from raiden_installer.utils import (
+    check_eth_node_responsivity,
+    recover_ld_library_env_path,
+    wait_for_transaction,
+)
+
+DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
+
+RESOURCE_FOLDER_PATH = get_resource_folder_path()
+
 
 EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
 PASSPHRASE: Optional[str] = None
@@ -66,8 +78,7 @@ class PasswordForm(Form):
 
 class AsyncTaskHandler(WebSocketHandler):
     def initialize(self):
-        self.installer_settings_name = self.settings.get("installer_settings_name")
-        self.installer_settings = available_settings[self.installer_settings_name]
+        self.installer_settings = self.settings.get("installer_settings")
         self.actions = {
             "close": self._run_close,
             "launch": self._run_launch,
@@ -189,7 +200,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
             conf_file = RaidenConfigurationFile(
                 account.keystore_file_path,
-                self.installer_settings_name,
+                self.installer_settings,
                 ethereum_rpc_provider.url,
                 routing_mode=self.installer_settings.routing_mode,
                 enable_monitoring=self.installer_settings.monitoring_enabled,
@@ -239,9 +250,8 @@ class AsyncTaskHandler(WebSocketHandler):
 
 
 class BaseRequestHandler(RequestHandler):
-    def initialize(self, **kw):
-        installer_settings_name = self.settings.get("installer_settings_name")
-        self.installer_settings = available_settings[installer_settings_name]
+    def initialize(self):
+        self.installer_settings = self.settings.get("installer_settings")
 
     def render(self, template_name, **context_data):
         network = Network.get_by_name(self.installer_settings.network)
@@ -262,7 +272,8 @@ class BaseRequestHandler(RequestHandler):
 class IndexHandler(BaseRequestHandler):
     def get(self):
         try:
-            configuration_file = RaidenConfigurationFile.get_available_configurations().pop()
+            configuration_file = RaidenConfigurationFile.get_available_configurations(
+                self.installer_settings).pop()
         except IndexError:
             configuration_file = None
 
@@ -271,7 +282,8 @@ class IndexHandler(BaseRequestHandler):
 
 class SetupHandler(BaseRequestHandler):
     def get(self, account_file):
-        file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
+        file_names = [os.path.basename(
+            f) for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)]
         self.render(
             "raiden_setup.html",
             configuration_file_names=file_names,
@@ -350,13 +362,16 @@ class LaunchHandler(BaseRequestHandler):
 
 class ConfigurationListHandler(BaseRequestHandler):
     def get(self):
-        if not RaidenConfigurationFile.list_existing_files():
+        if not RaidenConfigurationFile.list_existing_files(self.installer_settings):
             raise HTTPError(404)
 
         self.render("configuration_list.html")
 
 
 class APIHandler(RequestHandler):
+    def initialize(self):
+        self.installer_settings = self.settings.get("installer_settings")
+
     def set_default_headers(self, *args, **kw):
         self.set_header("Accept", "application/json")
         self.set_header("Content-Type", "application/json")
@@ -371,7 +386,7 @@ class ConfigurationListAPIHandler(APIHandler):
         self.render_json(
             [
                 self.reverse_url("api-configuration-detail", os.path.basename(f))
-                for f in RaidenConfigurationFile.list_existing_files()
+                for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)
             ]
         )
 
@@ -408,7 +423,7 @@ class ConfigurationItemAPIHandler(APIHandler):
         try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
 
-        settings = available_settings[configuration_file.settings_name]
+        settings = configuration_file.settings
         required = RequiredAmounts.from_settings(settings)
         service_token = Erc20Token.find_by_ticker(required.service_token.ticker, network)
         transfer_token = Erc20Token.find_by_ticker(required.transfer_token.ticker, network)
@@ -443,3 +458,51 @@ class ConfigurationItemAPIHandler(APIHandler):
                 "_initial_funding_txhash": configuration_file._initial_funding_txhash,
             }
         )
+
+
+def main(port: int, settings_name: str, additional_handlers: list):
+    log.info("Starting web server")
+
+    handlers = [
+        url(r"/", IndexHandler, name="index"),
+        url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
+        url(r"/setup/(.*)", SetupHandler, name="setup"),
+        url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
+        url(r"/account/(.*)", AccountDetailHandler, name="account"),
+        url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
+        url(r"/launch/(.*)", LaunchHandler, name="launch"),
+        url(
+            r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
+        ),
+        url(
+            r"/api/configuration/(.*)",
+            ConfigurationItemAPIHandler,
+            name="api-configuration-detail",
+        ),
+        url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
+    ]
+
+    settings = load_settings(settings_name)
+
+    app = Application(
+        handlers + additional_handlers,
+        debug=DEBUG,
+        static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
+        template_path=os.path.join(RESOURCE_FOLDER_PATH, "templates"),
+        installer_settings=settings
+    )
+
+    sockets = bind_sockets(port, "localhost")
+    server = HTTPServer(app)
+    server.add_sockets(sockets)
+
+    _, socket_port = sockets[0].getsockname()
+    local_url = f"http://localhost:{socket_port}"
+    log.info(f"Installer page ready on {local_url}")
+
+    if not DEBUG:
+        log.info("Should open automatically in browser...")
+        recover_ld_library_env_path()
+        webbrowser.open_new(local_url)
+
+    tornado.ioloop.IOLoop.current().start()

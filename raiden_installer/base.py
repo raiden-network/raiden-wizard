@@ -7,7 +7,7 @@ import toml
 from eth_utils import to_checksum_address
 from xdg import XDG_DATA_HOME
 
-from raiden_installer import available_settings, log
+from raiden_installer import Settings, load_settings, log
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, make_web3_provider
 from raiden_installer.network import Network
@@ -33,12 +33,11 @@ class RaidenConfigurationFile:
     FOLDER_PATH = XDG_DATA_HOME.joinpath("raiden")
 
     def __init__(
-        self, account_filename: Union[Path, str], settings_name: str, ethereum_client_rpc_endpoint: str, **kw
+        self, account_filename: Union[Path, str], settings: Settings, ethereum_client_rpc_endpoint: str, **kw
     ):
         self.account = Account(account_filename)
         self.account_filename = account_filename
-        self.settings_name = settings_name
-        self.settings = available_settings[settings_name]
+        self.settings = settings
         self.network = Network.get_by_name(self.settings.network)
         self.ethereum_client_rpc_endpoint = ethereum_client_rpc_endpoint
         self.accept_disclaimer = kw.get("accept_disclaimer", True)
@@ -79,7 +78,7 @@ class RaidenConfigurationFile:
 
     @property
     def file_name(self):
-        return f"config-{self.account.address}-{self.settings_name}.toml"
+        return f"config-{self.account.address}-{self.settings.name}.toml"
 
     @property
     def path(self):
@@ -97,14 +96,14 @@ class RaidenConfigurationFile:
             toml.dump(self.configuration_data, config_file)
 
     @classmethod
-    def list_existing_files(cls) -> List[Path]:
-        config_glob = str(cls.FOLDER_PATH.joinpath("config-*.toml"))
+    def list_existing_files(cls, settings: Settings) -> List[Path]:
+        config_glob = str(cls.FOLDER_PATH.joinpath(f"config-*-{settings.name}.toml"))
         return [Path(file_path) for file_path in glob.glob(config_glob)]
 
     @classmethod
-    def get_available_configurations(cls):
+    def get_available_configurations(cls, settings: Settings):
         configurations = []
-        for config_file_path in cls.list_existing_files():
+        for config_file_path in cls.list_existing_files(settings):
             try:
                 configurations.append(cls.load(config_file_path))
             except (ValueError, KeyError) as exc:
@@ -118,6 +117,13 @@ class RaidenConfigurationFile:
 
         _, _, settings_name = file_name.split("-")
 
+        try:
+            settings = load_settings(settings_name)
+        except FileNotFoundError as exc:
+            raise ValueError(
+                f"There are no Wizard settings {settings_name} for Raiden configuration {file_path}"
+            )
+
         with file_path.open() as config_file:
             data = toml.load(config_file)
             keystore_file_path = Account.find_keystore_file_path(
@@ -130,7 +136,7 @@ class RaidenConfigurationFile:
             return cls(
                 account_filename=keystore_file_path,
                 ethereum_client_rpc_endpoint=data["eth-rpc-endpoint"],
-                settings_name=settings_name,
+                settings=settings,
                 routing_mode=data["routing-mode"],
                 enable_monitoring=data["enable-monitoring"],
                 _initial_funding_txhash=data.get("_initial_funding_txhash"),

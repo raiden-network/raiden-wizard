@@ -96,14 +96,14 @@ class RaidenConfigurationFile:
             toml.dump(self.configuration_data, config_file)
 
     @classmethod
-    def list_existing_files(cls) -> List[Path]:
-        config_glob = str(cls.FOLDER_PATH.joinpath("config-*.toml"))
+    def list_existing_files(cls, settings: Settings) -> List[Path]:
+        config_glob = str(cls.FOLDER_PATH.joinpath(f"config-*-{settings.name}.toml"))
         return [Path(file_path) for file_path in glob.glob(config_glob)]
 
     @classmethod
-    def get_available_configurations(cls):
+    def get_available_configurations(cls, settings: Settings):
         configurations = []
-        for config_file_path in cls.list_existing_files():
+        for config_file_path in cls.list_existing_files(settings):
             try:
                 configurations.append(cls.load(config_file_path))
             except (ValueError, KeyError) as exc:

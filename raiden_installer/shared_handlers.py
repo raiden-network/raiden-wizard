@@ -18,7 +18,7 @@ from wtforms.validators import EqualTo
 from wtforms_tornado import Form
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_installer import load_settings, get_resource_folder_path, log
+from raiden_installer import get_resource_folder_path, load_settings, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
@@ -250,7 +250,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
 
 class BaseRequestHandler(RequestHandler):
-    def initialize(self, **kw):
+    def initialize(self):
         self.installer_settings = self.settings.get("installer_settings")
 
     def render(self, template_name, **context_data):
@@ -272,7 +272,8 @@ class BaseRequestHandler(RequestHandler):
 class IndexHandler(BaseRequestHandler):
     def get(self):
         try:
-            configuration_file = RaidenConfigurationFile.get_available_configurations().pop()
+            configuration_file = RaidenConfigurationFile.get_available_configurations(
+                self.installer_settings).pop()
         except IndexError:
             configuration_file = None
 
@@ -281,7 +282,8 @@ class IndexHandler(BaseRequestHandler):
 
 class SetupHandler(BaseRequestHandler):
     def get(self, account_file):
-        file_names = [os.path.basename(f) for f in RaidenConfigurationFile.list_existing_files()]
+        file_names = [os.path.basename(
+            f) for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)]
         self.render(
             "raiden_setup.html",
             configuration_file_names=file_names,
@@ -360,13 +362,16 @@ class LaunchHandler(BaseRequestHandler):
 
 class ConfigurationListHandler(BaseRequestHandler):
     def get(self):
-        if not RaidenConfigurationFile.list_existing_files():
+        if not RaidenConfigurationFile.list_existing_files(self.installer_settings):
             raise HTTPError(404)
 
         self.render("configuration_list.html")
 
 
 class APIHandler(RequestHandler):
+    def initialize(self):
+        self.installer_settings = self.settings.get("installer_settings")
+
     def set_default_headers(self, *args, **kw):
         self.set_header("Accept", "application/json")
         self.set_header("Content-Type", "application/json")
@@ -381,7 +386,7 @@ class ConfigurationListAPIHandler(APIHandler):
         self.render_json(
             [
                 self.reverse_url("api-configuration-detail", os.path.basename(f))
-                for f in RaidenConfigurationFile.list_existing_files()
+                for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)
             ]
         )
 

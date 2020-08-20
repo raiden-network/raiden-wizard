@@ -120,7 +120,9 @@ class RaidenConfigurationFile:
         try:
             settings = load_settings(settings_name)
         except FileNotFoundError as exc:
-            raise ValueError(f"There is no settings {settings_name} for config {file_path}")
+            raise ValueError(
+                f"There are no Wizard settings {settings_name} for Raiden configuration {file_path}"
+            )
 
         with file_path.open() as config_file:
             data = toml.load(config_file)

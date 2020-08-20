@@ -25,7 +25,7 @@ class TokenSettings:
 
 @dataclass
 class Settings:
-    name: str  # name of the corresponding toml file
+    name: str  # basename (without file extension) of the corresponding toml file
     network: str
     client_release_channel: str
     client_release_version: str

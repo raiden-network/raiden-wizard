@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import os
 import tempfile
 import time
@@ -33,8 +31,6 @@ class IntegrationTestCase(unittest.TestCase):
 
 
 class GoerliTestCase(IntegrationTestCase):
-    NETWORK_NAME = "goerli"
-
     def test_goerli_faucet(self):
         TIMEOUT = 10
         INTERVAL = 1
@@ -51,20 +47,14 @@ class GoerliTestCase(IntegrationTestCase):
 
 
 class TokenTestCase(IntegrationTestCase):
-    NETWORK_NAME = "goerli"
-
     def setUp(self):
         super().setUp()
-        self.ldn_token = Erc20Token.find_by_ticker("LDN")
+        self.svt_token = Erc20Token.find_by_ticker("SVT", self.NETWORK_NAME)
 
     def test_can_not_mint_tokens_without_gas(self):
         with self.assertRaises(ValueError):
-            mint_tokens(w3=self.w3, account=self.account, token=self.ldn_token)
+            mint_tokens(w3=self.w3, account=self.account, token=self.svt_token)
 
     def test_can_mint_tokens(self):
         self.network.fund(self.account)
-        mint_tokens(w3=self.w3, account=self.account, token=self.ldn_token)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        mint_tokens(w3=self.w3, account=self.account, token=self.svt_token)

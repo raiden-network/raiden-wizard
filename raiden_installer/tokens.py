@@ -164,17 +164,6 @@ _RDN = Erc20Token(
     },
 )
 
-_SAI = Erc20Token(
-    ticker="SAI",
-    wei_ticker="SEI",
-    addresses={
-        "mainnet": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-        "ropsten": "0xaD6D458402F60fD3Bd25163575031ACDce07538D",
-        "rinkeby": "0x2448eE2641d78CC42D7AD76498917359D961A783",
-        "kovan": "0xc4375b7de8af5a38a93548eb8453a498222c4ff2",
-    },
-)
-
 _DAI = Erc20Token(
     ticker="DAI",
     wei_ticker="DEI",
@@ -182,12 +171,6 @@ _DAI = Erc20Token(
         "mainnet": "0x6b175474e89094c44da98b954eedeac495271d0f",
         "kovan": "0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa",
     },
-)
-
-_LondonRDN = Erc20Token(
-    ticker="LDN",
-    wei_ticker="REI",
-    addresses={"goerli": "0x06b05eb77f6d7c4e7449105d36c7e04fa9cff3ca"},
 )
 
 _WizardToken = Erc20Token(
@@ -200,7 +183,6 @@ _WizardToken = Erc20Token(
 class Tokens(Enum):
     RDN = _RDN
     DAI = _DAI
-    LDN = _LondonRDN
     WIZ = _WizardToken
 
 
@@ -224,7 +206,6 @@ class TokensV33(Enum):
             "goerli": "0x709118121A1ccA0f32FC2C0c59752E8FEE3c2834",
         },
     )
-    LDN = _LondonRDN
     DAI = _DAI
     WIZ = _WizardToken
 

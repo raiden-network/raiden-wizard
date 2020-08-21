@@ -18,7 +18,9 @@ jobs:
           key: *cache_key
       - run:
           command: |
-            python3 -m venv venv
+            if [ ! -x venv/bin/python ]; then
+              python3 -m venv venv
+            fi
             . venv/bin/activate
             pip install -r requirements.txt
       - save_cache:

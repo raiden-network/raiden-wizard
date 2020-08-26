@@ -98,3 +98,6 @@ raiden-debug_*.log
 # venvs
 venv/
 .venv
+
+# fake blockchain subproject
+tests/fake_blockchain/node_modules

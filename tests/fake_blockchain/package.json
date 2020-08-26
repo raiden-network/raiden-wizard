@@ -1,0 +1,24 @@
+{
+  "name": "raiden-wizard-fake-blockchain",
+  "version": "1.0.0",
+  "description": "Run a local ganache blockchain for running integration tests.",
+  "scripts": {
+    "kyber-snapshot": "ganache-cli --db node_modules/kyber-network-workshop/db --accounts 10 --defaultBalanceEther 1000 --mnemonic 'gesture rather obey video awake genuine patient base soon parrot upset lounge' --networkId 5777 --debug",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raiden-network/raiden-wizard.git"
+  },
+  "author": "brainbot labs est.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/raiden-network/raiden-wizard/issues"
+  },
+  "homepage": "https://github.com/raiden-network/raiden-wizard#readme",
+  "dependencies": {
+    "ganache-cli": "^6.10.1",
+    "truffle": "^5.1.41",
+    "kyber-network-workshop": "KyberNetwork/workshop"
+  }
+}

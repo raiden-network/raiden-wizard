@@ -21,12 +21,7 @@ class ExchangeError(Exception):
 
 
 class Exchange:
-    GAS_REQUIRED = 0
     SUPPORTED_NETWORKS: List[str] = []
-    TRANSFER_WEBSITE_URL: Optional[str] = None
-    MAIN_WEBSITE_URL: Optional[str] = None
-    TERMS_OF_SERVICE_URL: Optional[str] = None
-    GAS_PRICE_MARGIN = 1.25
 
     def __init__(self, w3: Web3):
         self.w3 = w3
@@ -40,14 +35,10 @@ class Exchange:
         return Network.get_by_chain_id(self.chain_id)
 
     @property
-    def is_mainnet(self):
-        return self.network.name == "mainnet"
-
-    @property
     def name(self):
         return self.__class__.__name__
 
-    def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
+    def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:  # pragma: no cover
         raise NotImplementedError
 
     def calculate_transaction_costs(
@@ -58,16 +49,14 @@ class Exchange:
 
         return self._calculate_transaction_costs(token_amount, account)
 
-    def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
+    def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:  # pragma: no cover
         raise NotImplementedError
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
-        if transaction_costs is None:
-            transaction_costs = dict()
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):  # pragma: no cover
         raise NotImplementedError
 
-    def is_listing_token(self, ticker: TokenTicker):
-        return False
+    def is_listing_token(self, ticker: TokenTicker):  # pragma: no cover
+        raise NotImplementedError
 
     @classmethod
     def get_by_name(cls, name):
@@ -75,11 +64,7 @@ class Exchange:
 
 
 class Kyber(Exchange):
-    GAS_REQUIRED = 500_000
     SUPPORTED_NETWORKS = ["ropsten", "mainnet"]
-    MAIN_WEBSITE_URL = "https://kyber.network"
-    TRANSFER_WEBSITE_URL = "https://kyberswap.com/transfer/eth"
-    TERMS_OF_SERVICE_URL = "https://kyber.network/terms-and-conditions"
 
     def __init__(self, w3: Web3):
         super().__init__(w3=w3)
@@ -216,14 +201,9 @@ class Kyber(Exchange):
 
 
 class Uniswap(Exchange):
-    GAS_REQUIRED = 75_000
     RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
     DAI_EXCHANGE_ADDRESSES = {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
-    EXCHANGE_FEE = 0.003
     EXCHANGE_TIMEOUT = WEB3_TIMEOUT  # maximum waiting time in seconds
-    TRANSFER_WEBSITE_URL = "https://uniswap.ninja/send"
-    MAIN_WEBSITE_URL = "https://uniswap.io"
-    TERMS_OF_SERVICE_URL = "https://uniswap.io"
 
     def _get_exchange_proxy(self, token_ticker):
         try:

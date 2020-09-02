@@ -28,7 +28,7 @@ class Exchange:
 
     @property
     def chain_id(self):
-        return int(self.w3.net.version)
+        return self.w3.eth.chainId
 
     @property
     def network(self):

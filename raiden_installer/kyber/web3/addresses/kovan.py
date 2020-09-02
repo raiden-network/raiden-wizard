@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ContractAddresses(Enum):
+class ContractAddress(Enum):
     KyberNetworkProxy = "0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D"
     KyberNetwork = "0x118A7b23B7a2e6A57963d017A7E76A4E2636F075"
     PermissionlessOrderbookReserveLister = "0x7dE123798f649c9937A75a0f6668E4d06bFf5993"

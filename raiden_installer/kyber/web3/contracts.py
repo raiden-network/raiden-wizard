@@ -377,5 +377,5 @@ def get_network_proxy_address(chain_id: int):
 
 def get_network_contract_proxy(w3: Web3):
     return w3.eth.contract(
-        address=get_network_proxy_address(int(w3.net.version)), abi=KYBER_NETWORK_PROXY_ABI
+        address=get_network_proxy_address(w3.eth.chainId), abi=KYBER_NETWORK_PROXY_ABI
     )

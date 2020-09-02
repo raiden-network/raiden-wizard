@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Run a local ganache blockchain for running integration tests.",
   "scripts": {
-    "kyber-snapshot": "ganache-cli --db node_modules/kyber-network-workshop/db --accounts 10 --defaultBalanceEther 1000 --mnemonic 'gesture rather obey video awake genuine patient base soon parrot upset lounge' --networkId 5777 --debug",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

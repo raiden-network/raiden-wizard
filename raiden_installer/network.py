@@ -12,8 +12,6 @@ class FundingError(Exception):
 
 class Network:
     FAUCET_AVAILABLE = False
-    KYBER_RDN_EXCHANGE = False
-    UNISWAP_RDN_EXCHANGE = False
 
     CHAIN_ID_MAPPING = {"mainnet": 1, "ropsten": 3, "rinkeby": 4, "goerli": 5, "kovan": 42}
 
@@ -45,19 +43,12 @@ class Network:
 
     @staticmethod
     def get_by_name(name: str) -> Network:
-        network_class = {
-            "mainnet": Mainnet,
-            "ropsten": Ropsten,
-            "rinkeby": Rinkeby,
-            "goerli": Goerli,
-            "kovan": Kovan,
-        }.get(name, Network)
+        network_class = NETWORK_CLASSES.get(name, Network)
         return network_class()
 
 
 class Mainnet(Network):
-    KYBER_RDN_EXCHANGE = True
-    UNISWAP_RDN_EXCHANGE = True
+    pass
 
 
 class Goerli(Network):
@@ -77,7 +68,7 @@ class Goerli(Network):
 
 
 class Ropsten(Network):
-    KYBER_RDN_EXCHANGE = True
+    FAUCET_AVAILABLE = True
 
     def fund(self, account):
         try:
@@ -88,8 +79,17 @@ class Ropsten(Network):
 
 
 class Rinkeby(Network):
-    UNISWAP_RDN_EXCHANGE = True
+    pass
 
 
 class Kovan(Network):
     pass
+
+
+NETWORK_CLASSES = {
+    "mainnet": Mainnet,
+    "ropsten": Ropsten,
+    "rinkeby": Rinkeby,
+    "goerli": Goerli,
+    "kovan": Kovan,
+}

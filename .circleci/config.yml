@@ -2,16 +2,21 @@ version: 2.1
 
 vars: 
   - &cache_key raiden-wizard-{{ .Branch }}-{{ checksum "requirements.txt" }}
+  - &cache_key_fake_blockchain raiden-wizard-{{ .Branch }}-{{ checksum "tests/fake_blockchain/package-lock.json" }}
 
 executors:
-  python-executer:
+  python-executor:
     working_directory: ~/src
     docker:
       - image: circleci/python:3.7
+  python-node-executor:
+    working_directory: ~/src
+    docker:
+      - image: circleci/python:3.7-node
 
 jobs:
   install:
-    executor: python-executer
+    executor: python-executor
     steps:
       - checkout
       - restore_cache:
@@ -32,17 +37,43 @@ jobs:
           paths:
             - ./*
 
-  test:
-    executor: python-executer 
+  unit-test:
+    executor: python-executor 
     steps:
       - attach_workspace:
           at: .
       - run: 
           command: |
             . venv/bin/activate
-            coverage run --source raiden_installer -m pytest tests --junitxml=test-reports/pytest/test-results.xml
+            coverage run --source raiden_installer -m pytest tests/unit --junitxml=test-reports/pytest/unit-test-results.xml
             coverage xml
-      - run: bash <(curl -s https://codecov.io/bash)
+      - run: bash <(curl -s https://codecov.io/bash) -cF python-unit
+      - store_test_results:
+          path: ./test-reports
+      - store_artifacts:
+          path: ./test-reports
+
+  integration-test:
+    executor: python-node-executor 
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          key: *cache_key_fake_blockchain
+      - run:
+          command: |
+            cd tests/fake_blockchain
+            npm ci
+      - save_cache:
+          key: *cache_key_fake_blockchain
+          paths:
+            - tests/fake_blockchain/node_modules
+      - run: 
+          command: |
+            . venv/bin/activate
+            coverage run --source raiden_installer -m pytest tests/integration --junitxml=test-reports/pytest/integration-test-results.xml
+            coverage xml
+      - run: bash <(curl -s https://codecov.io/bash) -cF python-integration
       - store_test_results:
           path: ./test-reports
       - store_artifacts:
@@ -53,6 +84,9 @@ workflows:
   default_workflow:
     jobs:
       - install
-      - test:
+      - unit-test:
+          requires:
+            - install
+      - integration-test:
           requires:
             - install

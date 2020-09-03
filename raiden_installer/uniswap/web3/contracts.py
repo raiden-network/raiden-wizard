@@ -1,8 +1,3 @@
-from web3 import Web3
-
-from .addresses import get_factory_address
-from .constants import NULL_ADDRESS
-
 UNISWAP_FACTORY_ABI = [
     {
         "name": "NewExchange",
@@ -552,18 +547,3 @@ UNISWAP_EXCHANGE_ABI = [
         "gas": 1713,
     },
 ]
-
-
-def get_factory_contract_proxy(w3: Web3):
-    return w3.eth.contract(
-        abi=UNISWAP_FACTORY_ABI, address=get_factory_address(w3.eth.chainId)
-    )
-
-
-def get_token_exchange_contract_proxy(w3: Web3, token_network_address):
-    factory_proxy = get_factory_contract_proxy(w3)
-    exchange_address = factory_proxy.functions.getExchange(token_network_address).call()
-    if exchange_address == NULL_ADDRESS:
-        raise ValueError(f"No exchange for token {token_network_address}")
-
-    return w3.eth.contract(abi=UNISWAP_EXCHANGE_ABI, address=exchange_address)

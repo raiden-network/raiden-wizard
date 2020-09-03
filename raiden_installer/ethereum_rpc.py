@@ -35,14 +35,15 @@ def make_web3_provider(url: str, account: Account) -> Web3:
         # FIXME: This is a temporary fix to speed up gas price generation
         # by fetching from eth_gas_station if possible.
         # Once we have a reliable gas price calculation this can be removed
-        try:
-            response = requests.get(ETH_GAS_STATION_API)
-            if response and response.status_code == 200:
-                data = response.json()
-                log.debug(f"fetched gas price: {Wei(int(data['fast'] * 10e7 * 1.1))} Wei")
-                return Wei(int(data["fast"] * 10e7 * 1.1))
-        except (TimeoutError, ConnectionError, KeyError):
-            log.debug("Could not fetch from ethgasstation. Falling back to web3 gas estimation.")
+        if int(web3.net.version) == 1:
+            try:
+                response = requests.get(ETH_GAS_STATION_API)
+                if response and response.status_code == 200:
+                    data = response.json()
+                    log.debug(f"fetched gas price: {Wei(int(data['fast'] * 10e7 * 1.1))} Wei")
+                    return Wei(int(data["fast"] * 10e7 * 1.1))
+            except (TimeoutError, ConnectionError, KeyError):
+                log.debug("Could not fetch from ethgasstation. Falling back to web3 gas estimation.")
 
         gas_price_strategy = construct_time_based_gas_price_strategy(
             max_wait_seconds=15, sample_size=25

@@ -106,12 +106,15 @@
     req.onload = function () {
       if (this.status == 200) {
         const res = JSON.parse(this.response);
-        const text = document.createTextNode(`Approximately ${res.formatted} as per exchange`);
+        const text = document.createTextNode(
+          `Approximately ${res.formatted} as per exchange`,
+        );
         placeholder.remove();
         estimationElement.appendChild(text);
-      }
-      else {
-        const error = document.createTextNode(`Swap not possible at the moment.`);
+      } else {
+        const error = document.createTextNode(
+          `Swap not possible at the moment.`,
+        );
         placeholder.remove();
         estimationElement.appendChild(error);
         button.setAttribute("disabled", true);
@@ -125,17 +128,17 @@
 
   function addCostsToButtons() {
     const amountButtonsKyber = amountMenus.kyber.querySelectorAll(
-      ".amount-button"
+      ".amount-button",
     );
     const amountButtonsUniswap = amountMenus.uniswap.querySelectorAll(
-      ".amount-button"
+      ".amount-button",
     );
 
     amountButtonsKyber.forEach((button) =>
-      requestCostEstimation(button, "kyber")
+      requestCostEstimation(button, "kyber"),
     );
     amountButtonsUniswap.forEach((button) =>
-      requestCostEstimation(button, "uniswap")
+      requestCostEstimation(button, "uniswap"),
     );
   }
 
@@ -204,7 +207,7 @@
           amount: selectedAmount.toString(),
           token: TOKEN_TICKER,
           exchange: selectedExchange,
-        })
+        }),
       );
 
       toggleView();
@@ -227,28 +230,34 @@
 
   async function skipSwap() {
     let balance = await getBalances(
-      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}",
     );
 
-    if (TOKEN_TICKER === "RDN" && hasEnoughServiceTokenToLaunchRaiden(balance)) {
+    if (
+      TOKEN_TICKER === "RDN" &&
+      hasEnoughServiceTokenToLaunchRaiden(balance)
+    ) {
       const FILE_NAME = "{{ configuration_file.file_name }}";
-      setTimeout(function() {
-        WEBSOCKET.send(
-          JSON.stringify({
-            method: "udc_deposit",
-            configuration_file_name: FILE_NAME
-          })
-        );
-        toggleView();
-      }, 5000);
-    } else if (TOKEN_TICKER === "DAI" && hasEnoughTransferTokenToLaunchRaiden(balance)) {
-      document.querySelector('.hero').innerHTML = 
-      `Funds of ${balance.transfer_token.formatted} already acquired <br/>
+      toggleView();
+      WEBSOCKET.send(
+        JSON.stringify({
+          method: "udc_deposit",
+          configuration_file_name: FILE_NAME,
+        }),
+      );
+    } else if (
+      TOKEN_TICKER === "DAI" &&
+      hasEnoughTransferTokenToLaunchRaiden(balance)
+    ) {
+      document.querySelector(
+        ".hero",
+      ).innerHTML = `Funds of ${balance.transfer_token.formatted} already acquired <br/>
       Moving on to launch Raiden`;
-      setTimeout(function() {
-        forceNavigation("{{ reverse_url('launch', configuration_file.file_name) }}");
+      setTimeout(function () {
+        forceNavigation(
+          "{{ reverse_url('launch', configuration_file.file_name) }}",
+        );
       }, 5000);
-
     }
   }
 
@@ -271,7 +280,7 @@
     setupTooltipText();
     addCostsToButtons();
 
-    window.MAIN_VIEW_INTERVAL = 10000;
+    window.MAIN_VIEW_INTERVAL = 5000;
     window.runMainView();
   });
 </script>

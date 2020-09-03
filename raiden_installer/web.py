@@ -207,8 +207,8 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
                 self._send_status_update(
                     f"Service token deposited at UDC: {service_token_deposited.formatted} is enough"
                 )
-                time.sleep(5)
 
+            time.sleep(5)
             transfer_token = Erc20Token.find_by_ticker(
                 required.transfer_token.ticker, settings.network
             )

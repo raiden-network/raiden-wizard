@@ -16,6 +16,7 @@ from raiden_installer.network import NETWORK_CLASSES, Network
 from raiden_installer.token_exchange import ExchangeError, Kyber
 from raiden_installer.tokens import Erc20Token, TokenAmount
 from raiden_installer.transactions import get_token_balance
+from raiden_installer.utils import wait_for_transaction
 
 FAKE_BLOCKCHAIN_PATH = Path("tests", "fake_blockchain")
 PORT = "8546"
@@ -64,6 +65,7 @@ def revert_to_snapshot(snapshot_id):
 @pytest.fixture
 def test_password():
     return "test_password"
+
 
 @pytest.fixture
 def test_account(monkeypatch, test_password):
@@ -133,7 +135,10 @@ def test_cannot_buy_without_eth(test_account, patch_kyber_support, kyber):
         "value": test_account.get_ethereum_balance(kyber.w3).as_wei,
         "gasPrice": 0,
     }
-    kyber.w3.eth.sendTransaction(tx)
+    tx_hash = kyber.w3.eth.sendTransaction(tx)
+    tx_receipt = kyber.w3.eth.waitForTransactionReceipt(tx_hash, timeout=60)
+    wait_for_transaction(kyber.w3, tx_receipt)
+
     with pytest.raises(ValueError):
         kyber.buy_tokens(test_account, TokenAmount(10, KNC_TOKEN))
 

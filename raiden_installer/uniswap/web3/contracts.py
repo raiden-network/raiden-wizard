@@ -556,7 +556,7 @@ UNISWAP_EXCHANGE_ABI = [
 
 def get_factory_contract_proxy(w3: Web3):
     return w3.eth.contract(
-        abi=UNISWAP_FACTORY_ABI, address=get_factory_address(int(w3.net.version))
+        abi=UNISWAP_FACTORY_ABI, address=get_factory_address(w3.eth.chainId)
     )
 
 

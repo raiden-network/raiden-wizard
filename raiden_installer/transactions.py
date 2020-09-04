@@ -16,7 +16,7 @@ GAS_REQUIRED_FOR_MINT: int = 100_000
 
 def _make_deposit_proxy(w3: Web3, token: Erc20Token):
     contract_manager = ContractManager(contracts_precompiled_path())
-    contract_address = get_contract_address(int(w3.net.version), CONTRACT_USER_DEPOSIT)
+    contract_address = get_contract_address(w3.eth.chainId, CONTRACT_USER_DEPOSIT)
     proxy = w3.eth.contract(
         address=contract_address, abi=contract_manager.get_contract_abi(CONTRACT_USER_DEPOSIT)
     )

@@ -36,3 +36,7 @@ coverage:
 	coverage run --source raiden_installer -m pytest tests
 	coverage report -m
 	coverage html
+
+install-dev:
+	pip install -r requirements.txt
+	cd tests/fake_blockchain; npm install

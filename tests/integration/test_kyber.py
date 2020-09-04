@@ -62,9 +62,13 @@ def revert_to_snapshot(snapshot_id):
 
 
 @pytest.fixture
-def test_account(monkeypatch):
+def test_password():
+    return "test_password"
+
+@pytest.fixture
+def test_account(monkeypatch, test_password):
     monkeypatch.setattr(Account, "generate_private_key", lambda: to_bytes(WALLET_PRIVATE_KEY))
-    account = Account.create(TESTING_KEYSTORE_FOLDER, "test_password")
+    account = Account.create(TESTING_KEYSTORE_FOLDER, test_password)
     yield account
     account.keystore_file_path.unlink()
 

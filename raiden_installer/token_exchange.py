@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
 import structlog
 from eth_utils import to_checksum_address
@@ -21,8 +21,6 @@ class ExchangeError(Exception):
 
 
 class Exchange:
-    SUPPORTED_NETWORKS: List[str] = []
-
     def __init__(self, w3: Web3):
         self.w3 = w3
 
@@ -41,18 +39,29 @@ class Exchange:
     def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:  # pragma: no cover
         raise NotImplementedError
 
-    def calculate_transaction_costs(
-        self, token_amount: TokenAmount, account: Account
-    ) -> Optional[dict]:
-        if not self.is_listing_token(token_amount.ticker) or token_amount.as_wei <= 0:
-            return None
+    def calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
+        if not self.is_listing_token(token_amount.ticker):
+            raise ExchangeError(
+                f"Cannot calculate costs because {self.name} is not listing {token_amount.ticker}"
+            )
+        if token_amount.as_wei <= 0:
+            raise ExchangeError(f"Cannot calculate costs for a swap of {token_amount.formatted}")
 
         return self._calculate_transaction_costs(token_amount, account)
 
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:  # pragma: no cover
         raise NotImplementedError
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):  # pragma: no cover
+    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
+        if not transaction_costs:
+            try:
+                transaction_costs = self.calculate_transaction_costs(token_amount, account)
+            except ExchangeError as exc:
+                raise ExchangeError("Failed to get transactions costs") from exc
+
+        return self._buy_tokens(account, token_amount, transaction_costs)
+
+    def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):  # pragma: no cover
         raise NotImplementedError
 
     def is_listing_token(self, ticker: TokenTicker):  # pragma: no cover
@@ -64,8 +73,6 @@ class Exchange:
 
 
 class Kyber(Exchange):
-    SUPPORTED_NETWORKS = ["ropsten", "mainnet"]
-
     def __init__(self, w3: Web3):
         super().__init__(w3=w3)
         self.network_contract_proxy = kyber_contracts.get_network_contract_proxy(self.w3)
@@ -157,19 +164,7 @@ class Kyber(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
-        if transaction_costs is None:
-            transaction_costs = dict()
-        if self.network.name not in self.SUPPORTED_NETWORKS:
-            raise ExchangeError(
-                f"{self.name} does not list {token_amount.ticker} on {self.network.name}"
-            )
-
-        if not transaction_costs:
-            transaction_costs = self.calculate_transaction_costs(token_amount, account)
-        if transaction_costs is None:
-            raise ExchangeError("Failed to get transactions costs")
-
+    def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):
         eth_to_sell = transaction_costs["eth_sold"]
         exchange_rate = transaction_costs["exchange_rate"]
         gas_price = transaction_costs["gas_price"]
@@ -201,18 +196,17 @@ class Kyber(Exchange):
 
 
 class Uniswap(Exchange):
-    RAIDEN_EXCHANGE_ADDRESSES = {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"}
-    DAI_EXCHANGE_ADDRESSES = {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
+    EXCHANGE_ADDRESSES = {
+        "RDN": {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"},
+        "DAI": {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
+    }
     EXCHANGE_TIMEOUT = WEB3_TIMEOUT  # maximum waiting time in seconds
 
     def _get_exchange_proxy(self, token_ticker):
-        try:
-            return self.w3.eth.contract(
-                abi=uniswap_contracts.UNISWAP_EXCHANGE_ABI,
-                address=self._get_exchange_address(token_ticker),
-            )
-        except ExchangeError:
-            return None
+        return self.w3.eth.contract(
+            abi=uniswap_contracts.UNISWAP_EXCHANGE_ABI,
+            address=self._get_exchange_address(token_ticker),
+        )
 
     def is_listing_token(self, ticker: TokenTicker):
         try:
@@ -223,8 +217,7 @@ class Uniswap(Exchange):
 
     def _get_exchange_address(self, token_ticker: TokenTicker) -> str:
         try:
-            exchanges = {"RDN": self.RAIDEN_EXCHANGE_ADDRESSES, "DAI": self.DAI_EXCHANGE_ADDRESSES}
-            return exchanges[token_ticker][self.network.name]
+            return self.EXCHANGE_ADDRESSES[token_ticker][self.network.name]
         except KeyError:
             raise ExchangeError(f"{self.name} does not have a listed exchange for {token_ticker}")
 
@@ -264,24 +257,15 @@ class Uniswap(Exchange):
             "exchange_rate": exchange_rate,
         }
 
-    def buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs=None):
-        if transaction_costs is not None:
-            costs = transaction_costs
-        else:
-            transaction_costs = dict()
-            costs = self.calculate_transaction_costs(token_amount, account)
-
-        if costs is None:
-            raise ExchangeError("Failed to get transaction costs")
-
+    def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):
         exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
-        gas = costs["gas"]
-        gas_price = costs["gas_price"]
+        gas = transaction_costs["gas"]
+        gas_price = transaction_costs["gas_price"]
         transaction_params = {
             "from": account.address,
-            "value": costs["total"].as_wei,
+            "value": transaction_costs["total"].as_wei,
             "gas": 2 * gas,  # estimated gas sometimes is not enough
             "gas_price": gas_price.as_wei,
         }

@@ -75,17 +75,16 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     return w3.eth.waitForTransactionReceipt(tx_hash, timeout=WEB3_TIMEOUT)
 
 
-def wait_for_transaction(web3: Web3, transaction_receipt: Dict[str, Any]) -> None:
-
+def wait_for_transaction(w3: Web3, transaction_receipt: Dict[str, Any]) -> None:
     if "blockNumber" not in transaction_receipt:
         raise KeyError("blockNumber not in transaction receipt.")
 
     block_with_transaction = transaction_receipt["blockNumber"]
-    current_block = web3.eth.blockNumber
+    current_block = w3.eth.blockNumber
 
     while current_block < block_with_transaction:
         log.debug("wait for block with transaction to be fetched")
-        current_block = web3.eth.blockNumber
+        current_block = w3.eth.blockNumber
         time.sleep(1)
 
 

@@ -6,7 +6,7 @@ import psutil
 import pytest
 import requests
 from eth_utils import to_bytes
-from tests.constants import TESTING_TEMP_FOLDER
+from tests.fixtures import create_account, test_password
 from tests.integration import kyber_snapshot_addresses
 
 from raiden_installer.account import Account
@@ -39,7 +39,6 @@ GANACHE_COMMAND = [
     PORT
 ]
 
-TESTING_KEYSTORE_FOLDER = TESTING_TEMP_FOLDER.joinpath("keystore")
 # Prefilled account from Kyber Ganache snapshot
 WALLET_PRIVATE_KEY = 0x979d8b20000da5832fc99c547393fdfa5eef980c77bfb1decb17c59738d99471
 
@@ -63,25 +62,17 @@ def revert_to_snapshot(snapshot_id):
 
 
 @pytest.fixture
-def test_password():
-    return "test_password"
+def test_account(monkeypatch, create_account):
+    monkeypatch.setattr(Account, "generate_private_key", lambda: to_bytes(WALLET_PRIVATE_KEY))
+    return create_account()
 
 
 @pytest.fixture
-def test_account(monkeypatch, test_password):
-    monkeypatch.setattr(Account, "generate_private_key", lambda: to_bytes(WALLET_PRIVATE_KEY))
-    account = Account.create(TESTING_KEYSTORE_FOLDER, test_password)
-    yield account
-    account.keystore_file_path.unlink()
-
-
-@pytest.fixture()
 def patch_kyber_support(monkeypatch):
     monkeypatch.setitem(NETWORK_ADDRESS_MODULES_BY_CHAIN_ID, CHAIN_ID, kyber_snapshot_addresses)
-    monkeypatch.setattr(Kyber, "SUPPORTED_NETWORKS", ["ganache"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def patch_network(monkeypatch):
     class Ganache(Network):
         pass
@@ -102,7 +93,7 @@ def kyber_chain():
     proc.wait()
 
 
-@pytest.fixture()
+@pytest.fixture
 def kyber(test_account: Account, kyber_chain, patch_network):
     snapshot_id = take_snapshot()
     w3 = make_web3_provider(f"http://localhost:{PORT}", test_account)

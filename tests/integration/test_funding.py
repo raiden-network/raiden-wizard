@@ -1,11 +1,10 @@
 import os
-import tempfile
 import time
 import unittest
 from pathlib import Path
 
-from tests.constants import TESTING_TEMP_FOLDER
-from tests.utils import empty_accounts
+from tests.constants import TESTING_KEYSTORE_FOLDER
+from tests.utils import empty_account
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
@@ -14,7 +13,6 @@ from raiden_installer.tokens import Erc20Token, EthereumAmount, Wei
 from raiden_installer.transactions import mint_tokens
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
-TESTING_KEYSTORE_FOLDER = TESTING_TEMP_FOLDER.joinpath("keystore")
 
 
 @unittest.skipIf(INFURA_PROJECT_ID is None, "missing configuration for infura")
@@ -30,7 +28,7 @@ class IntegrationTestCase(unittest.TestCase):
         self.w3 = make_web3_provider(self.infura.url, self.account)
 
     def tearDown(self):
-        empty_accounts(self.w3, [self.account])
+        empty_account(self.w3, self.account)
         self.account.keystore_file_path.unlink()
 
 

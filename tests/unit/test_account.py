@@ -1,13 +1,11 @@
 import json
 import unittest
 
-from tests.constants import TESTING_TEMP_FOLDER
+from tests.constants import TESTING_KEYSTORE_FOLDER, TESTING_TEMP_FOLDER
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import make_web3_provider
 from raiden_installer.network import Network
-
-TESTING_KEYSTORE_FOLDER = TESTING_TEMP_FOLDER.joinpath("keystore")
 
 
 class AccountBaseTestCase(unittest.TestCase):

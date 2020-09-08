@@ -25,6 +25,9 @@ WIZ_TOKEN = Erc20Token.find_by_ticker("WIZ", NETWORK.name)
 GAS_LIMIT = 120_000
 
 
+pytestmark = pytest.mark.skipif(not INFURA_PROJECT_ID, reason="missing configuration for infura")
+
+
 def fund_account(account, w3):
     NETWORK.fund(account)
     account.wait_for_ethereum_funds(w3, EthereumAmount(0.01))

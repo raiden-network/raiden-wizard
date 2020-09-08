@@ -62,6 +62,9 @@ jobs:
           key: *cache_key_fake_blockchain
       - run:
           command: |
+            echo $TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID
+      - run:
+          command: |
             cd tests/fake_blockchain
             npm ci
       - save_cache:

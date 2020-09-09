@@ -5,7 +5,7 @@ import time
 import wtforms
 from eth_utils import decode_hex
 from tornado.escape import json_decode
-from tornado.web import url
+from tornado.web import Application, url
 from wtforms_tornado import Form
 
 from raiden_installer import log
@@ -17,7 +17,8 @@ from raiden_installer.shared_handlers import (
     APIHandler,
     AsyncTaskHandler,
     BaseRequestHandler,
-    main,
+    create_app,
+    run_server,
     try_unlock,
 )
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
@@ -353,12 +354,16 @@ class CostEstimationAPIHandler(APIHandler):
             )
 
 
-if __name__ == "__main__":
+def get_app() -> Application:
     additional_handlers = [
         url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
         url(r"/ws", MainAsyncTaskHandler, name="websocket"),
         url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail")
     ]
+    return create_app(SETTINGS, additional_handlers)
 
+
+if __name__ == "__main__":  # pragma: no cover
+    app = get_app()
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD") + 1000) % 2 ** 16 - 1 = 1994
-    main(1994, SETTINGS, additional_handlers)
+    run_server(app, 1994)

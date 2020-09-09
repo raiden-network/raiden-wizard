@@ -460,7 +460,7 @@ class ConfigurationItemAPIHandler(APIHandler):
         )
 
 
-def main(port: int, settings_name: str, additional_handlers: list):
+def create_app(settings_name: str, additional_handlers: list) -> Application:
     log.info("Starting web server")
 
     handlers = [
@@ -484,7 +484,7 @@ def main(port: int, settings_name: str, additional_handlers: list):
 
     settings = load_settings(settings_name)
 
-    app = Application(
+    return Application(
         handlers + additional_handlers,
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
@@ -492,6 +492,8 @@ def main(port: int, settings_name: str, additional_handlers: list):
         installer_settings=settings
     )
 
+
+def run_server(app: Application, port: int): # pragma: no cover
     sockets = bind_sockets(port, "localhost")
     server = HTTPServer(app)
     server.add_sockets(sockets)

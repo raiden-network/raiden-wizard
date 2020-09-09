@@ -1,12 +1,12 @@
 import json
 import sys
 
-from tornado.web import url
+from tornado.web import Application, url
 
 from raiden_installer import log
 from raiden_installer.base import RaidenConfigurationFile
 from raiden_installer.ethereum_rpc import make_web3_provider
-from raiden_installer.shared_handlers import AsyncTaskHandler, main, try_unlock
+from raiden_installer.shared_handlers import AsyncTaskHandler, create_app, run_server, try_unlock
 from raiden_installer.tokens import Erc20Token, EthereumAmount
 from raiden_installer.transactions import get_token_balance, mint_tokens
 from raiden_installer.utils import wait_for_transaction
@@ -86,10 +86,14 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
         self._send_redirect(self.reverse_url("launch", configuration_file_name))
 
 
-if __name__ == "__main__":
+def get_app() -> Application:
     additional_handlers = [
         url(r"/ws", TestnetAsyncTaskHandler, name="websocket"),
     ]
+    return create_app(SETTINGS, additional_handlers)
 
+
+if __name__ == "__main__":  # pragma: no cover
+    app = get_app()
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD_TESTNET") + 1000) % 2 ** 16 - 1 = 2640
-    main(2640, SETTINGS, additional_handlers)
+    run_server(app, 2640)

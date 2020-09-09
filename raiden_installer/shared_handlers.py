@@ -133,9 +133,9 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_close(self, **kw):
         sys.exit()
 
-    def _run_udc_deposit(self, w3, account, service_token, service_token_balance):
+    def _deposit_to_udc(self, w3, account, service_token, deposit_amount):
         self._send_status_update(
-            f"Making deposit of {service_token_balance.formatted} to the "
+            f"Making deposit of {deposit_amount.formatted} to the "
             "User Deposit Contract"
         )
         self._send_status_update(f"This might take a few minutes")
@@ -143,7 +143,7 @@ class AsyncTaskHandler(WebSocketHandler):
             w3=w3,
             account=account,
             token=service_token,
-            amount=service_token_balance.as_wei,
+            amount=deposit_amount.as_wei,
         )
         wait_for_transaction(w3, transaction_receipt)
         service_token_deposited = get_token_deposit(

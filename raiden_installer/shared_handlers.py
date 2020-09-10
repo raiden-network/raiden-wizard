@@ -166,7 +166,6 @@ class AsyncTaskHandler(WebSocketHandler):
 
     def _run_create_wallet(self, **kw):
         form = PasswordForm(passphrase1=kw.get("passphrase1"), passphrase2=kw.get("passphrase2"))
-        network_name = kw.get("network_name")
         if form.validate():
             self._send_status_update("Generating new wallet file for Raiden")
             global PASSPHRASE
@@ -282,11 +281,8 @@ class IndexHandler(BaseRequestHandler):
 
 class SetupHandler(BaseRequestHandler):
     def get(self, account_file):
-        file_names = [os.path.basename(
-            f) for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)]
         self.render(
             "raiden_setup.html",
-            configuration_file_names=file_names,
             network_name=self.installer_settings.network,
             account_file=account_file,
         )
@@ -360,14 +356,6 @@ class LaunchHandler(BaseRequestHandler):
             )
 
 
-class ConfigurationListHandler(BaseRequestHandler):
-    def get(self):
-        if not RaidenConfigurationFile.list_existing_files(self.installer_settings):
-            raise HTTPError(404)
-
-        self.render("configuration_list.html")
-
-
 class APIHandler(RequestHandler):
     def initialize(self):
         self.installer_settings = self.settings.get("installer_settings")
@@ -379,16 +367,6 @@ class APIHandler(RequestHandler):
     def render_json(self, data):
         self.write(json.dumps(data))
         self.finish()
-
-
-class ConfigurationListAPIHandler(APIHandler):
-    def get(self):
-        self.render_json(
-            [
-                self.reverse_url("api-configuration-detail", os.path.basename(f))
-                for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)
-            ]
-        )
 
 
 class KeystoreHandler(APIHandler):
@@ -445,9 +423,7 @@ class ConfigurationItemAPIHandler(APIHandler):
 
         self.render_json(
             {
-                "url": self.reverse_url("api-configuration-detail", configuration_file.file_name),
                 "file_name": configuration_file.file_name,
-                "account_page_url": self.reverse_url("account", configuration_file.file_name),
                 "account": configuration_file.account.address,
                 "network": configuration_file.network.name,
                 "balance": {
@@ -465,21 +441,17 @@ def create_app(settings_name: str, additional_handlers: list) -> Application:
 
     handlers = [
         url(r"/", IndexHandler, name="index"),
-        url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
         url(r"/setup/(.*)", SetupHandler, name="setup"),
         url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
         url(r"/account/(.*)", AccountDetailHandler, name="account"),
         url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
         url(r"/launch/(.*)", LaunchHandler, name="launch"),
-        url(
-            r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
-        ),
+        url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
         url(
             r"/api/configuration/(.*)",
             ConfigurationItemAPIHandler,
             name="api-configuration-detail",
         ),
-        url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
     ]
 
     settings = load_settings(settings_name)
@@ -493,7 +465,7 @@ def create_app(settings_name: str, additional_handlers: list) -> Application:
     )
 
 
-def run_server(app: Application, port: int): # pragma: no cover
+def run_server(app: Application, port: int):  # pragma: no cover
     sockets = bind_sockets(port, "localhost")
     server = HTTPServer(app)
     server.add_sockets(sockets)

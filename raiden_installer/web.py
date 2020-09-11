@@ -293,35 +293,6 @@ class SwapHandler(BaseRequestHandler):
 
 
 class CostEstimationAPIHandler(APIHandler):
-    def get(self, configuration_file_name):
-        # Returns the highest estimate of ETH needed to get required service token amount
-        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        account = configuration_file.account
-        try_unlock(account)
-        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        required = RequiredAmounts.from_settings(self.installer_settings)
-
-        kyber = Kyber(w3=w3)
-        uniswap = Uniswap(w3=w3)
-
-        highest_cost = 0
-        for exchange in (kyber, uniswap):
-            exchange_costs = exchange.calculate_transaction_costs(required.service_token, account)
-            if not exchange_costs:
-                continue
-            total_cost = exchange_costs["total"].as_wei
-            highest_cost = max(highest_cost, total_cost)
-
-        estimated_cost = EthereumAmount(Wei(highest_cost))
-        self.render_json(
-            {
-                "dex_swap_RDN": {
-                    "as_wei": estimated_cost.as_wei,
-                    "formatted": estimated_cost.formatted,
-                }
-            }
-        )
-
     def post(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account

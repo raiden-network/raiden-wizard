@@ -18,6 +18,7 @@ from raiden_installer.shared_handlers import (
     AsyncTaskHandler,
     BaseRequestHandler,
     create_app,
+    get_passphrase,
     run_server,
     try_unlock,
 )
@@ -263,6 +264,14 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
 class SwapHandler(BaseRequestHandler):
     def get(self, configuration_file_name, token_ticker):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        if get_passphrase() is None:
+            self.render(
+                "account_unlock.html",
+                keystore_file_path=configuration_file.account.keystore_file_path,
+                return_to=f"/swap/{configuration_file_name}/{token_ticker}",
+            )
+            return
+
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )

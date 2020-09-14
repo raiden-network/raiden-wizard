@@ -24,3 +24,9 @@ def create_account(monkeypatch, test_password) -> Callable[[], Account]:
 
     for account in accounts:
         account.keystore_file_path.unlink()
+
+
+@pytest.fixture
+def test_account(create_account):
+    return create_account()
+

@@ -89,7 +89,6 @@ class AsyncTaskHandler(WebSocketHandler):
     def initialize(self):
         self.installer_settings = self.settings.get("installer_settings")
         self.actions = {
-            "close": self._run_close,
             "launch": self._run_launch,
             "setup": self._run_setup,
             "unlock": self._run_unlock,
@@ -138,9 +137,6 @@ class AsyncTaskHandler(WebSocketHandler):
         message = {"type": "hash", "text": text, "tx_hash": tx_hash}
         self.write_message(message)
         log.info(f"Waiting for confirmation of txhash {tx_hash}")
-
-    def _run_close(self, **kw):
-        sys.exit()
 
     def _deposit_to_udc(self, w3, account, service_token, deposit_amount):
         self._send_status_update(
@@ -331,7 +327,7 @@ class AccountDetailHandler(BaseRequestHandler):
         required = RequiredAmounts.from_settings(self.installer_settings)
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
         log.info(f"funding tx {configuration_file._initial_funding_txhash}")
-        log.info(f"Checking balance {eth_balance} > {required.eth}")
+        log.info(f"Checking balance {eth_balance} >= {required.eth}")
         if eth_balance >= required.eth:
             configuration_file._initial_funding_txhash = None
             configuration_file.save()

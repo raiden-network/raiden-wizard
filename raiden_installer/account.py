@@ -1,6 +1,6 @@
 import datetime
-import glob
 import json
+import math
 import os
 import random
 import string
@@ -15,7 +15,7 @@ from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 
 from raiden_installer import log
-from raiden_installer.constants import WEB3_TIMEOUT
+from raiden_installer.constants import REQUIRED_BLOCK_CONFIRMATIONS, WEB3_TIMEOUT
 from raiden_installer.tokens import ETH, TokenAmount, Wei
 
 
@@ -67,9 +67,20 @@ class Account:
     ) -> TokenAmount:
         time_remaining = timeout
         POLLING_INTERVAL = 1
-        balance = self.get_ethereum_balance(w3)
-        while balance < expected_amount and time_remaining > 0:
+        block_with_balance = math.inf
+        current_block = w3.eth.blockNumber
+
+        while (current_block < block_with_balance + REQUIRED_BLOCK_CONFIRMATIONS and
+                time_remaining > 0):
+            current_block = w3.eth.blockNumber
             balance = self.get_ethereum_balance(w3)
+
+            if balance >= expected_amount:
+                if block_with_balance == math.inf:
+                    block_with_balance = w3.eth.blockNumber
+            else:
+                block_with_balance = math.inf
+
             time.sleep(POLLING_INTERVAL)
             time_remaining -= POLLING_INTERVAL
         log.debug(f"Balance is {balance}")

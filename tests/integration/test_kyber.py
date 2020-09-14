@@ -104,7 +104,8 @@ def kyber(test_account: Account, kyber_chain, patch_network):
 def test_buy_tokens(test_account, patch_kyber_support, kyber):
     knc_balance_before = get_token_balance(kyber.w3, test_account, KNC_TOKEN)
     buy_amount = TokenAmount(10, KNC_TOKEN)
-    kyber.buy_tokens(test_account, buy_amount)
+    tx_hash = kyber.buy_tokens(test_account, buy_amount)
+    kyber.w3.eth.waitForTransactionReceipt(tx_hash)
     knc_balance_after = get_token_balance(kyber.w3, test_account, KNC_TOKEN)
     assert knc_balance_after == knc_balance_before + buy_amount
 
@@ -127,8 +128,7 @@ def test_cannot_buy_without_eth(test_account, patch_kyber_support, kyber):
         "gasPrice": 0,
     }
     tx_hash = kyber.w3.eth.sendTransaction(tx)
-    tx_receipt = kyber.w3.eth.waitForTransactionReceipt(tx_hash, timeout=60)
-    wait_for_transaction(kyber.w3, tx_receipt)
+    kyber.w3.eth.waitForTransactionReceipt(tx_hash)
 
     with pytest.raises(ValueError):
         kyber.buy_tokens(test_account, TokenAmount(10, KNC_TOKEN))

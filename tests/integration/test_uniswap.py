@@ -13,10 +13,9 @@ from raiden_installer.token_exchange import ExchangeError, Uniswap
 from raiden_installer.tokens import Erc20Token, EthereumAmount, TokenAmount
 from raiden_installer.transactions import approve, get_token_balance, mint_tokens
 from raiden_installer.uniswap.web3 import contracts as uniswap_contracts
-from raiden_installer.utils import estimate_gas, send_raw_transaction, wait_for_transaction
+from raiden_installer.utils import send_raw_transaction, wait_for_transaction
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
-WAIT_TIME = 15  # Makes sure that transactions are discovered due to how Infura works
 
 WIZ_EXCHANGE_ADDRESS = "0x86E21A295782649f1d7bC3fB360b4AeDd17b6E37"
 
@@ -31,7 +30,6 @@ pytestmark = pytest.mark.skipif(not INFURA_PROJECT_ID, reason="missing configura
 def fund_account(account, w3):
     NETWORK.fund(account)
     account.wait_for_ethereum_funds(w3, EthereumAmount(0.01))
-    time.sleep(WAIT_TIME)
 
 
 def generateDeadline(w3):
@@ -53,7 +51,7 @@ def addLiquidity(w3, account, exchange_proxy):
         "gas": GAS_LIMIT,
     }
 
-    tx_receipt = send_raw_transaction(
+    tx_hash = send_raw_transaction(
         w3,
         account,
         exchange_proxy.functions.addLiquidity,
@@ -62,12 +60,10 @@ def addLiquidity(w3, account, exchange_proxy):
         deadline,
         **transaction_params,
     )
-    wait_for_transaction(w3, tx_receipt)
-    time.sleep(WAIT_TIME)
+    wait_for_transaction(w3, tx_hash)
 
 
 def removeLiquidity(w3, account, exchange_proxy):
-    time.sleep(WAIT_TIME)
     amount = exchange_proxy.functions.balanceOf(account.address).call()
     min_eth = 1
     min_tokens = 1
@@ -78,7 +74,7 @@ def removeLiquidity(w3, account, exchange_proxy):
         "gas": GAS_LIMIT,
     }
 
-    tx_receipt = send_raw_transaction(
+    tx_hash = send_raw_transaction(
         w3,
         account,
         exchange_proxy.functions.removeLiquidity,
@@ -88,8 +84,7 @@ def removeLiquidity(w3, account, exchange_proxy):
         deadline,
         **transaction_params,
     )
-    wait_for_transaction(w3, tx_receipt)
-    time.sleep(WAIT_TIME)
+    wait_for_transaction(w3, tx_hash)
 
 
 @pytest.fixture
@@ -109,9 +104,8 @@ def provide_liquidity(infura, create_account):
     w3 = make_web3_provider(infura.url, account)
 
     fund_account(account, w3)
-    tx_receipt = mint_tokens(w3, account, WIZ_TOKEN)
-    wait_for_transaction(w3, tx_receipt)
-    time.sleep(WAIT_TIME)
+    tx_hash = mint_tokens(w3, account, WIZ_TOKEN)
+    wait_for_transaction(w3, tx_hash)
 
     exchange_proxy = w3.eth.contract(
         abi=uniswap_contracts.UNISWAP_EXCHANGE_ABI,
@@ -145,9 +139,8 @@ def test_buy_tokens(funded_account, provide_liquidity, patch_exchange_address, u
     w3 = uniswap.w3
     wiz_balance_before = get_token_balance(w3, funded_account, WIZ_TOKEN)
     buy_amount = TokenAmount(1, WIZ_TOKEN)
-    tx_receipt = uniswap.buy_tokens(funded_account, buy_amount)
-    wait_for_transaction(w3, tx_receipt)
-    time.sleep(WAIT_TIME)
+    tx_hash = uniswap.buy_tokens(funded_account, buy_amount)
+    wait_for_transaction(w3, tx_hash)
     wiz_balance_after = get_token_balance(w3, funded_account, WIZ_TOKEN)
     assert wiz_balance_after == wiz_balance_before + buy_amount
 

@@ -63,8 +63,8 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
                 f"Fund Account with {service_token.ticker}",
                 3,
             )
-            transaction_receipt = mint_tokens(w3, account, service_token)
-            wait_for_transaction(w3, transaction_receipt)
+            tx_hash = mint_tokens(w3, account, service_token)
+            wait_for_transaction(w3, tx_hash)
 
         service_token_balance = get_token_balance(w3, account, service_token)
 
@@ -80,8 +80,8 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
                 f"Fund Account with {transfer_token.ticker}",
                 4,
             )
-            transaction_receipt = mint_tokens(w3, account, transfer_token)
-            wait_for_transaction(w3, transaction_receipt)
+            tx_hash = mint_tokens(w3, account, transfer_token)
+            wait_for_transaction(w3, tx_hash)
 
         self._send_redirect(self.reverse_url("launch", configuration_file_name))
 

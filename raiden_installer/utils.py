@@ -1,14 +1,19 @@
+import math
 import os
 import time
-from typing import Any, Dict
 
 import requests
 from web3 import Web3
+from web3.exceptions import TransactionNotFound
 
 from raiden_contracts.contract_manager import get_contracts_deployment_info
 from raiden_installer import log
-from raiden_installer.constants import WEB3_TIMEOUT
+from raiden_installer.constants import REQUIRED_BLOCK_CONFIRMATIONS, WEB3_TIMEOUT
 from raiden_installer.tokens import EthereumAmount, Wei
+
+
+class TransactionTimeoutError(Exception):
+    pass
 
 
 def recover_ld_library_env_path():  # pragma: no cover
@@ -72,20 +77,27 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     signed = w3.eth.account.signTransaction(transaction_data, account.private_key)
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
     log.debug(f"transaction hash: {tx_hash.hex()}")
-    return w3.eth.waitForTransactionReceipt(tx_hash, timeout=WEB3_TIMEOUT)
+    return tx_hash
 
 
-def wait_for_transaction(web3: Web3, transaction_receipt: Dict[str, Any]) -> None:
+def wait_for_transaction(w3: Web3, transaction_hash) -> None:
+    log.debug("wait for block with transaction to be fetched")
+    time_start = time.time()
+    block_with_transaction = math.inf
+    current_block = w3.eth.blockNumber
 
-    if "blockNumber" not in transaction_receipt:
-        raise KeyError("blockNumber not in transaction receipt.")
+    while current_block < block_with_transaction + REQUIRED_BLOCK_CONFIRMATIONS:
+        if time.time() - time_start >= WEB3_TIMEOUT:
+            raise TransactionTimeoutError(
+                f"Tx with hash {transaction_hash} was not found after {WEB3_TIMEOUT} seconds"
+            )
+        try:
+            tx_receipt = w3.eth.getTransactionReceipt(transaction_hash)
+            block_with_transaction = tx_receipt["blockNumber"]
+        except TransactionNotFound:
+            pass
 
-    block_with_transaction = transaction_receipt["blockNumber"]
-    current_block = web3.eth.blockNumber
-
-    while current_block < block_with_transaction:
-        log.debug("wait for block with transaction to be fetched")
-        current_block = web3.eth.blockNumber
+        current_block = w3.eth.blockNumber
         time.sleep(1)
 
 

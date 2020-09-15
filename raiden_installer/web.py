@@ -6,7 +6,6 @@ import wtforms
 from eth_utils import decode_hex
 from tornado.escape import json_decode
 from tornado.web import url
-from web3.exceptions import TimeExhausted
 from wtforms_tornado import Form
 
 from raiden_installer import log
@@ -35,7 +34,7 @@ from raiden_installer.transactions import (
     get_token_deposit,
     get_total_token_owned,
 )
-from raiden_installer.utils import wait_for_transaction
+from raiden_installer.utils import TransactionTimeoutError, wait_for_transaction
 
 SETTINGS = "mainnet"
 
@@ -113,8 +112,8 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
                 )
                 self._send_status_update(f"Trying to acquire {token_amount} at this rate")
 
-                transaction_receipt = exchange.buy_tokens(account, token_amount, costs)
-                wait_for_transaction(w3, transaction_receipt)
+                tx_hash = exchange.buy_tokens(account, token_amount, costs)
+                wait_for_transaction(w3, tx_hash)
 
                 token_balance = get_token_balance(w3, account, token)
                 balance_after_swap = account.get_ethereum_balance(w3)
@@ -232,21 +231,11 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
             w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
             self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash=tx_hash)
 
-            transaction_found = False
-
-            while (not transaction_found) and (time.time() - time_start < WEB3_TIMEOUT):
-                try:
-                    tx_receipt = w3.eth.waitForTransactionReceipt(
-                        decode_hex(tx_hash), timeout=WEB3_TIMEOUT
-                    )
-                    assert tx_receipt.get("blockNumber", 0) > 0
-                    transaction_found = True
-                except TimeExhausted:
-                    pass
-
-            if not transaction_found:
+            try:
+                wait_for_transaction(w3, decode_hex(tx_hash))
+            except TransactionTimeoutError:
                 self._send_status_update(
-                    [f"Not confirmed after {int(time.time() - time_start)} seconds!"], icon="error"
+                    [f"Not confirmed after {WEB3_TIMEOUT} seconds!"], icon="error"
                 )
                 self._send_txhash_message(
                     "Funding took too long! "

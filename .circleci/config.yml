@@ -68,7 +68,8 @@ jobs:
           key: *cache_key_fake_blockchain
           paths:
             - tests/fake_blockchain/node_modules
-      - run: 
+      - run:
+          no_output_timeout: 30m 
           command: |
             . venv/bin/activate
             coverage run --source raiden_installer -m pytest tests/integration --junitxml=test-reports/pytest/integration-test-results.xml

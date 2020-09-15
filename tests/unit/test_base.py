@@ -1,6 +1,6 @@
 import unittest
 
-from tests.constants import TESTING_TEMP_FOLDER
+from tests.constants import TESTING_KEYSTORE_FOLDER, TESTING_TEMP_FOLDER
 
 from raiden_installer import load_settings
 from raiden_installer.account import Account
@@ -29,8 +29,7 @@ class RaidenConfigurationTestCase(unittest.TestCase):
     def setUp(self):
         RaidenConfigurationFile.FOLDER_PATH = TESTING_TEMP_FOLDER.joinpath("config")
 
-        keystore_folder = TESTING_TEMP_FOLDER.joinpath("keystore")
-        self.account = Account.create(keystore_folder, passphrase="test_raiden_config")
+        self.account = Account.create(TESTING_KEYSTORE_FOLDER, passphrase="test_raiden_config")
         self.network = Network.get_by_name("goerli")
         self.settings = load_settings("demo_env")
 

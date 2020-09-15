@@ -1,8 +1,10 @@
 import os
-import tempfile
 import time
 import unittest
 from pathlib import Path
+
+from tests.constants import TESTING_KEYSTORE_FOLDER
+from tests.utils import empty_account
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
@@ -20,13 +22,13 @@ class IntegrationTestCase(unittest.TestCase):
     def setUp(self):
         assert INFURA_PROJECT_ID
 
-        DEFAULT_KEYSTORE_FOLDER = Path(tempfile.gettempdir())
-        self.account = Account.create(DEFAULT_KEYSTORE_FOLDER, "test_raiden_integration")
+        self.account = Account.create(TESTING_KEYSTORE_FOLDER, "test_raiden_integration")
         self.network = Network.get_by_name(self.__class__.NETWORK_NAME)
         self.infura = Infura.make(self.network, INFURA_PROJECT_ID)
         self.w3 = make_web3_provider(self.infura.url, self.account)
 
     def tearDown(self):
+        empty_account(self.w3, self.account)
         self.account.keystore_file_path.unlink()
 
 

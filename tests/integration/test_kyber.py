@@ -6,7 +6,7 @@ import psutil
 import pytest
 import requests
 from eth_utils import to_bytes
-from tests.constants import TESTING_TEMP_FOLDER
+from tests.fixtures import create_account, test_password
 from tests.integration import kyber_snapshot_addresses
 
 from raiden_installer.account import Account
@@ -39,7 +39,6 @@ GANACHE_COMMAND = [
     PORT
 ]
 
-TESTING_KEYSTORE_FOLDER = TESTING_TEMP_FOLDER.joinpath("keystore")
 # Prefilled account from Kyber Ganache snapshot
 WALLET_PRIVATE_KEY = 0x979d8b20000da5832fc99c547393fdfa5eef980c77bfb1decb17c59738d99471
 
@@ -63,25 +62,17 @@ def revert_to_snapshot(snapshot_id):
 
 
 @pytest.fixture
-def test_password():
-    return "test_password"
+def test_account(monkeypatch, create_account):
+    monkeypatch.setattr(Account, "generate_private_key", lambda: to_bytes(WALLET_PRIVATE_KEY))
+    return create_account()
 
 
 @pytest.fixture
-def test_account(monkeypatch, test_password):
-    monkeypatch.setattr(Account, "generate_private_key", lambda: to_bytes(WALLET_PRIVATE_KEY))
-    account = Account.create(TESTING_KEYSTORE_FOLDER, test_password)
-    yield account
-    account.keystore_file_path.unlink()
-
-
-@pytest.fixture()
 def patch_kyber_support(monkeypatch):
     monkeypatch.setitem(NETWORK_ADDRESS_MODULES_BY_CHAIN_ID, CHAIN_ID, kyber_snapshot_addresses)
-    monkeypatch.setattr(Kyber, "SUPPORTED_NETWORKS", ["ganache"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def patch_network(monkeypatch):
     class Ganache(Network):
         pass
@@ -102,7 +93,7 @@ def kyber_chain():
     proc.wait()
 
 
-@pytest.fixture()
+@pytest.fixture
 def kyber(test_account: Account, kyber_chain, patch_network):
     snapshot_id = take_snapshot()
     w3 = make_web3_provider(f"http://localhost:{PORT}", test_account)
@@ -113,7 +104,8 @@ def kyber(test_account: Account, kyber_chain, patch_network):
 def test_buy_tokens(test_account, patch_kyber_support, kyber):
     knc_balance_before = get_token_balance(kyber.w3, test_account, KNC_TOKEN)
     buy_amount = TokenAmount(10, KNC_TOKEN)
-    kyber.buy_tokens(test_account, buy_amount)
+    tx_hash = kyber.buy_tokens(test_account, buy_amount)
+    kyber.w3.eth.waitForTransactionReceipt(tx_hash)
     knc_balance_after = get_token_balance(kyber.w3, test_account, KNC_TOKEN)
     assert knc_balance_after == knc_balance_before + buy_amount
 
@@ -136,8 +128,7 @@ def test_cannot_buy_without_eth(test_account, patch_kyber_support, kyber):
         "gasPrice": 0,
     }
     tx_hash = kyber.w3.eth.sendTransaction(tx)
-    tx_receipt = kyber.w3.eth.waitForTransactionReceipt(tx_hash, timeout=60)
-    wait_for_transaction(kyber.w3, tx_receipt)
+    kyber.w3.eth.waitForTransactionReceipt(tx_hash)
 
     with pytest.raises(ValueError):
         kyber.buy_tokens(test_account, TokenAmount(10, KNC_TOKEN))

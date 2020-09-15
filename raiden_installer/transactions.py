@@ -78,7 +78,7 @@ def approve(w3, account, allowed_address, allowance: Wei, token: Erc20Token):
             gas=GAS_REQUIRED_FOR_APPROVE,
         )
 
-    transaction_receipt = send_raw_transaction(
+    tx_hash = send_raw_transaction(
         w3,
         account,
         token_proxy.functions.approve,
@@ -87,7 +87,7 @@ def approve(w3, account, allowed_address, allowance: Wei, token: Erc20Token):
         gas=GAS_REQUIRED_FOR_APPROVE,
     )
 
-    wait_for_transaction(w3, transaction_receipt)
+    wait_for_transaction(w3, tx_hash)
 
 
 def get_token_balance(w3: Web3, account: Account, token: Erc20Token) -> TokenAmount:

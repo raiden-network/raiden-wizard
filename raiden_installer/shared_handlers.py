@@ -139,13 +139,13 @@ class AsyncTaskHandler(WebSocketHandler):
             "User Deposit Contract"
         )
         self._send_status_update(f"This might take a few minutes")
-        transaction_receipt = deposit_service_tokens(
+        tx_hash = deposit_service_tokens(
             w3=w3,
             account=account,
             token=service_token,
             amount=deposit_amount.as_wei,
         )
-        wait_for_transaction(w3, transaction_receipt)
+        wait_for_transaction(w3, tx_hash)
         service_token_deposited = get_token_deposit(
             w3=w3, account=account, token=service_token
         )

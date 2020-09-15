@@ -6,6 +6,7 @@ import pytest
 from eth_utils import add_0x_prefix
 from tests.constants import TESTING_TEMP_FOLDER
 from tests.fixtures import create_account, test_account, test_password
+from tornado.httpclient import HTTPRequest
 from tornado.websocket import websocket_connect
 
 from raiden_installer import load_settings
@@ -45,9 +46,12 @@ class SharedHandlersTests:
         return Infura.make(network, INFURA_PROJECT_ID)
 
     @pytest.fixture
-    def config(self, test_account, infura, settings_name):
+    def settings(self, settings_name):
+        return load_settings(settings_name)
+
+    @pytest.fixture
+    def config(self, test_account, infura, settings):
         RaidenConfigurationFile.FOLDER_PATH = TESTING_TEMP_FOLDER.joinpath("config")
-        settings = load_settings(settings_name)
         config = RaidenConfigurationFile(
             test_account.keystore_file_path,
             settings,
@@ -147,6 +151,45 @@ class TestWeb(SharedHandlersTests):
     @pytest.fixture
     def settings_name(self):
         return "mainnet"
+
+    @pytest.mark.gen_test
+    def test_swap_handler(self, http_client, base_url, config, settings, unlocked):
+        response = yield http_client.fetch(
+            f"{base_url}/swap/{config.file_name}/{settings.service_token.ticker}"
+        )
+        assert successful_html_response(response)
+        assert not is_unlock_page(response.body)
+
+    @pytest.mark.gen_test
+    def test_locked_swap_handler(self, http_client, base_url, config, settings):
+        response = yield http_client.fetch(
+            f"{base_url}/swap/{config.file_name}/{settings.service_token.ticker}"
+        )
+        assert successful_html_response(response)
+        assert is_unlock_page(response.body)
+
+    @pytest.mark.gen_test(timeout=10)
+    def test_cost_estimation_handler(self, http_client, base_url, config, settings):
+        exchange = "Kyber"
+        currency = settings.transfer_token.ticker
+        target_amount = 3
+        data = {
+            "exchange": exchange,
+            "currency": currency,
+            "target_amount": target_amount,
+        }
+        request = HTTPRequest(
+            url=f"{base_url}/api/cost-estimation/{config.file_name}",
+            method="POST",
+            body=json.dumps(data)
+        )
+        response = yield http_client.fetch(request)
+        json_response = json.loads(response.body)
+        assert successful_json_response(response)
+        assert json_response["exchange"] == exchange
+        assert json_response["currency"] == currency
+        assert json_response["target_amount"] == target_amount
+        assert json_response["as_wei"] > 0
 
 
 class TestWebTestnet(SharedHandlersTests):

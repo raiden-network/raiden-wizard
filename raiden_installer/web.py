@@ -196,7 +196,7 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
             service_token_deposited = get_token_deposit(w3, account, service_token)
 
             if service_token_deposited < required.service_token:
-                swap_amount = swap_amounts.service_token_1
+                swap_amount = swap_amounts.service_token
 
                 if service_token_balance >= swap_amount:
                     deposit = swap_amount - service_token_deposited
@@ -281,13 +281,9 @@ class SwapHandler(BaseRequestHandler):
 
         swap_amounts = SwapAmounts.from_settings(self.installer_settings)
         if token_ticker == self.installer_settings.service_token.ticker:
-            swap_amount_1 = swap_amounts.service_token_1
-            swap_amount_2 = swap_amounts.service_token_2
-            swap_amount_3 = swap_amounts.service_token_3
+            swap_amount = swap_amounts.service_token
         elif token_ticker == self.installer_settings.transfer_token.ticker:
-            swap_amount_1 = swap_amounts.transfer_token_1
-            swap_amount_2 = swap_amounts.transfer_token_2
-            swap_amount_3 = swap_amounts.transfer_token_3
+            swap_amount = swap_amounts.transfer_token
 
         self.render(
             "swap.html",
@@ -295,9 +291,7 @@ class SwapHandler(BaseRequestHandler):
             kyber=kyber,
             uniswap=uniswap,
             token=token,
-            swap_amount_1=swap_amount_1,
-            swap_amount_2=swap_amount_2,
-            swap_amount_3=swap_amount_3,
+            swap_amount=swap_amount,
         )
 
 

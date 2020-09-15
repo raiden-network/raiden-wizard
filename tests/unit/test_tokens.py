@@ -147,26 +147,10 @@ class InstallerAmountsTestCase(unittest.TestCase):
         swap_amounts = SwapAmounts.from_settings(self.settings)
 
         self.assertEqual(
-            swap_amounts.service_token_1,
-            TokenAmount(Wei(self.settings.service_token.swap_amount_1), self.service_token)
+            swap_amounts.service_token,
+            TokenAmount(Wei(self.settings.service_token.swap_amount), self.service_token)
         )
         self.assertEqual(
-            swap_amounts.service_token_2,
-            TokenAmount(Wei(self.settings.service_token.swap_amount_2), self.service_token)
-        )
-        self.assertEqual(
-            swap_amounts.service_token_3,
-            TokenAmount(Wei(self.settings.service_token.swap_amount_3), self.service_token)
-        )
-        self.assertEqual(
-            swap_amounts.transfer_token_1,
-            TokenAmount(Wei(self.settings.transfer_token.swap_amount_1), self.transfer_token)
-        )
-        self.assertEqual(
-            swap_amounts.transfer_token_2,
-            TokenAmount(Wei(self.settings.transfer_token.swap_amount_2), self.transfer_token)
-        )
-        self.assertEqual(
-            swap_amounts.transfer_token_3,
-            TokenAmount(Wei(self.settings.transfer_token.swap_amount_3), self.transfer_token)
+            swap_amounts.transfer_token,
+            TokenAmount(Wei(self.settings.transfer_token.swap_amount), self.transfer_token)
         )

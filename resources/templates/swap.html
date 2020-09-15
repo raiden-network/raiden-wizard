@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block content %}
 <div class="hero">
-  Get {{ swap_amount_1 }} via a decentralized exchange<br />
+  Get {{ swap_amount }} via a decentralized exchange<br />
   Choose an exchange of your choice to swap
 </div>
 
@@ -21,8 +21,8 @@
     </button>
 
     <div class="menu" id="amount-menu-kyber">
-      <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
-        {{ swap_amount_1.formatted }}
+      <button class="amount-button" value="{{ swap_amount.as_wei }}">
+        {{ swap_amount.formatted }}
       </button>
     </div>
   </div>
@@ -39,8 +39,8 @@
     </button>
 
     <div class="menu" id="amount-menu-uniswap">
-      <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
-        {{ swap_amount_1.formatted }}
+      <button class="amount-button" value="{{ swap_amount.as_wei }}">
+        {{ swap_amount.formatted }}
       </button>
     </div>
   </div>

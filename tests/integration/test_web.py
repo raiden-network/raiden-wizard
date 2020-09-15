@@ -3,6 +3,7 @@ import json
 import os
 
 import pytest
+from eth_utils import add_0x_prefix
 from tests.constants import TESTING_TEMP_FOLDER
 from tests.fixtures import create_account, test_account, test_password
 from tornado.websocket import websocket_connect
@@ -106,7 +107,32 @@ class SharedHandlersTests:
         response = yield http_client.fetch(
             f"{base_url}/keystore/{config.file_name}/{test_account.keystore_file_path.name}"
         )
+        json_response = json.loads(response.body)
         assert successful_json_response(response)
+        assert add_0x_prefix(json_response["address"]).lower() == test_account.address.lower()
+
+    @pytest.mark.gen_test(timeout=10)
+    def test_gas_price_handler(self, http_client, base_url, config):
+        response = yield http_client.fetch(
+            f"{base_url}/gas_price/{config.file_name}"
+        )
+        json_response = json.loads(response.body)
+        assert successful_json_response(response)
+        assert json_response["gas_price"] > 0
+
+    @pytest.mark.gen_test
+    def test_configuration_item_handler(self, http_client, base_url, config):
+        response = yield http_client.fetch(
+            f"{base_url}/api/configuration/{config.file_name}"
+        )
+        json_response = json.loads(response.body)
+        assert successful_json_response(response)
+        assert json_response["file_name"] == config.file_name
+        assert json_response["account"] == config.account.address
+        assert json_response["network"] == config.network.name
+        assert json_response["balance"]["ETH"]["as_wei"] == 0
+        assert json_response["balance"]["service_token"]["as_wei"] == 0
+        assert json_response["balance"]["transfer_token"]["as_wei"] == 0
 
 
 class TestWeb(SharedHandlersTests):

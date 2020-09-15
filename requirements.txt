@@ -66,6 +66,7 @@ Pygments==2.4.2
 pyparsing==2.4.2
 pyrsistent==0.16.0
 pytest==5.0.1
+pytest-tornado==0.8.1
 raiden-contracts==0.37.0
 regex==2019.6.8
 requests==2.22.0

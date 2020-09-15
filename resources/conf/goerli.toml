@@ -7,15 +7,11 @@ ethereum_amount_required = 2e16
 [service_token]
 ticker = "SVT"
 amount_required = 6e18
-swap_amount_1 = 10e18
-swap_amount_2 = 20e18
-swap_amount_3 = 50e18
+swap_amount = 10e18
 mintable = true
 
 [transfer_token]
 ticker = "WIZ"
 amount_required = 2e18
-swap_amount_1 = 2e18
-swap_amount_2 = 5e18
-swap_amount_3 = 10e18
+swap_amount = 2e18
 mintable = true

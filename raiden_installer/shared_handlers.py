@@ -41,16 +41,25 @@ DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 
 RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
-
 EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
+AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "goerli"]]
+
 PASSPHRASE: Optional[str] = None
 
-AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
+
+def get_passphrase() -> Optional[str]:
+    return PASSPHRASE
+
+
+def set_passphrase(passphrase: Optional[str]):
+    global PASSPHRASE
+    PASSPHRASE = passphrase
 
 
 def try_unlock(account):
-    if account.check_passphrase(PASSPHRASE):
-        account.passphrase = PASSPHRASE
+    passphrase = get_passphrase()
+    if account.check_passphrase(passphrase):
+        account.passphrase = passphrase
 
 
 class QuickSetupForm(Form):
@@ -80,7 +89,6 @@ class AsyncTaskHandler(WebSocketHandler):
     def initialize(self):
         self.installer_settings = self.settings.get("installer_settings")
         self.actions = {
-            "close": self._run_close,
             "launch": self._run_launch,
             "setup": self._run_setup,
             "unlock": self._run_unlock,
@@ -130,9 +138,6 @@ class AsyncTaskHandler(WebSocketHandler):
         self.write_message(message)
         log.info(f"Waiting for confirmation of txhash {tx_hash}")
 
-    def _run_close(self, **kw):
-        sys.exit()
-
     def _deposit_to_udc(self, w3, account, service_token, deposit_amount):
         self._send_status_update(
             f"Making deposit of {deposit_amount.formatted} to the "
@@ -158,20 +163,18 @@ class AsyncTaskHandler(WebSocketHandler):
         keystore_file_path = kw.get("keystore_file_path")
         account = Account(keystore_file_path)
         if account.check_passphrase(passphrase):
-            global PASSPHRASE
-            PASSPHRASE = kw.get("passphrase")
+            set_passphrase(passphrase)
             self._send_redirect(kw.get("return_to"))
         else:
             self._send_error_message("Incorrect passphrase, try again.")
 
     def _run_create_wallet(self, **kw):
         form = PasswordForm(passphrase1=kw.get("passphrase1"), passphrase2=kw.get("passphrase2"))
-        network_name = kw.get("network_name")
         if form.validate():
             self._send_status_update("Generating new wallet file for Raiden")
-            global PASSPHRASE
-            PASSPHRASE = form.data["passphrase1"].strip()
-            account = Account.create(find_keystore_folder_path(), passphrase=PASSPHRASE)
+            passphrase = form.data["passphrase1"].strip()
+            set_passphrase(passphrase)
+            account = Account.create(find_keystore_folder_path(), passphrase=passphrase)
 
             self._send_redirect(
                 self.reverse_url("setup", account.keystore_file_path)
@@ -179,7 +182,7 @@ class AsyncTaskHandler(WebSocketHandler):
 
     def _run_setup(self, **kw):
         account_file = kw.get("account_file")
-        account = Account(account_file, passphrase=PASSPHRASE)
+        account = Account(account_file, passphrase=get_passphrase())
         form = QuickSetupForm(endpoint=kw.get("endpoint"), network=kw.get("network"))
         if form.validate():
             self._send_status_update("Generating new wallet and configuration file for raiden")
@@ -234,7 +237,7 @@ class AsyncTaskHandler(WebSocketHandler):
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
         )
 
-        with temporary_passphrase_file(PASSPHRASE) as passphrase_file:
+        with temporary_passphrase_file(get_passphrase()) as passphrase_file:
             if not raiden_client.is_running:
                 raiden_client.launch(configuration_file, passphrase_file)
 
@@ -282,11 +285,8 @@ class IndexHandler(BaseRequestHandler):
 
 class SetupHandler(BaseRequestHandler):
     def get(self, account_file):
-        file_names = [os.path.basename(
-            f) for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)]
         self.render(
             "raiden_setup.html",
-            configuration_file_names=file_names,
             network_name=self.installer_settings.network,
             account_file=account_file,
         )
@@ -300,6 +300,14 @@ class WalletCreationHandler(BaseRequestHandler):
 class AccountDetailHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        if get_passphrase() is None:
+            self.render(
+                "account_unlock.html",
+                keystore_file_path=configuration_file.account.keystore_file_path,
+                return_to=f"/account/{configuration_file_name}",
+            )
+            return
+
         keystore_path = configuration_file.configuration_data["keystore-path"]
         filename = ""
         for file in glob(f"{keystore_path}/UTC--*"):
@@ -318,54 +326,34 @@ class AccountDetailHandler(BaseRequestHandler):
         )
         required = RequiredAmounts.from_settings(self.installer_settings)
         eth_balance = configuration_file.account.get_ethereum_balance(w3)
-        log.info(f"Checking balance {eth_balance} > {required.eth}")
-        if eth_balance < required.eth:
-            log.info(f"funding tx {configuration_file._initial_funding_txhash}")
-            if configuration_file._initial_funding_txhash is not None:
-                return self.render(
-                    "account.html", configuration_file=configuration_file, keystore=filename,
-                )
-        else:
+        log.info(f"funding tx {configuration_file._initial_funding_txhash}")
+        log.info(f"Checking balance {eth_balance} >= {required.eth}")
+        if eth_balance >= required.eth:
             configuration_file._initial_funding_txhash = None
             configuration_file.save()
 
-        if PASSPHRASE is not None:
-            self.render("account.html", configuration_file=configuration_file, keystore=filename)
-        else:
-            self.render(
-                "account_unlock.html",
-                keystore_file_path=configuration_file.account.keystore_file_path,
-                return_to=f"/account/{configuration_file_name}",
-            )
+        self.render("account.html", configuration_file=configuration_file, keystore=filename)
 
 
 class LaunchHandler(BaseRequestHandler):
     def get(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        w3 = make_web3_provider(
-            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
-        )
-
-        current_balance = configuration_file.account.get_ethereum_balance(w3)
-
-        if PASSPHRASE is not None:
-            self.render(
-                "launch.html", configuration_file=configuration_file, balance=current_balance
-            )
-        else:
+        if get_passphrase() is None:
             self.render(
                 "account_unlock.html",
                 keystore_file_path=configuration_file.account.keystore_file_path,
                 return_to=f"/launch/{configuration_file_name}",
             )
+            return
 
+        w3 = make_web3_provider(
+            configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
+        )
+        current_balance = configuration_file.account.get_ethereum_balance(w3)
 
-class ConfigurationListHandler(BaseRequestHandler):
-    def get(self):
-        if not RaidenConfigurationFile.list_existing_files(self.installer_settings):
-            raise HTTPError(404)
-
-        self.render("configuration_list.html")
+        self.render(
+            "launch.html", configuration_file=configuration_file, balance=current_balance
+        )
 
 
 class APIHandler(RequestHandler):
@@ -379,16 +367,6 @@ class APIHandler(RequestHandler):
     def render_json(self, data):
         self.write(json.dumps(data))
         self.finish()
-
-
-class ConfigurationListAPIHandler(APIHandler):
-    def get(self):
-        self.render_json(
-            [
-                self.reverse_url("api-configuration-detail", os.path.basename(f))
-                for f in RaidenConfigurationFile.list_existing_files(self.installer_settings)
-            ]
-        )
 
 
 class KeystoreHandler(APIHandler):
@@ -445,9 +423,7 @@ class ConfigurationItemAPIHandler(APIHandler):
 
         self.render_json(
             {
-                "url": self.reverse_url("api-configuration-detail", configuration_file.file_name),
                 "file_name": configuration_file.file_name,
-                "account_page_url": self.reverse_url("account", configuration_file.file_name),
                 "account": configuration_file.account.address,
                 "network": configuration_file.network.name,
                 "balance": {
@@ -460,31 +436,27 @@ class ConfigurationItemAPIHandler(APIHandler):
         )
 
 
-def main(port: int, settings_name: str, additional_handlers: list):
+def create_app(settings_name: str, additional_handlers: list) -> Application:
     log.info("Starting web server")
 
     handlers = [
         url(r"/", IndexHandler, name="index"),
-        url(r"/configurations", ConfigurationListHandler, name="configuration-list"),
         url(r"/setup/(.*)", SetupHandler, name="setup"),
         url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
         url(r"/account/(.*)", AccountDetailHandler, name="account"),
         url(r"/keystore/(.*)/(.*)", KeystoreHandler, name="keystore"),
         url(r"/launch/(.*)", LaunchHandler, name="launch"),
-        url(
-            r"/api/configurations", ConfigurationListAPIHandler, name="api-configuration-list"
-        ),
+        url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
         url(
             r"/api/configuration/(.*)",
             ConfigurationItemAPIHandler,
             name="api-configuration-detail",
         ),
-        url(r"/gas_price/(.*)", GasPriceHandler, name="gas_price"),
     ]
 
     settings = load_settings(settings_name)
 
-    app = Application(
+    return Application(
         handlers + additional_handlers,
         debug=DEBUG,
         static_path=os.path.join(RESOURCE_FOLDER_PATH, "static"),
@@ -492,6 +464,8 @@ def main(port: int, settings_name: str, additional_handlers: list):
         installer_settings=settings
     )
 
+
+def run_server(app: Application, port: int):  # pragma: no cover
     sockets = bind_sockets(port, "localhost")
     server = HTTPServer(app)
     server.add_sockets(sockets)

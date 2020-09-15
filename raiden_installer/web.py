@@ -5,7 +5,7 @@ import time
 import wtforms
 from eth_utils import decode_hex
 from tornado.escape import json_decode
-from tornado.web import url
+from tornado.web import Application, url
 from wtforms_tornado import Form
 
 from raiden_installer import log
@@ -17,7 +17,9 @@ from raiden_installer.shared_handlers import (
     APIHandler,
     AsyncTaskHandler,
     BaseRequestHandler,
-    main,
+    create_app,
+    get_passphrase,
+    run_server,
     try_unlock,
 )
 from raiden_installer.token_exchange import Exchange, ExchangeError, Kyber, Uniswap
@@ -194,7 +196,7 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
             service_token_deposited = get_token_deposit(w3, account, service_token)
 
             if service_token_deposited < required.service_token:
-                swap_amount = swap_amounts.service_token_1
+                swap_amount = swap_amounts.service_token
 
                 if service_token_balance >= swap_amount:
                     deposit = swap_amount - service_token_deposited
@@ -262,6 +264,14 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
 class SwapHandler(BaseRequestHandler):
     def get(self, configuration_file_name, token_ticker):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
+        if get_passphrase() is None:
+            self.render(
+                "account_unlock.html",
+                keystore_file_path=configuration_file.account.keystore_file_path,
+                return_to=f"/swap/{configuration_file_name}/{token_ticker}",
+            )
+            return
+
         w3 = make_web3_provider(
             configuration_file.ethereum_client_rpc_endpoint, configuration_file.account
         )
@@ -271,13 +281,9 @@ class SwapHandler(BaseRequestHandler):
 
         swap_amounts = SwapAmounts.from_settings(self.installer_settings)
         if token_ticker == self.installer_settings.service_token.ticker:
-            swap_amount_1 = swap_amounts.service_token_1
-            swap_amount_2 = swap_amounts.service_token_2
-            swap_amount_3 = swap_amounts.service_token_3
+            swap_amount = swap_amounts.service_token
         elif token_ticker == self.installer_settings.transfer_token.ticker:
-            swap_amount_1 = swap_amounts.transfer_token_1
-            swap_amount_2 = swap_amounts.transfer_token_2
-            swap_amount_3 = swap_amounts.transfer_token_3
+            swap_amount = swap_amounts.transfer_token
 
         self.render(
             "swap.html",
@@ -285,42 +291,11 @@ class SwapHandler(BaseRequestHandler):
             kyber=kyber,
             uniswap=uniswap,
             token=token,
-            swap_amount_1=swap_amount_1,
-            swap_amount_2=swap_amount_2,
-            swap_amount_3=swap_amount_3,
+            swap_amount=swap_amount,
         )
 
 
 class CostEstimationAPIHandler(APIHandler):
-    def get(self, configuration_file_name):
-        # Returns the highest estimate of ETH needed to get required service token amount
-        configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        account = configuration_file.account
-        try_unlock(account)
-        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-        required = RequiredAmounts.from_settings(self.installer_settings)
-
-        kyber = Kyber(w3=w3)
-        uniswap = Uniswap(w3=w3)
-
-        highest_cost = 0
-        for exchange in (kyber, uniswap):
-            exchange_costs = exchange.calculate_transaction_costs(required.service_token, account)
-            if not exchange_costs:
-                continue
-            total_cost = exchange_costs["total"].as_wei
-            highest_cost = max(highest_cost, total_cost)
-
-        estimated_cost = EthereumAmount(Wei(highest_cost))
-        self.render_json(
-            {
-                "dex_swap_RDN": {
-                    "as_wei": estimated_cost.as_wei,
-                    "formatted": estimated_cost.formatted,
-                }
-            }
-        )
-
     def post(self, configuration_file_name):
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         account = configuration_file.account
@@ -353,12 +328,16 @@ class CostEstimationAPIHandler(APIHandler):
             )
 
 
-if __name__ == "__main__":
+def get_app() -> Application:
     additional_handlers = [
         url(r"/swap/(.*)/([A-Z]{3})", SwapHandler, name="swap"),
         url(r"/ws", MainAsyncTaskHandler, name="websocket"),
         url(r"/api/cost-estimation/(.*)", CostEstimationAPIHandler, name="api-cost-detail")
     ]
+    return create_app(SETTINGS, additional_handlers)
 
+
+if __name__ == "__main__":  # pragma: no cover
+    app = get_app()
     # port = (sum(ord(c) for c in "RAIDEN_WIZARD") + 1000) % 2 ** 16 - 1 = 1994
-    main(1994, SETTINGS, additional_handlers)
+    run_server(app, 1994)

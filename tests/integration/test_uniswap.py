@@ -3,7 +3,7 @@ import time
 
 import pytest
 from tests.constants import TESTING_KEYSTORE_FOLDER
-from tests.fixtures import create_account, test_password
+from tests.fixtures import create_account, test_account, test_password
 from tests.utils import empty_account
 
 from raiden_installer.constants import WEB3_TIMEOUT
@@ -115,11 +115,6 @@ def provide_liquidity(infura, create_account):
     yield
     removeLiquidity(w3, account, exchange_proxy)
     empty_account(w3, account)
-
-
-@pytest.fixture
-def test_account(create_account):
-    return create_account()
 
 
 @pytest.fixture

@@ -12,7 +12,7 @@ def test_password():
 
 
 @pytest.fixture
-def create_account(monkeypatch, test_password) -> Callable[[], Account]:
+def create_account(test_password) -> Callable[[], Account]:
     accounts = list()
 
     def _create_account():

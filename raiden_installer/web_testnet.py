@@ -38,7 +38,6 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
             return
 
         network = configuration_file.network
-
         if not network.FAUCET_AVAILABLE:
             self._send_error_message(
                 f"Can not run automatic funding for {network.capitalized_name}"
@@ -47,6 +46,10 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
 
         account = configuration_file.account
         try_unlock(account)
+        if account.passphrase is None:
+            self._send_error_message("Failed to unlock account! Please reload page")
+            return
+
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         self._send_status_update(f"Obtaining {network.capitalized_name} ETH through faucet")
         network.fund(account)
@@ -67,7 +70,6 @@ class TestnetAsyncTaskHandler(AsyncTaskHandler):
             wait_for_transaction(w3, tx_hash)
 
         service_token_balance = get_token_balance(w3, account, service_token)
-
         if service_token_balance.as_wei > 0:
             self._deposit_to_udc(w3, account, service_token, service_token_balance)
 

@@ -7,17 +7,19 @@ import pytest
 from eth_utils import add_0x_prefix
 from tests.constants import TESTING_TEMP_FOLDER
 from tests.fixtures import create_account, test_account, test_password
-from tornado import util
+from tests.utils import empty_account
 from tornado.httpclient import HTTPRequest
 from tornado.websocket import websocket_connect
 
 from raiden_installer import load_settings
 from raiden_installer.account import find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
-from raiden_installer.ethereum_rpc import Infura
+from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient
 from raiden_installer.shared_handlers import get_passphrase, set_passphrase
+from raiden_installer.tokens import Erc20Token
+from raiden_installer.transactions import get_token_balance, get_token_deposit
 from raiden_installer.web import get_app
 from raiden_installer.web_testnet import get_app as get_app_testnet
 
@@ -40,6 +42,22 @@ def successful_json_response(response):
 
 def is_unlock_page(body):
     return UNLOCK_PAGE_HEADLINE in body.decode("utf-8")
+
+
+def check_balances(w3, account, settings, check_func):
+    balance = account.get_ethereum_balance(w3)
+
+    service_token = Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network)
+    udc_balance = get_token_deposit(w3, account, service_token)
+
+    transfer_token = Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network)
+    transfer_token_balance = get_token_balance(w3, account, transfer_token)
+
+    return (
+        check_func(balance.as_wei) and
+        check_func(udc_balance.as_wei) and
+        check_func(transfer_token_balance.as_wei)
+    )
 
 
 class SharedHandlersTests:
@@ -79,7 +97,7 @@ class SharedHandlersTests:
         set_passphrase(None)
 
     @pytest.fixture
-    def ws_client(self, http_client, http_port, app):
+    def ws_client(self, http_client, http_port):
         loop = asyncio.get_event_loop()
         url = f"ws://localhost:{http_port}/ws"
         client = loop.run_until_complete(websocket_connect(url))
@@ -387,7 +405,7 @@ class TestWeb(SharedHandlersTests):
         assert successful_html_response(response)
         assert is_unlock_page(response.body)
 
-    @pytest.mark.gen_test(timeout=10)
+    @pytest.mark.gen_test(timeout=15)
     def test_cost_estimation_handler(self, http_client, base_url, config, settings):
         exchange = "Kyber"
         currency = settings.transfer_token.ticker
@@ -423,3 +441,69 @@ class TestWebTestnet(SharedHandlersTests):
     @pytest.fixture
     def settings_name(self):
         return "demo_env"
+
+    @pytest.mark.gen_test(timeout=900)
+    def test_funding(self, ws_client, config, test_account, unlocked, settings):
+        data = {
+            "method": "fund",
+            "configuration_file_name": config.file_name,
+        }
+        ws_client.write_message(json.dumps(data))
+
+        for _ in range(2):
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "status-update"
+
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "next-step"
+
+        for _ in range(3):
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "status-update"
+
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "next-step"
+
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "redirect"
+        assert message["redirect_url"] == f"/launch/{config.file_name}"
+
+        w3 = make_web3_provider(config.ethereum_client_rpc_endpoint, test_account)
+        assert check_balances(w3, test_account, settings, lambda x: x > 0)
+
+        empty_account(w3, test_account)
+
+    @pytest.mark.gen_test
+    def test_funding_with_invalid_config_file(
+        self,
+        ws_client,
+        config,
+        test_account,
+        unlocked,
+        settings
+    ):
+        data = {
+            "method": "fund",
+            "configuration_file_name": "invalid" + config.file_name,
+        }
+        ws_client.write_message(json.dumps(data))
+
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "error-message"
+
+        w3 = make_web3_provider(config.ethereum_client_rpc_endpoint, test_account)
+        assert check_balances(w3, test_account, settings, lambda x: x == 0)
+
+    @pytest.mark.gen_test
+    def test_locked_funding(self, ws_client, config, test_account, settings):
+        data = {
+            "method": "fund",
+            "configuration_file_name": config.file_name,
+        }
+        ws_client.write_message(json.dumps(data))
+
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "error-message"
+
+        w3 = make_web3_provider(config.ethereum_client_rpc_endpoint, test_account)
+        assert check_balances(w3, test_account, settings, lambda x: x == 0)

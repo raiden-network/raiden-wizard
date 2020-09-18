@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from eth_utils import add_0x_prefix
+from eth_utils import add_0x_prefix, encode_hex
 from tests.constants import TESTING_TEMP_FOLDER
 from tests.fixtures import create_account, test_account, test_password
 from tests.utils import empty_account
@@ -18,8 +18,9 @@ from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient
 from raiden_installer.shared_handlers import get_passphrase, set_passphrase
-from raiden_installer.tokens import Erc20Token
+from raiden_installer.tokens import ETH, Erc20Token, EthereumAmount, TokenAmount, Wei
 from raiden_installer.transactions import get_token_balance, get_token_deposit
+from raiden_installer.utils import TransactionTimeoutError
 from raiden_installer.web import get_app
 from raiden_installer.web_testnet import get_app as get_app_testnet
 
@@ -323,10 +324,7 @@ class SharedHandlersTests:
 
     @pytest.mark.gen_test
     def test_launch(self, ws_client, config, unlocked):
-        with patch(
-            "raiden_installer.raiden.RaidenClient.get_client",
-            spec=RaidenClient
-        ) as mock_get_client:
+        with patch("raiden_installer.raiden.RaidenClient.get_client") as mock_get_client:
             mock_client = mock_get_client()
             mock_client.is_installed = False
             mock_client.is_running = False
@@ -354,10 +352,7 @@ class SharedHandlersTests:
 
     @pytest.mark.gen_test
     def test_locked_launch(self, ws_client, config):
-        with patch(
-            "raiden_installer.raiden.RaidenClient.get_client",
-            spec=RaidenClient
-        ) as mock_get_client:
+        with patch("raiden_installer.raiden.RaidenClient.get_client") as mock_get_client:
             mock_client = mock_get_client()
             mock_client.is_installed = False
             mock_client.is_running = False
@@ -427,6 +422,348 @@ class TestWeb(SharedHandlersTests):
         assert json_response["currency"] == currency
         assert json_response["target_amount"] == target_amount
         assert json_response["as_wei"] > 0
+
+    # Websocket methods tests
+
+    @pytest.mark.gen_test
+    def test_track_transaction(self, ws_client, config, settings):
+        with patch("raiden_installer.web.wait_for_transaction") as mock_wait_for_transaction:
+            tx_hash_bytes = os.urandom(32)
+            tx_hash = encode_hex(tx_hash_bytes)
+            data = {
+                "method": "track_transaction",
+                "configuration_file_name": config.file_name,
+                "tx_hash": tx_hash
+            }
+            ws_client.write_message(json.dumps(data))
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "hash"
+            assert message["tx_hash"] == tx_hash
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "status-update"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "redirect"
+            assert message["redirect_url"] == (
+                f"/swap/{config.file_name}/{settings.service_token.ticker}"
+            )
+
+            mock_wait_for_transaction.assert_called_once()
+            args, _ = mock_wait_for_transaction.call_args
+            assert tx_hash_bytes in args
+
+            loaded_config = RaidenConfigurationFile.get_by_filename(config.file_name)
+            assert loaded_config._initial_funding_txhash == None
+
+    @pytest.mark.gen_test
+    def test_track_transaction_with_invalid_config(self, ws_client, config, io_loop):
+        with patch("raiden_installer.web.wait_for_transaction") as mock_wait_for_transaction:
+            tx_hash = encode_hex(os.urandom(32))
+            data = {
+                "method": "track_transaction",
+                "configuration_file_name": "invalid" + config.file_name,
+                "tx_hash": tx_hash
+            }
+            ws_client.write_message(json.dumps(data))
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "error-message"
+
+            mock_wait_for_transaction.assert_not_called()
+
+    @pytest.mark.gen_test(timeout=10)
+    def test_swap(self, ws_client, config, settings, unlocked):
+        def token_balance(w3, account, token):
+            return (
+                TokenAmount(0, token)
+                if token.ticker == settings.transfer_token.ticker
+                else TokenAmount(10, token)
+            )
+
+        with patch("raiden_installer.web.wait_for_transaction"), \
+            patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
+            patch(
+                "raiden_installer.account.Account.get_ethereum_balance",
+                return_value=TokenAmount(100, ETH)
+        ), \
+            patch(
+                "raiden_installer.web.get_token_balance",
+                side_effect=token_balance
+        ), \
+            patch(
+                "raiden_installer.web.get_total_token_owned",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+            patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens",
+                return_value=os.urandom(32)
+        ) as mock_deposit_service_tokens, \
+            patch(
+                "raiden_installer.shared_handlers.get_token_deposit",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+                patch("raiden_installer.shared_handlers.wait_for_transaction"):
+            mock_exchange = mock_get_exchange()()
+            mock_exchange.calculate_transaction_costs.return_value = {
+                "gas_price": EthereumAmount(Wei(1000000000)),
+                "gas": Wei(500000),
+                "eth_sold": EthereumAmount(0.5),
+                "total": EthereumAmount(0.505),
+                "exchange_rate": EthereumAmount(0.05),
+            }
+            mock_exchange.buy_tokens.return_value = os.urandom(32)
+            mock_exchange.name = "uniswap"
+
+            data = {
+                "method": "swap",
+                "configuration_file_name": config.file_name,
+                "amount": "10000000000000000000",
+                "token": settings.service_token.ticker,
+                "exchange": "uniswap"
+            }
+            ws_client.write_message(json.dumps(data))
+
+            for _ in range(8):
+                message = json.loads((yield ws_client.read_message()))
+                assert message["type"] == "status-update"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "summary"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "redirect"
+            assert message["redirect_url"] == (
+                f"/swap/{config.file_name}/{settings.transfer_token.ticker}"
+            )
+
+            mock_exchange.calculate_transaction_costs.assert_called_once()
+            mock_exchange.buy_tokens.assert_called_once()
+            mock_deposit_service_tokens.assert_called_once()
+
+    @pytest.mark.gen_test
+    def test_swap_with_invalid_exchange(self, ws_client, config, settings, unlocked):
+        with patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
+            patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens"
+        ) as mock_deposit_service_tokens:
+            mock_exchange = mock_get_exchange()()
+
+            data = {
+                "method": "swap",
+                "configuration_file_name": config.file_name,
+                "amount": "10000000000000000000",
+                "token": settings.service_token.ticker,
+                "exchange": "invalid exchange"
+            }
+            ws_client.write_message(json.dumps(data))
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "error-message"
+
+            mock_exchange.calculate_transaction_costs.assert_not_called()
+            mock_exchange.buy_tokens.assert_not_called()
+            mock_deposit_service_tokens.assert_not_called()
+
+    @pytest.mark.gen_test(timeout=10)
+    def test_swap_without_enough_eth(self, ws_client, config, settings, unlocked):
+        with patch("raiden_installer.web.wait_for_transaction"), \
+            patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
+            patch(
+                "raiden_installer.account.Account.get_ethereum_balance",
+                return_value=TokenAmount(0, ETH)
+        ), patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens"
+        ) as mock_deposit_service_tokens:
+            mock_exchange = mock_get_exchange()()
+            mock_exchange.calculate_transaction_costs.return_value = {
+                "gas_price": EthereumAmount(Wei(1000000000)),
+                "gas": Wei(500000),
+                "eth_sold": EthereumAmount(0.5),
+                "total": EthereumAmount(0.505),
+                "exchange_rate": EthereumAmount(0.05),
+            }
+
+            data = {
+                "method": "swap",
+                "configuration_file_name": config.file_name,
+                "amount": "10000000000000000000",
+                "token": settings.service_token.ticker,
+                "exchange": "uniswap"
+            }
+            ws_client.write_message(json.dumps(data))
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "status-update"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "error-message"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "summary"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "redirect"
+            assert message["redirect_url"] == (
+                f"/swap/{config.file_name}/{settings.service_token.ticker}"
+            )
+
+            mock_exchange.calculate_transaction_costs.assert_called_once()
+            mock_exchange.buy_tokens.assert_not_called()
+            mock_deposit_service_tokens.assert_not_called()
+
+    @pytest.mark.gen_test(timeout=10)
+    def test_swap_with_enough_transfer_tokens(self, ws_client, config, settings, unlocked):
+        with patch("raiden_installer.web.wait_for_transaction"), \
+            patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
+            patch(
+                "raiden_installer.account.Account.get_ethereum_balance",
+                return_value=TokenAmount(100, ETH)
+        ), \
+            patch(
+                "raiden_installer.web.get_token_balance",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+            patch(
+                "raiden_installer.web.get_total_token_owned",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+            patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens",
+                return_value=os.urandom(32)
+        ) as mock_deposit_service_tokens, \
+            patch(
+                "raiden_installer.shared_handlers.get_token_deposit",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+                patch("raiden_installer.shared_handlers.wait_for_transaction"):
+            mock_exchange = mock_get_exchange()()
+            mock_exchange.calculate_transaction_costs.return_value = {
+                "gas_price": EthereumAmount(Wei(1000000000)),
+                "gas": Wei(500000),
+                "eth_sold": EthereumAmount(0.5),
+                "total": EthereumAmount(0.505),
+                "exchange_rate": EthereumAmount(0.05),
+            }
+            mock_exchange.buy_tokens.return_value = os.urandom(32)
+            mock_exchange.name = "uniswap"
+
+            data = {
+                "method": "swap",
+                "configuration_file_name": config.file_name,
+                "amount": "10000000000000000000",
+                "token": settings.service_token.ticker,
+                "exchange": "uniswap"
+            }
+            ws_client.write_message(json.dumps(data))
+
+            for _ in range(8):
+                message = json.loads((yield ws_client.read_message()))
+                assert message["type"] == "status-update"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "summary"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "redirect"
+            assert message["redirect_url"] == (
+                f"/launch/{config.file_name}"
+            )
+
+            mock_exchange.calculate_transaction_costs.assert_called_once()
+            mock_exchange.buy_tokens.assert_called_once()
+            mock_deposit_service_tokens.assert_called_once()
+
+    @pytest.mark.gen_test(timeout=15)
+    def test_udc_deposit(self, ws_client, config, settings, unlocked):
+        with patch(
+                "raiden_installer.web.get_token_balance",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+            patch(
+                "raiden_installer.web.get_token_deposit",
+                side_effect=lambda w3, account, token: TokenAmount(0, token)
+        ), \
+            patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens",
+                return_value=os.urandom(32)
+        ) as mock_deposit_service_tokens, \
+            patch(
+                "raiden_installer.shared_handlers.get_token_deposit",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+                patch("raiden_installer.shared_handlers.wait_for_transaction"):
+            data = {
+                "method": "udc_deposit",
+                "configuration_file_name": config.file_name,
+            }
+            ws_client.write_message(json.dumps(data))
+
+            for _ in range(3):
+                message = json.loads((yield ws_client.read_message()))
+                assert message["type"] == "status-update"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "summary"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "redirect"
+            assert message["redirect_url"] == (
+                f"/launch/{config.file_name}"
+            )
+
+            mock_deposit_service_tokens.assert_called_once()
+
+    @pytest.mark.gen_test
+    def test_udc_deposit_without_config(self, ws_client, config, settings, unlocked):
+        with patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens"
+        ) as mock_deposit_service_tokens:
+            data = {
+                "method": "udc_deposit",
+            }
+            ws_client.write_message(json.dumps(data))
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "error-message"
+
+            mock_deposit_service_tokens.assert_not_called()
+
+    @pytest.mark.gen_test(timeout=15)
+    def test_udc_deposit_when_already_deposited(self, ws_client, config, settings, unlocked):
+        required_deposit = Wei(settings.service_token.amount_required)
+
+        with patch(
+                "raiden_installer.web.get_token_balance",
+                side_effect=lambda w3, account, token: TokenAmount(10, token)
+        ), \
+            patch(
+                "raiden_installer.web.get_token_deposit",
+                side_effect=lambda w3, account, token: TokenAmount(required_deposit, token)
+        ), \
+            patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens"
+        ) as mock_deposit_service_tokens:
+            data = {
+                "method": "udc_deposit",
+                "configuration_file_name": config.file_name,
+            }
+            ws_client.write_message(json.dumps(data))
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "status-update"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "summary"
+
+            message = json.loads((yield ws_client.read_message()))
+            assert message["type"] == "redirect"
+            assert message["redirect_url"] == (
+                f"/launch/{config.file_name}"
+            )
+
+            mock_deposit_service_tokens.assert_not_called()
 
 
 class TestWebTestnet(SharedHandlersTests):

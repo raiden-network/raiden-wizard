@@ -122,22 +122,6 @@ class AsyncTaskHandler(WebSocketHandler):
         self.write_message(json.dumps({"type": "redirect", "redirect_url": redirect_url}))
         log.info(f"Redirecting to {redirect_url}")
 
-    def _send_summary(self, text, **kw):
-        if not isinstance(text, list):
-            text = [text]
-        message = {"type": "summary", "text": text}
-        icon = kw.get("icon")
-        if icon:
-            message["icon"] = icon
-        self.write_message(message)
-
-    def _send_txhash_message(self, text, tx_hash):
-        if not isinstance(text, list):
-            text = [text]
-        message = {"type": "hash", "text": text, "tx_hash": tx_hash}
-        self.write_message(message)
-        log.info(f"Waiting for confirmation of txhash {tx_hash}")
-
     def _deposit_to_udc(self, w3, account, service_token, deposit_amount):
         self._send_status_update(
             f"Making deposit of {deposit_amount.formatted} to the "

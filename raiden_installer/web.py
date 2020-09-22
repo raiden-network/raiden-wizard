@@ -318,12 +318,12 @@ class CostEstimationAPIHandler(APIHandler):
         try_unlock(account)
         w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
         ex_currency_amt = json_decode(self.request.body)
-        exchange = Exchange.get_by_name(ex_currency_amt["exchange"])(w3=w3)
         currency = Erc20Token.find_by_ticker(
             ex_currency_amt["currency"], configuration_file.network.name
         )
         token_amount = TokenAmount(ex_currency_amt["target_amount"], currency)
         try:
+            exchange = Exchange.get_by_name(ex_currency_amt["exchange"])(w3=w3)
             exchange_costs = exchange.calculate_transaction_costs(token_amount, account)
             total_cost = exchange_costs["total"]
             self.render_json(

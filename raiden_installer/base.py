@@ -51,7 +51,7 @@ class RaidenConfigurationFile:
         base_config = {
             "environment-type": self.environment_type,
             "keystore-path": str(self.account.keystore_file_path.parent),
-            "address": to_checksum_address(self.account.address),
+            "address": self.account.address,
             "network-id": self.network.name,
             "accept-disclaimer": self.accept_disclaimer,
             "eth-rpc-endpoint": self.ethereum_client_rpc_endpoint,

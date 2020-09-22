@@ -6,10 +6,10 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from raiden_installer.account import Account
-from raiden_installer.constants import GAS_LIMIT_MARGIN, WEB3_TIMEOUT
+from raiden_installer.constants import GAS_LIMIT_MARGIN, NULL_ADDRESS, WEB3_TIMEOUT
 from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from raiden_installer.network import Network
-from raiden_installer.tokens import EthereumAmount, TokenAmount, TokenTicker, Wei
+from raiden_installer.tokens import Erc20Token, EthereumAmount, TokenAmount, TokenTicker, Wei
 from raiden_installer.uniswap.web3 import contracts as uniswap_contracts
 from raiden_installer.utils import estimate_gas, send_raw_transaction
 
@@ -196,38 +196,39 @@ class Kyber(Exchange):
 
 
 class Uniswap(Exchange):
-    EXCHANGE_ADDRESSES = {
-        "RDN": {"mainnet": "0x7D03CeCb36820b4666F45E1b4cA2538724Db271C"},
-        "DAI": {"mainnet": "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"}
-    }
-    EXCHANGE_TIMEOUT = WEB3_TIMEOUT  # maximum waiting time in seconds
+    ROUTER02_ADDRESS = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"  # same address on all networks
+    SUPPORTED_NETWORKS = ["mainnet", "ropsten", "rinkeby", "goerli", "kovan"]
 
-    def _get_exchange_proxy(self, token_ticker):
+    def __init__(self, w3: Web3):
+        super().__init__(w3=w3)
+        if not self.network.name in self.SUPPORTED_NETWORKS:
+            raise ExchangeError(f"{self.name} does not support {self.network.name}")
+
+        self.router_proxy = self.w3.eth.contract(
+            abi=uniswap_contracts.UNISWAP_ROUTER02_ABI,
+            address=self.ROUTER02_ADDRESS,
+        )
+        self.weth_address = self.router_proxy.functions.WETH().call()
+
+    def _get_factory_proxy(self):
+        factory_address = self.router_proxy.functions.factory().call()
         return self.w3.eth.contract(
-            abi=uniswap_contracts.UNISWAP_EXCHANGE_ABI,
-            address=self._get_exchange_address(token_ticker),
+            abi=uniswap_contracts.UNISWAP_FACTORY_ABI,
+            address=factory_address,
         )
 
-    def is_listing_token(self, ticker: TokenTicker):
-        try:
-            self._get_exchange_address(ticker)
-            return True
-        except ExchangeError:
-            return False
-
-    def _get_exchange_address(self, token_ticker: TokenTicker) -> str:
-        try:
-            return self.EXCHANGE_ADDRESSES[token_ticker][self.network.name]
-        except KeyError:
-            raise ExchangeError(f"{self.name} does not have a listed exchange for {token_ticker}")
+    def is_listing_token(self, token_ticker: TokenTicker):
+        factory_proxy = self._get_factory_proxy()
+        token = Erc20Token.find_by_ticker(token_ticker, self.network.name)
+        pair_address = factory_proxy.functions.getPair(self.weth_address, token.address).call()
+        return pair_address != NULL_ADDRESS
 
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
         eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
         gas_price = EthereumAmount(Wei(self.w3.eth.generateGasPrice()))
-        exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
         latest_block = self.w3.eth.getBlock("latest")
-        deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
+        deadline = latest_block.timestamp + WEB3_TIMEOUT
         transaction_params = {
             "from": account.address,
             "value": eth_sold.as_wei,
@@ -237,8 +238,10 @@ class Uniswap(Exchange):
         gas = estimate_gas(
             self.w3,
             account,
-            exchange_proxy.functions.ethToTokenSwapOutput,
+            self.router_proxy.functions.swapETHForExactTokens,
             token_amount.as_wei,
+            [self.weth_address, token_amount.address],
+            account.address,
             deadline,
             **transaction_params,
         )
@@ -258,31 +261,31 @@ class Uniswap(Exchange):
         }
 
     def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):
-        exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
         latest_block = self.w3.eth.getBlock("latest")
-        deadline = latest_block.timestamp + self.EXCHANGE_TIMEOUT
+        deadline = latest_block.timestamp + WEB3_TIMEOUT
         gas = transaction_costs["gas"]
         gas_price = transaction_costs["gas_price"]
         transaction_params = {
             "from": account.address,
             "value": transaction_costs["total"].as_wei,
-            "gas": 2 * gas,  # estimated gas sometimes is not enough
+            "gas": gas,
             "gas_price": gas_price.as_wei,
         }
 
         return send_raw_transaction(
             self.w3,
             account,
-            exchange_proxy.functions.ethToTokenSwapOutput,
+            self.router_proxy.functions.swapETHForExactTokens,
             token_amount.as_wei,
+            [self.weth_address, token_amount.address],
+            account.address,
             deadline,
             **transaction_params,
         )
 
     def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
-        exchange_proxy = self._get_exchange_proxy(token_amount.ticker)
-
-        eth_to_sell = EthereumAmount(
-            Wei(exchange_proxy.functions.getEthToTokenOutputPrice(token_amount.as_wei).call())
-        )
+        amounts_in = self.router_proxy.functions.getAmountsIn(
+            token_amount.as_wei, [self.weth_address, token_amount.address]
+        ).call()
+        eth_to_sell = EthereumAmount(Wei(amounts_in[0]))
         return EthereumAmount(eth_to_sell.value / token_amount.value)

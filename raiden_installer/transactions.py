@@ -23,19 +23,19 @@ def _make_deposit_proxy(w3: Web3, token: Erc20Token):
 
     service_token_address = to_checksum_address(proxy.functions.token().call())
 
-    if service_token_address != to_checksum_address(token.address):
+    if service_token_address != token.address:
         raise ValueError(f"{token.ticker} is at {token.address}, expected {service_token_address}")
     return proxy
 
 
 def _make_token_proxy(w3: Web3, token: Erc20Token):
-    return w3.eth.contract(address=to_checksum_address(token.address), abi=EIP20_ABI)
+    return w3.eth.contract(address=token.address, abi=EIP20_ABI)
 
 
 def mint_tokens(w3: Web3, account: Account, token: Erc20Token):
     contract_manager = ContractManager(contracts_precompiled_path())
     token_proxy = w3.eth.contract(
-        address=to_checksum_address(token.address),
+        address=token.address,
         abi=contract_manager.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
     )
 

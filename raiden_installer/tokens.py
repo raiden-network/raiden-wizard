@@ -3,6 +3,8 @@ from decimal import Decimal, getcontext
 from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
+from eth_utils import to_checksum_address
+
 from raiden_contracts.constants import CONTRACTS_VERSION
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
@@ -63,7 +65,7 @@ class Erc20Token(Currency):
             raise TokenError(f"Network is not set for {self.ticker}")
 
         try:
-            return self.addresses[self.network_name]
+            return to_checksum_address(self.addresses[self.network_name])
         except KeyError as exc:
             raise TokenError(f"{self.ticker} is not deployed on {self.network_name}") from exc
 

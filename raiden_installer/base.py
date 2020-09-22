@@ -84,11 +84,6 @@ class RaidenConfigurationFile:
     def path(self):
         return self.FOLDER_PATH.joinpath(self.file_name)
 
-    @property
-    def ethereum_balance(self):
-        w3 = make_web3_provider(self.ethereum_client_rpc_endpoint, self.account)
-        return self.account.get_ethereum_balance(w3)
-
     def save(self):
         self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 

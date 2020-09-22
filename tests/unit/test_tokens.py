@@ -16,8 +16,8 @@ class TokenAmountTestCase(unittest.TestCase):
     def setUp(self):
         self.one_eth = EthereumAmount(1)
         self.two_eth = EthereumAmount(2)
-        self.one_rdn = TokenAmount(1, Erc20Token.find_by_ticker("RDN"))
-        self.one_wiz = TokenAmount(1, Erc20Token.find_by_ticker("WIZ"))
+        self.one_rdn = TokenAmount(1, Erc20Token.find_by_ticker("RDN", "mainnet"))
+        self.one_wiz = TokenAmount(1, Erc20Token.find_by_ticker("WIZ", "goerli"))
 
     def test_can_convert_to_wei(self):
         self.assertEqual(self.one_eth.as_wei, Wei(10 ** 18))
@@ -93,6 +93,10 @@ class TokenAmountTestCase(unittest.TestCase):
     def test_cannot_compare_different_currencies_with_ge_operator(self):
         with self.assertRaises(ValueError):
             self.one_rdn >= self.one_wiz
+
+    def test_can_get_address(self):
+        rdn_token = Erc20Token.find_by_ticker("RDN", "mainnet")
+        self.assertEqual(self.one_rdn.address, rdn_token.address)
 
 
 class Erc20TokenTestCase(unittest.TestCase):

@@ -55,20 +55,20 @@ class Currency:
 class Erc20Token(Currency):
     supply: int = 10 ** 21
     addresses: Dict[str, str] = field(default_factory=dict)
-    network: Optional[str] = None
+    network_name: Optional[str] = None
 
     @property
     def address(self) -> str:
-        if self.network is None:
+        if self.network_name is None:
             raise TokenError(f"Network is not set for {self.ticker}")
 
         try:
-            return self.addresses[self.network]
+            return self.addresses[self.network_name]
         except KeyError as exc:
-            raise TokenError(f"{self.ticker} is not deployed on {self.network}") from exc
+            raise TokenError(f"{self.ticker} is not deployed on {self.network_name}") from exc
 
     @staticmethod
-    def find_by_ticker(ticker, network=None):
+    def find_by_ticker(ticker, network_name=None):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
         token_list_version = {
@@ -77,13 +77,10 @@ class Erc20Token(Currency):
             "0.36": TokensV36,
             "0.37": TokensV37,
         }.get(version_string, Tokens)
-        return replace(token_list_version[ticker].value, network=network)
+        return replace(token_list_version[ticker].value, network_name=network_name)
 
 
-ETH = Currency(ticker="ETH", wei_ticker="WEI")
-
-
-class TokenAmount(Generic[Eth_T]):
+class CurrencyAmount(Generic[Eth_T]):
     def __init__(self, value: Eth_T, currency: Currency):
         context = getcontext()
         context.prec = currency.decimals
@@ -113,13 +110,13 @@ class TokenAmount(Generic[Eth_T]):
         if not self.currency == other.currency:
             raise ValueError(f"Cannot add {self.formatted} and {other.formatted}")
 
-        return TokenAmount(Wei(self.as_wei + other.as_wei), self.currency)
+        return CurrencyAmount(Wei(self.as_wei + other.as_wei), self.currency)
 
     def __sub__(self, other):
         if not self.currency == other.currency:
             raise ValueError(f"Cannot sub {self.formatted} and {other.formatted}")
 
-        return TokenAmount(Wei(self.as_wei - other.as_wei), self.currency)
+        return CurrencyAmount(Wei(self.as_wei - other.as_wei), self.currency)
 
     def __eq__(self, other):
         return self.currency == other.currency and self.as_wei == other.as_wei
@@ -147,7 +144,16 @@ class TokenAmount(Generic[Eth_T]):
         return self.as_wei >= other.as_wei
 
 
-class EthereumAmount(TokenAmount):
+class TokenAmount(CurrencyAmount):
+    def __init__(self, value: Eth_T, currency: Erc20Token):
+        super().__init__(value, currency)
+        self.address = currency.address
+
+
+ETH = Currency(ticker="ETH", wei_ticker="WEI")
+
+
+class EthereumAmount(CurrencyAmount):
     def __init__(self, value: Eth_T):
         super().__init__(value, ETH)
 

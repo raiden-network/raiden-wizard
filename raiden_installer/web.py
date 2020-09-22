@@ -320,7 +320,7 @@ class CostEstimationAPIHandler(APIHandler):
         ex_currency_amt = json_decode(self.request.body)
         exchange = Exchange.get_by_name(ex_currency_amt["exchange"])(w3=w3)
         currency = Erc20Token.find_by_ticker(
-            ex_currency_amt["currency"], configuration_file.network
+            ex_currency_amt["currency"], configuration_file.network.name
         )
         token_amount = TokenAmount(ex_currency_amt["target_amount"], currency)
         try:

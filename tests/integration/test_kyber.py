@@ -46,7 +46,7 @@ KNC_TOKEN = Erc20Token(
     ticker="KNC",
     wei_ticker="KEI",
     addresses={"ganache": kyber_snapshot_addresses.TokenAddress.KNC.value},
-    network="ganache"
+    network_name="ganache"
 )
 
 

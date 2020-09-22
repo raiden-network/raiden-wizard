@@ -267,7 +267,7 @@ class Uniswap(Exchange):
         gas_price = transaction_costs["gas_price"]
         transaction_params = {
             "from": account.address,
-            "value": transaction_costs["total"].as_wei,
+            "value": transaction_costs["eth_sold"].as_wei,
             "gas": gas,
             "gas_price": gas_price.as_wei,
         }

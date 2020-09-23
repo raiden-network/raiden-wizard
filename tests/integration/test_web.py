@@ -384,6 +384,28 @@ class TestWeb(SharedHandlersTests):
     def settings_name(self):
         return "mainnet"
 
+    @pytest.fixture
+    def mock_get_exchange(self):
+        with patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange:
+            yield mock_get_exchange
+
+    @pytest.fixture
+    def mock_deposit_service_tokens(self):
+        with patch(
+                "raiden_installer.shared_handlers.deposit_service_tokens",
+                return_value=os.urandom(32)
+        ) as mock_deposit_service_tokens:
+            yield mock_deposit_service_tokens
+
+    @pytest.fixture
+    def mock_wait_for_transaction(self):
+        with patch(
+            "raiden_installer.web.wait_for_transaction"
+        ), patch(
+            "raiden_installer.shared_handlers.wait_for_transaction"
+        ):
+            yield
+
     @pytest.mark.gen_test
     def test_swap_handler(self, http_client, base_url, config, settings, unlocked):
         response = yield http_client.fetch(
@@ -474,7 +496,16 @@ class TestWeb(SharedHandlersTests):
             mock_wait_for_transaction.assert_not_called()
 
     @pytest.mark.gen_test(timeout=10)
-    def test_swap(self, ws_client, config, settings, unlocked):
+    def test_swap(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_get_exchange,
+        mock_deposit_service_tokens,
+        mock_wait_for_transaction
+    ):
         def token_balance(w3, account, token):
             return (
                 TokenAmount(0, token)
@@ -482,29 +513,24 @@ class TestWeb(SharedHandlersTests):
                 else TokenAmount(10, token)
             )
 
-        with patch("raiden_installer.web.wait_for_transaction"), \
-            patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
-            patch(
-                "raiden_installer.account.Account.get_ethereum_balance",
-                return_value=TokenAmount(100, ETH)
-        ), \
-            patch(
-                "raiden_installer.web.get_token_balance",
-                side_effect=token_balance
-        ), \
-            patch(
-                "raiden_installer.web.get_total_token_owned",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-            patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens",
-                return_value=os.urandom(32)
-        ) as mock_deposit_service_tokens, \
-            patch(
-                "raiden_installer.shared_handlers.get_token_deposit",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-                patch("raiden_installer.shared_handlers.wait_for_transaction"):
+        eth_balance_patch = patch(
+            "raiden_installer.account.Account.get_ethereum_balance",
+            return_value=EthereumAmount(100)
+        )
+        token_balance_patch = patch(
+            "raiden_installer.web.get_token_balance",
+            side_effect=token_balance
+        )
+        total_tokens_patch = patch(
+            "raiden_installer.web.get_total_token_owned",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+        token_deposit_patch = patch(
+            "raiden_installer.shared_handlers.get_token_deposit",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+
+        with eth_balance_patch, token_balance_patch, total_tokens_patch, token_deposit_patch:
             mock_exchange = mock_get_exchange()()
             mock_exchange.calculate_transaction_costs.return_value = {
                 "gas_price": EthereumAmount(Wei(1000000000)),
@@ -543,39 +569,48 @@ class TestWeb(SharedHandlersTests):
             mock_deposit_service_tokens.assert_called_once()
 
     @pytest.mark.gen_test
-    def test_swap_with_invalid_exchange(self, ws_client, config, settings, unlocked):
-        with patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
-            patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens"
-        ) as mock_deposit_service_tokens:
-            mock_exchange = mock_get_exchange()()
+    def test_swap_with_invalid_exchange(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_get_exchange,
+        mock_deposit_service_tokens
+    ):
+        mock_exchange = mock_get_exchange()()
 
-            data = {
-                "method": "swap",
-                "configuration_file_name": config.file_name,
-                "amount": "10000000000000000000",
-                "token": settings.service_token.ticker,
-                "exchange": "invalid exchange"
-            }
-            ws_client.write_message(json.dumps(data))
+        data = {
+            "method": "swap",
+            "configuration_file_name": config.file_name,
+            "amount": "10000000000000000000",
+            "token": settings.service_token.ticker,
+            "exchange": "invalid exchange"
+        }
+        ws_client.write_message(json.dumps(data))
 
-            message = json.loads((yield ws_client.read_message()))
-            assert message["type"] == "error-message"
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "error-message"
 
-            mock_exchange.calculate_transaction_costs.assert_not_called()
-            mock_exchange.buy_tokens.assert_not_called()
-            mock_deposit_service_tokens.assert_not_called()
+        mock_exchange.calculate_transaction_costs.assert_not_called()
+        mock_exchange.buy_tokens.assert_not_called()
+        mock_deposit_service_tokens.assert_not_called()
 
     @pytest.mark.gen_test(timeout=10)
-    def test_swap_without_enough_eth(self, ws_client, config, settings, unlocked):
-        with patch("raiden_installer.web.wait_for_transaction"), \
-            patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
-            patch(
+    def test_swap_without_enough_eth(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_get_exchange,
+        mock_deposit_service_tokens,
+        mock_wait_for_transaction
+    ):
+        with patch(
                 "raiden_installer.account.Account.get_ethereum_balance",
-                return_value=TokenAmount(0, ETH)
-        ), patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens"
-        ) as mock_deposit_service_tokens:
+                return_value=EthereumAmount(0)
+        ):
             mock_exchange = mock_get_exchange()()
             mock_exchange.calculate_transaction_costs.return_value = {
                 "gas_price": EthereumAmount(Wei(1000000000)),
@@ -614,30 +649,34 @@ class TestWeb(SharedHandlersTests):
             mock_deposit_service_tokens.assert_not_called()
 
     @pytest.mark.gen_test(timeout=10)
-    def test_swap_with_enough_transfer_tokens(self, ws_client, config, settings, unlocked):
-        with patch("raiden_installer.web.wait_for_transaction"), \
-            patch("raiden_installer.token_exchange.Exchange.get_by_name") as mock_get_exchange, \
-            patch(
-                "raiden_installer.account.Account.get_ethereum_balance",
-                return_value=TokenAmount(100, ETH)
-        ), \
-            patch(
-                "raiden_installer.web.get_token_balance",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-            patch(
-                "raiden_installer.web.get_total_token_owned",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-            patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens",
-                return_value=os.urandom(32)
-        ) as mock_deposit_service_tokens, \
-            patch(
-                "raiden_installer.shared_handlers.get_token_deposit",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-                patch("raiden_installer.shared_handlers.wait_for_transaction"):
+    def test_swap_with_enough_transfer_tokens(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_get_exchange,
+        mock_deposit_service_tokens,
+        mock_wait_for_transaction
+    ):
+        eth_balance_patch = patch(
+            "raiden_installer.account.Account.get_ethereum_balance",
+            return_value=EthereumAmount(100)
+        )
+        token_balance_patch = patch(
+            "raiden_installer.web.get_token_balance",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+        total_tokens_patch = patch(
+            "raiden_installer.web.get_total_token_owned",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+        token_deposit_patch = patch(
+            "raiden_installer.shared_handlers.get_token_deposit",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+
+        with eth_balance_patch, token_balance_patch, total_tokens_patch, token_deposit_patch:
             mock_exchange = mock_get_exchange()()
             mock_exchange.calculate_transaction_costs.return_value = {
                 "gas_price": EthereumAmount(Wei(1000000000)),
@@ -676,24 +715,29 @@ class TestWeb(SharedHandlersTests):
             mock_deposit_service_tokens.assert_called_once()
 
     @pytest.mark.gen_test(timeout=15)
-    def test_udc_deposit(self, ws_client, config, settings, unlocked):
-        with patch(
-                "raiden_installer.web.get_token_balance",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-            patch(
-                "raiden_installer.web.get_token_deposit",
-                side_effect=lambda w3, account, token: TokenAmount(0, token)
-        ), \
-            patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens",
-                return_value=os.urandom(32)
-        ) as mock_deposit_service_tokens, \
-            patch(
-                "raiden_installer.shared_handlers.get_token_deposit",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-                patch("raiden_installer.shared_handlers.wait_for_transaction"):
+    def test_udc_deposit(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_deposit_service_tokens,
+        mock_wait_for_transaction
+    ):
+        token_balance_patch = patch(
+            "raiden_installer.web.get_token_balance",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+        token_deposit_patch_web = patch(
+            "raiden_installer.web.get_token_deposit",
+            side_effect=lambda w3, account, token: TokenAmount(0, token)
+        )
+        token_deposit_patch_shared = patch(
+            "raiden_installer.shared_handlers.get_token_deposit",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+
+        with token_balance_patch, token_deposit_patch_web, token_deposit_patch_shared:
             data = {
                 "method": "udc_deposit",
                 "configuration_file_name": config.file_name,
@@ -716,35 +760,44 @@ class TestWeb(SharedHandlersTests):
             mock_deposit_service_tokens.assert_called_once()
 
     @pytest.mark.gen_test
-    def test_udc_deposit_without_config(self, ws_client, config, settings, unlocked):
-        with patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens"
-        ) as mock_deposit_service_tokens:
-            data = {
-                "method": "udc_deposit",
-            }
-            ws_client.write_message(json.dumps(data))
+    def test_udc_deposit_without_config(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_deposit_service_tokens
+    ):
+        data = {
+            "method": "udc_deposit",
+        }
+        ws_client.write_message(json.dumps(data))
 
-            message = json.loads((yield ws_client.read_message()))
-            assert message["type"] == "error-message"
+        message = json.loads((yield ws_client.read_message()))
+        assert message["type"] == "error-message"
 
-            mock_deposit_service_tokens.assert_not_called()
+        mock_deposit_service_tokens.assert_not_called()
 
     @pytest.mark.gen_test(timeout=15)
-    def test_udc_deposit_when_already_deposited(self, ws_client, config, settings, unlocked):
+    def test_udc_deposit_when_already_deposited(
+        self,
+        ws_client,
+        config,
+        settings,
+        unlocked,
+        mock_deposit_service_tokens
+    ):
         required_deposit = Wei(settings.service_token.amount_required)
+        token_balance_patch = patch(
+            "raiden_installer.web.get_token_balance",
+            side_effect=lambda w3, account, token: TokenAmount(10, token)
+        )
+        token_deposit_patch = patch(
+            "raiden_installer.web.get_token_deposit",
+            side_effect=lambda w3, account, token: TokenAmount(required_deposit, token)
+        )
 
-        with patch(
-                "raiden_installer.web.get_token_balance",
-                side_effect=lambda w3, account, token: TokenAmount(10, token)
-        ), \
-            patch(
-                "raiden_installer.web.get_token_deposit",
-                side_effect=lambda w3, account, token: TokenAmount(required_deposit, token)
-        ), \
-            patch(
-                "raiden_installer.shared_handlers.deposit_service_tokens"
-        ) as mock_deposit_service_tokens:
+        with token_balance_patch, token_deposit_patch:
             data = {
                 "method": "udc_deposit",
                 "configuration_file_name": config.file_name,

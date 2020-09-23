@@ -1,4 +1,3 @@
-import math
 import os
 import time
 
@@ -57,8 +56,8 @@ def addLiquidity(w3, account, router_proxy, current_rate):
         router_proxy.functions.addLiquidityETH,
         WIZ_TOKEN.address,
         token_amount_desired.as_wei,
-        math.floor(token_amount_desired.as_wei * 0.8),
-        math.floor(eth_amount.as_wei * 0.8),
+        int(token_amount_desired.as_wei * 0.8),
+        int(eth_amount.as_wei * 0.8),
         account.address,
         deadline,
         **transaction_params,

@@ -6,7 +6,12 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 
 from raiden_installer.account import Account
-from raiden_installer.constants import GAS_LIMIT_MARGIN, NULL_ADDRESS, WEB3_TIMEOUT
+from raiden_installer.constants import (
+    EXCHANGE_PRICE_MARGIN,
+    GAS_LIMIT_MARGIN,
+    NULL_ADDRESS,
+    WEB3_TIMEOUT,
+)
 from raiden_installer.kyber.web3 import contracts as kyber_contracts, tokens as kyber_tokens
 from raiden_installer.network import Network
 from raiden_installer.tokens import Erc20Token, EthereumAmount, TokenAmount, TokenTicker, Wei
@@ -110,7 +115,9 @@ class Kyber(Exchange):
         log.debug("calculating exchange rate")
         exchange_rate = self.get_current_rate(token_amount)
 
-        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value * Decimal(1.2))
+        eth_sold = EthereumAmount(
+            token_amount.value * exchange_rate.value * Decimal(EXCHANGE_PRICE_MARGIN)
+        )
         log.debug("calculating gas price")
         web3_gas_price = self.w3.eth.generateGasPrice()
         kyber_max_gas_price = self.network_contract_proxy.functions.maxGasPrice().call()
@@ -225,7 +232,9 @@ class Uniswap(Exchange):
 
     def _calculate_transaction_costs(self, token_amount: TokenAmount, account: Account) -> dict:
         exchange_rate = self.get_current_rate(token_amount)
-        eth_sold = EthereumAmount(token_amount.value * exchange_rate.value)
+        eth_sold = EthereumAmount(
+            token_amount.value * exchange_rate.value * Decimal(EXCHANGE_PRICE_MARGIN)
+        )
         gas_price = EthereumAmount(Wei(self.w3.eth.generateGasPrice()))
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + WEB3_TIMEOUT
@@ -263,11 +272,12 @@ class Uniswap(Exchange):
     def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + WEB3_TIMEOUT
+        eth_sold = transaction_costs["eth_sold"].as_wei
         gas = transaction_costs["gas"]
         gas_price = transaction_costs["gas_price"]
         transaction_params = {
             "from": account.address,
-            "value": transaction_costs["eth_sold"].as_wei,
+            "value": eth_sold,
             "gas": gas,
             "gas_price": gas_price.as_wei,
         }

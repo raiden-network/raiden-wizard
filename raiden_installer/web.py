@@ -69,6 +69,7 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
         if icon:
             message["icon"] = icon
         self.write_message(message)
+        log.info(" ".join(text))
 
     def _send_txhash_message(self, text, tx_hash):
         if not isinstance(text, list):
@@ -182,7 +183,6 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
         self._send_redirect(redirect_url)
 
     def _redirect_after_swap_error(self, exc, configuration_file_name, token_ticker):
-        self._send_error_message(str(exc))
         next_page = f"Try again to exchange {token_ticker}..."
         self._send_summary(["Transaction failed", str(exc), next_page], icon="error")
         time.sleep(5)

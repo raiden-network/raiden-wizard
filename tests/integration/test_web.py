@@ -633,9 +633,6 @@ class TestWeb(SharedHandlersTests):
             assert message["type"] == "status-update"
 
             message = json.loads((yield ws_client.read_message()))
-            assert message["type"] == "error-message"
-
-            message = json.loads((yield ws_client.read_message()))
             assert message["type"] == "summary"
 
             message = json.loads((yield ws_client.read_message()))

@@ -49,20 +49,35 @@
 <div class="action">
   <button type="submit" disabled>Confirm</button>
 </div>
-{% end %} {% block question %}
-<div class="question">
-  <span class="tooltip-item" id="{{ token.ticker }}">
-    <a target="_blank">
-      <img
-        class="icon-link big"
-        src="{{ static_url('images/question.png') }}"
-        alt="Questions"
-      />
-    </a>
-    <div class="tooltip"></div>
-  </span>
-</div>
-{% end %} {% block page_header_scripts %}
+{% end %}
+
+{% block question_items %}
+  {% if token.ticker == "RDN" %}
+    <li>
+      The Raiden Network consists of a few services in order to increase the security and reliability of the network.
+    </li>
+    <li>
+      RDN tokens are required to pay for path finding and monitoring service providers. 
+      These tokens need to be deposited into the User Deposit Contract.
+      By clicking confirm the tokens will be bought and deposited instantly on your behalf.
+    </li>
+    <li>
+      A minimum of 10 RDN is recommended to get started and be able to play around for a while.
+    </li>
+  {% elif token.ticker == "DAI" %}
+    <li>
+      The Raiden Client offers to join the DAI token network. You can make payments in DAI tokens.
+    </li>
+    <li>
+      DAI is a stable coin which is pegged to the USD. This means that one DAI is roughly worth one USD.
+    </li>
+    <li>
+      A minimum of 3 DAI is recommended to get started and be able to play around for a while.
+    </li>
+  {% end %}
+{% end %} 
+
+{% block page_header_scripts %}
 <script type="text/javascript">
   const API_COST_ESTIMATION_ENDPOINT =
     "/api/cost-estimation/{{ configuration_file.file_name }}";
@@ -72,21 +87,6 @@
   const amountMenus = {};
   let selectedExchange = "";
   let selectedAmount = 0;
-
-  const tokenTips = {
-    RDN: [
-      `The Raiden Network consists of a few services in order to increase the security and reliability of the network.`,
-      `RDN tokens are required to pay for path finding and monitoring service providers. These tokens need to be deposited into the User Deposit Contract. By clicking confirm the tokens will be bought and deposited instantly on your behalf.`,
-      `A minimum of 10 RDN is recommended to get started and be able to play around for a while.`,
-      `Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>`,
-    ],
-    DAI: [
-      `The Raiden Client offers to join the DAI token network. You can make payments in DAI tokens`,
-      `DAI is a stable coin which is pegged to the USD. This means that one DAI is roughly worth one USD.`,
-      `A minimum of 3 DAI is recommended to get started and be able to play around for a while.`,
-      `Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>`,
-    ],
-  };
 
   function requestCostEstimation(button, exchange) {
     const estimationElement = document.createElement("div");
@@ -214,20 +214,6 @@
     });
   }
 
-  function setupTooltipText() {
-    const toolTip = document
-      .getElementById(TOKEN_TICKER)
-      .querySelector(".tooltip");
-    let ul = document.createElement("ul");
-    toolTip.appendChild(ul);
-    function renderTokenTips(element, index, arr) {
-      let li = document.createElement("li");
-      li.innerHTML += element;
-      ul.appendChild(li);
-    }
-    tokenTips[TOKEN_TICKER].forEach(renderTokenTips);
-  }
-
   async function skipSwap() {
     let balance = await getBalances(
       "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}",
@@ -277,7 +263,6 @@
 
     setupMenus();
     setupSubmit();
-    setupTooltipText();
     addCostsToButtons();
 
     window.MAIN_VIEW_INTERVAL = 5000;

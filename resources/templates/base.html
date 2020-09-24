@@ -502,9 +502,22 @@
         <ul class="messages"></ul>
       </div>
 
-      <div class="question">
-        {% block question %} {% end %} 
-    </div>
+      <div class="question {% block question_class %}{% end %}">
+        <span class="tooltip-item">
+          <img src="{{ static_url('images/question.png') }}" alt="Questions" />
+          <div class="tooltip">
+            <ul>
+              {% block question_items %} {% end %}
+              <li>
+                Do you need additional help? See 
+                  <a href="https://gitter.im/raiden-network/raiden" target="_blank">
+                    Raiden Gitter Chat
+                  </a>
+              </li>
+            </ul>
+          </div>
+        </span>
+      </div>
     </section>
   </body>
 </html>

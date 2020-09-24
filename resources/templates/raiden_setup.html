@@ -21,47 +21,30 @@
 <div class="action">
   <button type="submit" disabled>Confirm</button>
 </div>
-{% end %} {% block question %}
-<div class="question">
-  <span class="tooltip-item">
-    <a target="_blank">
-      <img
-        class="icon-link big"
-        src="{{ static_url('images/question.png') }}"
-        alt="Questions"
-      />
+{% end %}
+
+{% block question_items %}
+  <li>
+    Raiden is an off chain scaling solution for the Ethereum Blockchain.
+    The Raiden Wizard as well as Raiden need to connect to an Ethereum
+    node.
+  </li>
+  <li>
+    The
+    <a href="https://infura.io/product" target="_blank">
+      Infura API suite
     </a>
-    <div class="tooltip">
-      <ul>
-        <li>
-          Raiden is an off chain scaling solution for the Ethereum Blockchain.
-          The Raiden Wizard as well as Raiden need to connect to an Ethereum
-          node.
-        </li>
-        <li>
-          The
-          <a href="https://infura.io/product" target="_blank"
-            >Infura API suite</a
-          >
-          provides instant access over HTTPS and WebSockets to Ethereum.
-        </li>
-        <li>
-          If you have not done yet, please create a project at Infura to connect
-          to the Ethereum Mainnet. You can find your Infura project ID under
-          your project's settings. For more help, look
-          <a href="https://infura.io/docs/" target="_blank">here</a>.
-        </li>
-        <li>
-          Do you need additional help? See
-          <a href="https://gitter.im/raiden-network/raiden" target="_blank"
-            >Raiden Gitter Chat</a
-          >
-        </li>
-      </ul>
-    </div>
-  </span>
-</div>
-{% end %} {% block page_header_scripts %}
+    provides instant access over HTTPS and WebSockets to Ethereum.
+  </li>
+  <li>
+    If you have not done yet, please create a project at Infura to connect
+    to the Ethereum Mainnet. You can find your Infura project ID under
+    your project's settings. For more help, look
+    <a href="https://infura.io/docs/" target="_blank">here</a>.
+  </li>
+{% end %}
+
+{% block page_header_scripts %}
 <script type="text/javascript">
   window.addEventListener("load", function () {
     setProgressStep(1, "Connect to the Ethereum Blockchain");

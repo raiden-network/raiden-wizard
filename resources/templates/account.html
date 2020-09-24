@@ -56,35 +56,21 @@
 
 {% end %}
 
-{% block question %}
-<div class="question">
-  <span class="tooltip-item">
-    <a target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
-    </a>
-    <div class="tooltip">
-      <ul>
-        <li>
-          Please, download your keystore file now. You can restore your Raiden account
-          with this file and the password via Metamask.
-        </li>
-        {% if not network.FAUCET_AVAILABLE %}
-        <li>
-          Send 0.125 ETH to your Raiden account. 0.075 ETH are used as safety buffer
-          to operate 3 channels. 0.05 ETH are needed for RDN and DAI tokens.
-        </li>
-        <li>
-          You can withdraw those 0.125 ETH minus the amount you will have spent in a
-          transaction or as transaction fees.
-        </li>
-        {% end %}
-        <li>
-          Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>
-        </li>
-      </ul>
-    </div>
-  </span>
-</div>
+{% block question_items %}
+  <li>
+    Please, download your keystore file now. You can restore your Raiden account
+    with this file and the password via Metamask.
+  </li>
+  {% if not network.FAUCET_AVAILABLE %}
+  <li>
+    Send 0.125 ETH to your Raiden account. 0.075 ETH are used as safety buffer
+    to operate 3 channels. 0.05 ETH are needed for RDN and DAI tokens.
+  </li>
+  <li>
+    You can withdraw those 0.125 ETH minus the amount you will have spent in a
+    transaction or as transaction fees.
+  </li>
+  {% end %}
 {% end %}
 
 {% block page_header_scripts %}

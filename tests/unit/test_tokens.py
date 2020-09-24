@@ -1,5 +1,7 @@
 import unittest
 
+from eth_utils import to_checksum_address
+
 from raiden_installer import load_settings
 from raiden_installer.tokens import (
     Erc20Token,
@@ -106,13 +108,16 @@ class Erc20TokenTestCase(unittest.TestCase):
             rdn_token.address
 
     def test_cannot_get_address_on_network_without_deployment(self):
-        rdn_token = Erc20Token.find_by_ticker("WIZ", "mainnet")
+        wiz_token = Erc20Token.find_by_ticker("WIZ", "mainnet")
         with self.assertRaises(TokenError):
-            rdn_token.address
+            wiz_token.address
 
     def test_get_address(self):
-        rdn_token = Erc20Token.find_by_ticker("WIZ", "goerli")
-        self.assertEqual(rdn_token.address, "0x95b2d84de40a0121061b105e6b54016a49621b44")
+        wiz_token = Erc20Token.find_by_ticker("WIZ", "goerli")
+        self.assertEqual(
+            wiz_token.address,
+            to_checksum_address("0x95b2d84de40a0121061b105e6b54016a49621b44")
+        )
 
 
 class InstallerAmountsTestCase(unittest.TestCase):

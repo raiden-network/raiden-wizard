@@ -87,7 +87,7 @@ def kyber_chain():
         GANACHE_COMMAND,
         cwd=str(FAKE_BLOCKCHAIN_PATH)
     )
-    time.sleep(2)
+    time.sleep(5)
     yield
     proc.terminate()
     proc.wait()

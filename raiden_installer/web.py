@@ -40,7 +40,7 @@ from raiden_installer.utils import TransactionTimeoutError, wait_for_transaction
 
 SETTINGS = "mainnet"
 
-NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "ropsten", "goerli"]]
+NETWORKS_WITH_TOKEN_SWAP = [Network.get_by_name(n) for n in ["mainnet", "goerli"]]
 
 
 class TokenExchangeForm(Form):
@@ -60,6 +60,22 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
             "udc_deposit": self._run_udc_deposit,
             "track_transaction": self._run_track_transaction,
         })
+
+    def _send_summary(self, text, **kw):
+        if not isinstance(text, list):
+            text = [text]
+        message = {"type": "summary", "text": text}
+        icon = kw.get("icon")
+        if icon:
+            message["icon"] = icon
+        self.write_message(message)
+
+    def _send_txhash_message(self, text, tx_hash):
+        if not isinstance(text, list):
+            text = [text]
+        message = {"type": "hash", "text": text, "tx_hash": tx_hash}
+        self.write_message(message)
+        log.info(f"{''.join(text)} {tx_hash}")
 
     def _run_swap(self, **kw):
         try:
@@ -167,21 +183,21 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
 
     def _redirect_after_swap_error(self, exc, configuration_file_name, token_ticker):
         self._send_error_message(str(exc))
-        redirect_url = self.reverse_url("swap", configuration_file_name, token_ticker)
         next_page = f"Try again to exchange {token_ticker}..."
         self._send_summary(["Transaction failed", str(exc), next_page], icon="error")
         time.sleep(5)
+        redirect_url = self.reverse_url("swap", configuration_file_name, token_ticker)
         self._send_redirect(redirect_url)
 
     def _run_udc_deposit(self, **kw):
         try:
             configuration_file_name = kw.get("configuration_file_name")
+            configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
         except (ValueError, KeyError, TypeError) as exc:
             self._send_error_message(f"Invalid request: {exc}")
             return
 
         try:
-            configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
             settings = self.installer_settings
             required = RequiredAmounts.from_settings(settings)
             swap_amounts = SwapAmounts.from_settings(settings)
@@ -222,43 +238,43 @@ class MainAsyncTaskHandler(AsyncTaskHandler):
             )
 
     def _run_track_transaction(self, **kw):
-        configuration_file_name = kw.get("configuration_file_name")
-        tx_hash = kw.get("tx_hash")
-        time_start = time.time()
         try:
+            configuration_file_name = kw.get("configuration_file_name")
+            tx_hash = kw.get("tx_hash")
             configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-            configuration_file._initial_funding_txhash = tx_hash
-            configuration_file.save()
-            account = configuration_file.account
-            w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
-            self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash=tx_hash)
-
-            try:
-                wait_for_transaction(w3, decode_hex(tx_hash))
-            except TransactionTimeoutError:
-                self._send_status_update(
-                    [f"Not confirmed after {WEB3_TIMEOUT} seconds!"], icon="error"
-                )
-                self._send_txhash_message(
-                    "Funding took too long! "
-                    "Click the link below and restart the wizard, "
-                    "once it was confirmed:",
-                    tx_hash=tx_hash,
-                )
-                time.sleep(10)
-                sys.exit(1)
-
-            else:
-                configuration_file._initial_funding_txhash = None
-                configuration_file.save()
-
-            self._send_status_update("Transaction confirmed")
-            service_token = configuration_file.settings.service_token
-            self._send_redirect(
-                self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
-            )
         except Exception as exc:
             self._send_error_message(str(exc))
+            return
+
+        configuration_file._initial_funding_txhash = tx_hash
+        configuration_file.save()
+        account = configuration_file.account
+        w3 = make_web3_provider(configuration_file.ethereum_client_rpc_endpoint, account)
+        self._send_txhash_message(["Waiting for confirmation of transaction"], tx_hash=tx_hash)
+
+        try:
+            wait_for_transaction(w3, decode_hex(tx_hash))
+        except TransactionTimeoutError:
+            self._send_status_update(
+                [f"Not confirmed after {WEB3_TIMEOUT} seconds!"], icon="error"
+            )
+            self._send_txhash_message(
+                "Funding took too long! "
+                "Click the link below and restart the wizard, "
+                "once it was confirmed:",
+                tx_hash=tx_hash,
+            )
+            time.sleep(10)
+            sys.exit(1)
+        else:
+            configuration_file._initial_funding_txhash = None
+            configuration_file.save()
+
+        self._send_status_update("Transaction confirmed")
+        service_token = configuration_file.settings.service_token
+        self._send_redirect(
+            self.reverse_url("swap", configuration_file.file_name, service_token.ticker)
+        )
 
 
 class SwapHandler(BaseRequestHandler):

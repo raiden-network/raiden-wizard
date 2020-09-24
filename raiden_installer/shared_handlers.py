@@ -122,22 +122,6 @@ class AsyncTaskHandler(WebSocketHandler):
         self.write_message(json.dumps({"type": "redirect", "redirect_url": redirect_url}))
         log.info(f"Redirecting to {redirect_url}")
 
-    def _send_summary(self, text, **kw):
-        if not isinstance(text, list):
-            text = [text]
-        message = {"type": "summary", "text": text}
-        icon = kw.get("icon")
-        if icon:
-            message["icon"] = icon
-        self.write_message(message)
-
-    def _send_txhash_message(self, text, tx_hash):
-        if not isinstance(text, list):
-            text = [text]
-        message = {"type": "hash", "text": text, "tx_hash": tx_hash}
-        self.write_message(message)
-        log.info(f"Waiting for confirmation of txhash {tx_hash}")
-
     def _deposit_to_udc(self, w3, account, service_token, deposit_amount):
         self._send_status_update(
             f"Making deposit of {deposit_amount.formatted} to the "
@@ -174,7 +158,7 @@ class AsyncTaskHandler(WebSocketHandler):
             self._send_status_update("Generating new wallet file for Raiden")
             passphrase = form.data["passphrase1"].strip()
             set_passphrase(passphrase)
-            account = Account.create(find_keystore_folder_path(), passphrase=passphrase)
+            account = Account.create(find_keystore_folder_path(), passphrase)
 
             self._send_redirect(
                 self.reverse_url("setup", account.keystore_file_path)
@@ -217,21 +201,17 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_launch(self, **kw):
         configuration_file_name = kw.get("configuration_file_name")
         configuration_file = RaidenConfigurationFile.get_by_filename(configuration_file_name)
-        raiden_client = RaidenClient.get_client(self.installer_settings)
+        account = configuration_file.account
+        try_unlock(account)
+        if account.passphrase is None:
+            self._send_error_message("Failed to unlock account! Please reload page")
+            return
 
+        raiden_client = RaidenClient.get_client(self.installer_settings)
         if not raiden_client.is_installed:
             self._send_status_update(f"Downloading and installing raiden {raiden_client.release}")
             raiden_client.install()
             self._send_status_update("Installation complete")
-
-        account = configuration_file.account
-        try_unlock(account)
-        if account.passphrase is None:
-            return self.render(
-                "account_unlock.html",
-                keystore_file_path=account.keystore_file_path,
-                return_to=f"/launch/{configuration_file_name}",
-            )
 
         self._send_status_update(
             "Launching Raiden, this might take a couple of minutes, do not close the browser"
@@ -246,7 +226,7 @@ class AsyncTaskHandler(WebSocketHandler):
                     status_callback=lambda stat: log.info(str(stat))
                 )
                 self._send_task_complete("Raiden is ready!")
-                self._send_redirect(raiden_client.WEB_UI_INDEX_URL)
+                self._send_redirect(RaidenClient.WEB_UI_INDEX_URL)
             except (RaidenClientError, RuntimeError) as exc:
                 self._send_error_message(f"Raiden process failed to start: {exc}")
                 raiden_client.kill()
@@ -276,7 +256,8 @@ class IndexHandler(BaseRequestHandler):
     def get(self):
         try:
             configuration_file = RaidenConfigurationFile.get_available_configurations(
-                self.installer_settings).pop()
+                self.installer_settings
+            ).pop()
         except IndexError:
             configuration_file = None
 
@@ -285,16 +266,12 @@ class IndexHandler(BaseRequestHandler):
 
 class SetupHandler(BaseRequestHandler):
     def get(self, account_file):
-        self.render(
-            "raiden_setup.html",
-            network_name=self.installer_settings.network,
-            account_file=account_file,
-        )
+        self.render("raiden_setup.html", account_file=account_file)
 
 
 class WalletCreationHandler(BaseRequestHandler):
     def get(self):
-        self.render("account_password.html", network_name=self.installer_settings.network)
+        self.render("account_password.html")
 
 
 class AccountDetailHandler(BaseRequestHandler):

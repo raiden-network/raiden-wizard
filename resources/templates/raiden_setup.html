@@ -66,7 +66,6 @@
   window.addEventListener("load", function () {
     setProgressStep(1, "Connect to the Ethereum Blockchain");
 
-    const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
     const infura_project_input = document.querySelector("input[name=endpoint]");
     const error_display = document.querySelector("span.error");
     const submit_button = document.querySelector("button");
@@ -89,7 +88,7 @@
         JSON.stringify({
           method: "setup",
           endpoint: infura_project_input.value,
-          network: "{{ network_name }}",
+          network: "{{ network.name }}",
           account_file: "{{ account_file }}",
         })
       );

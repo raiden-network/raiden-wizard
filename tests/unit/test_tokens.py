@@ -1,6 +1,6 @@
 import unittest
 
-from eth_utils import to_checksum_address
+from eth_utils import decode_hex
 
 from raiden_installer import load_settings
 from raiden_installer.tokens import (
@@ -102,21 +102,19 @@ class TokenAmountTestCase(unittest.TestCase):
 
 
 class Erc20TokenTestCase(unittest.TestCase):
-    def test_cannot_get_address_when_no_network_set(self):
-        rdn_token = Erc20Token.find_by_ticker("RDN")
+    def test_cannot_initialize_token_without_address(self):
         with self.assertRaises(TokenError):
-            rdn_token.address
+            Erc20Token("RDN", "REI")
 
-    def test_cannot_get_address_on_network_without_deployment(self):
-        wiz_token = Erc20Token.find_by_ticker("WIZ", "mainnet")
+    def test_cannot_get_token_on_network_without_deployment(self):
         with self.assertRaises(TokenError):
-            wiz_token.address
+            Erc20Token.find_by_ticker("WIZ", "mainnet")
 
     def test_get_address(self):
         wiz_token = Erc20Token.find_by_ticker("WIZ", "goerli")
         self.assertEqual(
             wiz_token.address,
-            to_checksum_address("0x95b2d84de40a0121061b105e6b54016a49621b44")
+            decode_hex("0x95b2d84de40a0121061b105e6b54016a49621b44")
         )
 
 

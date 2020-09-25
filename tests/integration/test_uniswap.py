@@ -2,9 +2,7 @@ import os
 import time
 
 import pytest
-from tests.constants import TESTING_KEYSTORE_FOLDER
-from tests.fixtures import create_account, test_account, test_password
-from tests.utils import empty_account
+from eth_utils import decode_hex
 
 from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
@@ -14,6 +12,9 @@ from raiden_installer.tokens import Erc20Token, EthereumAmount, TokenAmount
 from raiden_installer.transactions import approve, get_token_balance, mint_tokens
 from raiden_installer.uniswap.web3 import contracts as uniswap_contracts
 from raiden_installer.utils import send_raw_transaction, wait_for_transaction
+from tests.constants import TESTING_KEYSTORE_FOLDER
+from tests.fixtures import create_account, test_account, test_password
+from tests.utils import empty_account
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 
@@ -76,12 +77,11 @@ def get_pair_address(w3, router_proxy):
 
 
 def removeLiquidity(w3, account, router_proxy):
-    pair_address = get_pair_address(w3, router_proxy)
+    pair_address = decode_hex(get_pair_address(w3, router_proxy))
     liquidity_token = Erc20Token(
         ticker="UNI-V2",
         wei_ticker="UNI-V2 WEI",
-        addresses={NETWORK.name: pair_address},
-        network_name=NETWORK.name
+        address=pair_address
     )
     amount = get_token_balance(w3, account, liquidity_token)
 

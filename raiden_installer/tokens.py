@@ -3,8 +3,7 @@ from decimal import Decimal, getcontext
 from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
-from eth_utils import to_checksum_address
-
+from eth_utils import decode_hex
 from raiden_contracts.constants import CONTRACTS_VERSION
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
@@ -55,22 +54,15 @@ class Currency:
 
 @dataclass
 class Erc20Token(Currency):
+    address: bytes = b""
     supply: int = 10 ** 21
-    addresses: Dict[str, str] = field(default_factory=dict)
-    network_name: Optional[str] = None
 
-    @property
-    def address(self) -> str:
-        if self.network_name is None:
-            raise TokenError(f"Network is not set for {self.ticker}")
-
-        try:
-            return to_checksum_address(self.addresses[self.network_name])
-        except KeyError as exc:
-            raise TokenError(f"{self.ticker} is not deployed on {self.network_name}") from exc
+    def __post_init__(self):
+        if self.address == b"":
+            raise TokenError("Erc20Token should not get initialized without an address")
 
     @staticmethod
-    def find_by_ticker(ticker, network_name=None):
+    def find_by_ticker(ticker, network_name):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
         token_list_version = {
@@ -79,7 +71,17 @@ class Erc20Token(Currency):
             "0.36": TokensV36,
             "0.37": TokensV37,
         }.get(version_string, Tokens)
-        return replace(token_list_version[ticker].value, network_name=network_name)
+        try:
+            token_data = token_list_version[ticker].value
+            address = token_data.addresses[network_name]
+        except KeyError as exc:
+            raise TokenError(f"{ticker} is not deployed on {network_name}") from exc
+
+        return Erc20Token(
+            ticker=token_data.ticker,
+            wei_ticker=token_data.wei_ticker,
+            address=decode_hex(address)
+        )
 
 
 class CurrencyAmount(Generic[Eth_T]):
@@ -160,7 +162,14 @@ class EthereumAmount(CurrencyAmount):
         super().__init__(value, ETH)
 
 
-_RDN = Erc20Token(
+@dataclass(frozen=True)
+class TokenData:
+    ticker: str
+    wei_ticker: str
+    addresses: Dict[str, str]
+
+
+_RDN = TokenData(
     ticker="RDN",
     wei_ticker="REI",
     addresses={
@@ -172,7 +181,7 @@ _RDN = Erc20Token(
     },
 )
 
-_DAI = Erc20Token(
+_DAI = TokenData(
     ticker="DAI",
     wei_ticker="DEI",
     addresses={
@@ -181,7 +190,7 @@ _DAI = Erc20Token(
     },
 )
 
-_WizardToken = Erc20Token(
+_WizardToken = TokenData(
     ticker="WIZ",
     wei_ticker="WEI",
     addresses={"goerli": "0x95b2d84de40a0121061b105e6b54016a49621b44"},
@@ -195,9 +204,8 @@ class Tokens(Enum):
 
 
 class TokensV25(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
             "goerli": "0x3a989d97388a39a0b5796306c615d10b7416be77",
@@ -206,9 +214,8 @@ class TokensV25(Enum):
 
 
 class TokensV33(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
             "goerli": "0x709118121A1ccA0f32FC2C0c59752E8FEE3c2834",
@@ -219,9 +226,8 @@ class TokensV33(Enum):
 
 
 class TokensV36(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={"goerli": "0x4074fD4d460d0c31cbEdC3f59B2D98626D063952"},
     )
     DAI = _DAI
@@ -229,12 +235,11 @@ class TokensV36(Enum):
 
 
 class TokensV37(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={"mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6"},
     )
-    SVT = Erc20Token(
+    SVT = TokenData(
         ticker="SVT",
         wei_ticker="SEI",
         addresses={"goerli": "0x5Fc523e13fBAc2140F056AD7A96De2cC0C4Cc63A"},

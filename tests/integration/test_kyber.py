@@ -8,6 +8,7 @@ import requests
 from eth_utils import to_bytes
 from tests.fixtures import create_account, test_password
 from tests.integration import kyber_snapshot_addresses
+from eth_utils import decode_hex
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import make_web3_provider
@@ -45,8 +46,7 @@ WALLET_PRIVATE_KEY = 0x979d8b20000da5832fc99c547393fdfa5eef980c77bfb1decb17c5973
 KNC_TOKEN = Erc20Token(
     ticker="KNC",
     wei_ticker="KEI",
-    addresses={"ganache": kyber_snapshot_addresses.TokenAddress.KNC.value},
-    network_name="ganache"
+    address=decode_hex(kyber_snapshot_addresses.TokenAddress.KNC.value)
 )
 
 

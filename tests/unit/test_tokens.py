@@ -1,6 +1,6 @@
 import unittest
 
-from eth_utils import decode_hex
+from eth_utils import to_canonical_address
 
 from raiden_installer import load_settings
 from raiden_installer.tokens import (
@@ -114,7 +114,7 @@ class Erc20TokenTestCase(unittest.TestCase):
         wiz_token = Erc20Token.find_by_ticker("WIZ", "goerli")
         self.assertEqual(
             wiz_token.address,
-            decode_hex("0x95b2d84de40a0121061b105e6b54016a49621b44")
+            to_canonical_address("0x95b2d84de40a0121061b105e6b54016a49621b44")
         )
 
 

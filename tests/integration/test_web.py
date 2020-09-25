@@ -4,10 +4,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from eth_utils import add_0x_prefix, encode_hex
-from tests.constants import TESTING_TEMP_FOLDER
-from tests.fixtures import create_account, test_account, test_password
-from tests.utils import empty_account
+from eth_utils import encode_hex, to_canonical_address, to_checksum_address
 from tornado.httpclient import HTTPRequest
 from tornado.websocket import websocket_connect
 
@@ -23,6 +20,9 @@ from raiden_installer.transactions import get_token_balance, get_token_deposit
 from raiden_installer.utils import TransactionTimeoutError
 from raiden_installer.web import get_app
 from raiden_installer.web_testnet import get_app as get_app_testnet
+from tests.constants import TESTING_TEMP_FOLDER
+from tests.fixtures import create_account, test_account, test_password
+from tests.utils import empty_account
 
 INFURA_PROJECT_ID = os.getenv("TEST_RAIDEN_INSTALLER_INFURA_PROJECT_ID")
 
@@ -154,7 +154,7 @@ class SharedHandlersTests:
         )
         json_response = json.loads(response.body)
         assert successful_json_response(response)
-        assert add_0x_prefix(json_response["address"]).lower() == test_account.address.lower()
+        assert to_canonical_address(json_response["address"]) == test_account.address
 
     @pytest.mark.gen_test(timeout=10)
     def test_gas_price_handler(self, http_client, base_url, config):
@@ -173,7 +173,7 @@ class SharedHandlersTests:
         json_response = json.loads(response.body)
         assert successful_json_response(response)
         assert json_response["file_name"] == config.file_name
-        assert json_response["account"] == config.account.address
+        assert to_canonical_address(json_response["account"]) == config.account.address
         assert json_response["network"] == config.network.name
         assert json_response["balance"]["ETH"]["as_wei"] == 0
         assert json_response["balance"]["service_token"]["as_wei"] == 0
@@ -258,7 +258,8 @@ class SharedHandlersTests:
         message = json.loads((yield ws_client.read_message()))
         assert message["type"] == "status-update"
 
-        config_file_name = f"config-{test_account.address}-{settings.name}.toml"
+        account_address = to_checksum_address(test_account.address)
+        config_file_name = f"config-{account_address}-{settings.name}.toml"
         message = json.loads((yield ws_client.read_message()))
         assert message["type"] == "redirect"
         assert message["redirect_url"] == f"/account/{config_file_name}"
@@ -294,7 +295,7 @@ class SharedHandlersTests:
 
         with pytest.raises(ValueError):
             RaidenConfigurationFile.get_by_filename(
-                f"config-{test_account.address}-{settings.name}.toml"
+                f"config-{to_checksum_address(test_account.address)}-{settings.name}.toml"
             )
 
     @pytest.mark.gen_test
@@ -319,7 +320,7 @@ class SharedHandlersTests:
 
         with pytest.raises(ValueError):
             RaidenConfigurationFile.get_by_filename(
-                f"config-{test_account.address}-{settings.name}.toml"
+                f"config-{to_checksum_address(test_account.address)}-{settings.name}.toml"
             )
 
     @pytest.mark.gen_test

@@ -1,5 +1,7 @@
 from math import ceil
 
+from eth_utils import to_checksum_address
+
 FAUCET_ACCOUNT = "0x3918d37E2f28F5B22f9f650556AD9D4590960018"
 
 
@@ -18,7 +20,7 @@ def empty_account(w3, account):
     # Making sure that our faucet does not deplete so fast
     signed = w3.eth.account.signTransaction(
         {
-            "from": account.address,
+            "from": to_checksum_address(account.address),
             "nonce": nonce,
             "gasPrice": gas_price,
             "gas": gas,

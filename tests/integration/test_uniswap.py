@@ -2,7 +2,7 @@ import os
 import time
 
 import pytest
-from eth_utils import decode_hex
+from eth_utils import to_canonical_address
 
 from raiden_installer.constants import WEB3_TIMEOUT
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
@@ -77,7 +77,7 @@ def get_pair_address(w3, router_proxy):
 
 
 def removeLiquidity(w3, account, router_proxy):
-    pair_address = decode_hex(get_pair_address(w3, router_proxy))
+    pair_address = to_canonical_address(get_pair_address(w3, router_proxy))
     liquidity_token = Erc20Token(
         ticker="UNI-V2",
         wei_ticker="UNI-V2 WEI",

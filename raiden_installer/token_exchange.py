@@ -2,7 +2,8 @@ from decimal import Decimal
 from typing import List
 
 import structlog
-from eth_utils import to_checksum_address
+from eth_typing import Address
+from eth_utils import to_canonical_address
 from web3 import Web3
 
 from raiden_installer.account import Account
@@ -147,24 +148,24 @@ class Kyber(Exchange):
         self.network_contract_proxy = kyber_contracts.get_network_contract_proxy(self.w3)
 
     def is_listing_token(self, ticker: TokenTicker):
-        token_network_address = self.get_token_network_address(ticker)
-        return token_network_address is not None
-
-    def get_token_network_address(self, ticker: TokenTicker):
         try:
-            token_network_address = kyber_tokens.get_token_network_address(self.chain_id, ticker)
-            return token_network_address and to_checksum_address(token_network_address)
-        except KeyError:
-            return None
+            self.get_token_network_address(ticker)
+            return True
+        except ExchangeError:
+            return False
+
+    def get_token_network_address(self, ticker: TokenTicker) -> Address:
+        try:
+            token_network_address = to_canonical_address(
+                kyber_tokens.get_token_network_address(self.chain_id, ticker)
+            )
+            return token_network_address
+        except (KeyError, TypeError) as exc:
+            raise ExchangeError(f"{self.name} is not listing {ticker}") from exc
 
     def get_current_rate(self, token_amount: TokenAmount) -> EthereumAmount:
-        eth_address = to_checksum_address(
-            kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
-        )
-
-        token_network_address = to_checksum_address(
-            kyber_tokens.get_token_network_address(self.chain_id, token_amount.ticker)
-        )
+        eth_address = self.get_token_network_address(TokenTicker("ETH"))
+        token_network_address = self.get_token_network_address(token_amount.ticker)
 
         expected_rate, slippage_rate = self.network_contract_proxy.functions.getExpectedRate(
             token_network_address, eth_address, token_amount.as_wei
@@ -194,9 +195,7 @@ class Kyber(Exchange):
                 f"An exchange rate is needed to estimate gas for a swap on {self.name}"
             )
 
-        eth_address = to_checksum_address(
-            kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
-        )
+        eth_address = self.get_token_network_address(TokenTicker("ETH"))
         return estimate_gas(
             self.w3,
             account,
@@ -214,9 +213,7 @@ class Kyber(Exchange):
     def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):
         exchange_rate = transaction_costs["exchange_rate"]
         eth_to_sell = transaction_costs["eth_sold"]
-        eth_address = to_checksum_address(
-            kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
-        )
+        eth_address = self.get_token_network_address(TokenTicker("ETH"))
 
         return self._send_buy_transaction(
             account,
@@ -233,7 +230,8 @@ class Kyber(Exchange):
 
 
 class Uniswap(Exchange):
-    ROUTER02_ADDRESS = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"  # same address on all networks
+    # same address on all networks
+    ROUTER02_ADDRESS = to_canonical_address("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D")
     SUPPORTED_NETWORKS = ["mainnet", "ropsten", "rinkeby", "goerli", "kovan"]
 
     def __init__(self, w3: Web3):
@@ -245,10 +243,10 @@ class Uniswap(Exchange):
             abi=uniswap_contracts.UNISWAP_ROUTER02_ABI,
             address=self.ROUTER02_ADDRESS,
         )
-        self.weth_address = self.router_proxy.functions.WETH().call()
+        self.weth_address = to_canonical_address(self.router_proxy.functions.WETH().call())
 
     def _get_factory_proxy(self):
-        factory_address = self.router_proxy.functions.factory().call()
+        factory_address = to_canonical_address(self.router_proxy.functions.factory().call())
         return self.w3.eth.contract(
             abi=uniswap_contracts.UNISWAP_FACTORY_ABI,
             address=factory_address,
@@ -257,7 +255,9 @@ class Uniswap(Exchange):
     def is_listing_token(self, token_ticker: TokenTicker):
         factory_proxy = self._get_factory_proxy()
         token = Erc20Token.find_by_ticker(token_ticker, self.network.name)
-        pair_address = factory_proxy.functions.getPair(self.weth_address, token.address).call()
+        pair_address = to_canonical_address(
+            factory_proxy.functions.getPair(self.weth_address, token.address).call()
+        )
         return pair_address != NULL_ADDRESS
 
     def _get_gas_price(self):
@@ -283,7 +283,7 @@ class Uniswap(Exchange):
             **transaction_params,
         )
 
-    def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict, *args):
+    def _buy_tokens(self, account: Account, token_amount: TokenAmount, transaction_costs: dict):
         latest_block = self.w3.eth.getBlock("latest")
         deadline = latest_block.timestamp + WEB3_TIMEOUT
 

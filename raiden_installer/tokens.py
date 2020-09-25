@@ -3,7 +3,9 @@ from decimal import Decimal, getcontext
 from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
-from eth_utils import decode_hex
+from eth_typing import Address
+from eth_utils import to_canonical_address
+
 from raiden_contracts.constants import CONTRACTS_VERSION
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
@@ -54,11 +56,11 @@ class Currency:
 
 @dataclass
 class Erc20Token(Currency):
-    address: bytes = b""
+    address: Address = Address(b"")
     supply: int = 10 ** 21
 
     def __post_init__(self):
-        if self.address == b"":
+        if self.address == Address(b""):
             raise TokenError("Erc20Token should not get initialized without an address")
 
     @staticmethod
@@ -80,7 +82,7 @@ class Erc20Token(Currency):
         return Erc20Token(
             ticker=token_data.ticker,
             wei_ticker=token_data.wei_ticker,
-            address=decode_hex(address)
+            address=to_canonical_address(address)
         )
 
 

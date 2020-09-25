@@ -46,27 +46,9 @@
 {% end %}
 
 {% block page_header_scripts %}
-<script type="text/javascript">
-
-
- window.addEventListener("load", function() {
-   const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
-   const passphrase = document.querySelector("input[name=passphrase]");
-   const error_display = document.querySelector("span.error");
-   const submit_button = document.querySelector("button");
-
-   function submitPassphrase(evt) {
-     WEBSOCKET.send(JSON.stringify({
-       method: "unlock",
-       passphrase: passphrase.value,
-       keystore_file_path: "{{ keystore_file_path }}",
-       return_to: "{{ return_to }}"
-     }));
-
-     toggleView();
-   }
-
-   submit_button.addEventListener("click", submitPassphrase);
- });
-</script>
+  <script type="text/javascript">
+    const KEYSTORE_FILE_PATH = "{{ keystore_file_path }}";
+    const RETURN_TO = "{{ return_to }}";
+  </script>
+  <script type="text/javascript" src="{{ static_url('js/account_unlock.js') }}"></script>
 {% end %}

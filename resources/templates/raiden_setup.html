@@ -1,4 +1,6 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} 
+
+{% block content %}
 <div class="hero">
   Enter your Infura ID that will connect you to the Ethereum Blockchain &nbsp;
 </div>
@@ -45,43 +47,9 @@
 {% end %}
 
 {% block page_header_scripts %}
-<script type="text/javascript">
-  window.addEventListener("load", function () {
-    setProgressStep(1, "Connect to the Ethereum Blockchain");
-
-    const infura_project_input = document.querySelector("input[name=endpoint]");
-    const error_display = document.querySelector("span.error");
-    const submit_button = document.querySelector("button");
-
-    function checkIdNotEmpty(evt) {
-      const error_message = "Please enter your Infura ID.";
-
-      if (!evt.target.value) {
-        error_display.textContent = error_message;
-        error_display.hidden = false;
-        submit_button.disabled = true;
-      } else {
-        error_display.hidden = true;
-        submit_button.disabled = false;
-      }
-    }
-
-    function submitConfiguration(evt) {
-      WEBSOCKET.send(
-        JSON.stringify({
-          method: "setup",
-          endpoint: infura_project_input.value,
-          network: "{{ network.name }}",
-          account_file: "{{ account_file }}",
-        })
-      );
-
-      toggleView();
-    }
-
-    // Attaching event handlers
-    infura_project_input.addEventListener("input", checkIdNotEmpty);
-    submit_button.addEventListener("click", submitConfiguration);
-  });
-</script>
+  <script type="text/javascript">
+    const NETWORK_NAME = "{{ network.name }}";
+    const ACCOUNT_FILE = "{{ account_file }}";
+  </script>
+  <script type="text/javascript" src="{{ static_url('js/raiden_setup.js') }}"></script>
 {% end %}

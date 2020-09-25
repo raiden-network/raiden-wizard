@@ -105,11 +105,5 @@
 {% end %}
 
 {% block page_header_scripts %}
-  <script type="text/javascript">
-    window.addEventListener("load", function() {
-      const button = document.querySelector("button.link-button");
-      const checkboxes = document.querySelectorAll("input[type=checkbox]");
-      checkAcknowledgements(checkboxes, button);
-    });
-  </script>
+  <script type="text/javascript" src="{{ static_url('js/index.js') }}"></script>
 {% end %}

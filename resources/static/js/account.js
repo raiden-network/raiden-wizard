@@ -73,7 +73,6 @@ function checkWeb3Available() {
   let has_web3 = Boolean(window.ethereum || window.web3);
   let noWeb3Text = document.getElementById("no-web3");
   if (has_web3) {
-    console.log("Inside has_web3 true");
     noWeb3Text.style.display = "none";
   } else {
     noWeb3Text.style.display = "inline";
@@ -151,7 +150,7 @@ function main() {
   poll();
 }
 
-window.addEventListener("load", function () {
+window.addEventListener("DOMContentLoaded", function () {
   setProgressStep(2, "Fund Account with ETH");
   if (FAUCET_AVAILABLE !== "True") {
     window.MAIN_VIEW_INTERVAL = 10000;

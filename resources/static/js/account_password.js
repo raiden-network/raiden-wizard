@@ -1,4 +1,4 @@
-window.addEventListener("load", function () {
+window.addEventListener("DOMContentLoaded", function () {
   setProgressStep(0, "Create a Raiden Account");
 
   const passphrase1 = document.querySelector("input[name=passphrase1]");

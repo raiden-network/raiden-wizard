@@ -64,7 +64,7 @@ async function main() {
   btn_launch.disabled = !can_launch;
 }
 
-window.addEventListener("load", async function () {
+window.addEventListener("DOMContentLoaded", async function () {
   setProgressStep(5, "Launch Raiden");
   main();
 });

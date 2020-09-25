@@ -1,4 +1,4 @@
-window.addEventListener("load", function () {
+window.addEventListener("DOMContentLoaded", function () {
   setProgressStep(1, "Connect to the Ethereum Blockchain");
 
   const infura_project_input = document.querySelector("input[name=endpoint]");

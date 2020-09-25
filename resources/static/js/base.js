@@ -441,7 +441,7 @@ function setUpTogglePassword() {
 
 window.addEventListener("beforeunload", beforeunloadHandler);
 
-window.addEventListener("load", function () {
+window.addEventListener("DOMContentLoaded", function () {
   let link_buttons = document.querySelectorAll("button.link-button");
 
   link_buttons.forEach(function (elem) {

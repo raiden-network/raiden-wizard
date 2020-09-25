@@ -153,7 +153,7 @@ function main() {
   skipSwap();
 }
 
-window.addEventListener("load", function () {
+window.addEventListener("DOMContentLoaded", function () {
   if (TOKEN_TICKER === "RDN") {
     setProgressStep(3, "Fund Account with RDN");
   } else if (TOKEN_TICKER === "DAI") {

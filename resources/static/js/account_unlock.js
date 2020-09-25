@@ -1,4 +1,4 @@
-window.addEventListener("load", function () {
+window.addEventListener("DOMContentLoaded", function () {
   const passphrase = document.querySelector("input[name=passphrase]");
   const submit_button = document.querySelector("button");
 

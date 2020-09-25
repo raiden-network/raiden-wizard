@@ -188,7 +188,12 @@ class Kyber(Exchange):
         transaction_params: dict,
         **kw
     ):
-        exchange_rate = kw["exchange_rate"]
+        exchange_rate = kw.get("exchange_rate")
+        if exchange_rate is None:
+            raise ExchangeError(
+                f"An exchange rate is needed to estimate gas for a swap on {self.name}"
+            )
+
         eth_address = to_checksum_address(
             kyber_tokens.get_token_network_address(self.chain_id, TokenTicker("ETH"))
         )

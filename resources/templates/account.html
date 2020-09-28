@@ -75,7 +75,7 @@
 
 {% block page_header_scripts %}
   <script type="text/javascript">
-    const TARGET_ADDRESS = "to_checksum_address({{ configuration_file.account.address }})";
+    const TARGET_ADDRESS = "{{ to_checksum_address(configuration_file.account.address) }}";
     const ETHEREUM_REQUIRED_AMOUNT_FORMATTED =
       "{{ ethereum_required.formatted }}";
     const FAUCET_AVAILABLE = "{{ network.FAUCET_AVAILABLE }}";

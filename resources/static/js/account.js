@@ -98,16 +98,13 @@ function updateNeededEth(balance) {
 
 function sendEthButtonlogic(balance) {
   const has_web3 = checkWeb3Available();
-  let button_send_eth = document.getElementById("btn-web3-eth");
-  button_send_eth.disabled = has_web3
-    ? has_web3 && hasEnoughEthToStartSwaps(balance)
-    : true;
+  let sendButton = document.getElementById("btn-web3-eth");
+  sendButton.disabled = has_web3 ? hasEnoughEthToStartSwaps(balance) : true;
   if (!has_web3) {
     return;
   }
   if (hasEnoughEthToStartSwaps(balance)) {
-    let button_send_eth = document.getElementById("btn-web3-eth");
-    button_send_eth.disabled = true;
+    sendButton.disabled = true;
     const action = document.querySelector(".action");
     action.classList.add("tx-received");
     setTimeout(function () {
@@ -131,12 +128,19 @@ function showDownloadButton(callback) {
 async function poll() {
   let balance = await getBalances(CONFIGURATION_DETAIL_URL);
   let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+
+  const spinner = document.querySelector(".spinner");
+  if (spinner) {
+    spinner.remove();
+  }
+
   if (!balance.ETH.as_wei && config._initial_funding_txhash) {
     return trackTransaction(
       config._initial_funding_txhash,
       CONFIGURATION_FILE_NAME
     );
   }
+
   if (balance.ETH.as_wei) {
     sendEthButtonlogic(balance);
   } else {

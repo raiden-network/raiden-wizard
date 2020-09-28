@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 import tornado.ioloop
 import wtforms
-from eth_utils import to_checksum_address
+from eth_utils import to_canonical_address, to_checksum_address
 from tornado.netutil import bind_sockets
 from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
@@ -292,7 +292,7 @@ class AccountDetailHandler(BaseRequestHandler):
             if file_path.is_file():
                 keystore_content = json.loads(file_path.read_text())
                 if (
-                    to_checksum_address(keystore_content["address"])
+                    to_canonical_address(keystore_content["address"])
                     == configuration_file.account.address
                 ):
                     filename = os.path.basename(file)
@@ -401,7 +401,7 @@ class ConfigurationItemAPIHandler(APIHandler):
         self.render_json(
             {
                 "file_name": configuration_file.file_name,
-                "account": configuration_file.account.address,
+                "account": to_checksum_address(configuration_file.account.address),
                 "network": configuration_file.network.name,
                 "balance": {
                     "ETH": serialize_balance(eth_balance),

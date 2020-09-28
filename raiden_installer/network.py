@@ -4,6 +4,7 @@ import hashlib
 import uuid
 
 import requests
+from eth_utils import to_checksum_address
 
 
 class FundingError(Exception):
@@ -60,7 +61,7 @@ class Goerli(Network):
             client_hash = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
             response = requests.post(
                 "https://faucet.workshop.raiden.network/",
-                json={"address": account.address, "client_hash": client_hash},
+                json={"address": to_checksum_address(account.address), "client_hash": client_hash},
             )
             response.raise_for_status()
         except Exception as exc:
@@ -72,7 +73,9 @@ class Ropsten(Network):
 
     def fund(self, account):
         try:
-            response = requests.get(f"https://faucet.ropsten.be/donate/{account.address}")
+            response = requests.get(
+                f"https://faucet.ropsten.be/donate/{to_checksum_address(account.address)}"
+            )
             response.raise_for_status()
         except Exception as exc:
             raise FundingError(f"Failed to get funds from faucet: {exc}") from exc

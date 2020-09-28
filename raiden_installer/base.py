@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Union
 
 import toml
-from eth_utils import to_checksum_address
+from eth_utils import to_canonical_address, to_checksum_address
 from xdg import XDG_DATA_HOME
 
 from raiden_installer import Settings, load_settings, log
@@ -78,16 +78,11 @@ class RaidenConfigurationFile:
 
     @property
     def file_name(self):
-        return f"config-{self.account.address}-{self.settings.name}.toml"
+        return f"config-{to_checksum_address(self.account.address)}-{self.settings.name}.toml"
 
     @property
     def path(self):
         return self.FOLDER_PATH.joinpath(self.file_name)
-
-    @property
-    def ethereum_balance(self):
-        w3 = make_web3_provider(self.ethereum_client_rpc_endpoint, self.account)
-        return self.account.get_ethereum_balance(w3)
 
     def save(self):
         self.FOLDER_PATH.mkdir(parents=True, exist_ok=True)
@@ -127,7 +122,7 @@ class RaidenConfigurationFile:
         with file_path.open() as config_file:
             data = toml.load(config_file)
             keystore_file_path = Account.find_keystore_file_path(
-                data["address"], Path(data["keystore-path"])
+                to_canonical_address(data["address"]), Path(data["keystore-path"])
             )
             if keystore_file_path is None:
                 raise ValueError(

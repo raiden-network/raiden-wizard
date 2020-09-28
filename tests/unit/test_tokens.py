@@ -1,5 +1,7 @@
 import unittest
 
+from eth_utils import to_canonical_address
+
 from raiden_installer import load_settings
 from raiden_installer.tokens import (
     Erc20Token,
@@ -16,8 +18,8 @@ class TokenAmountTestCase(unittest.TestCase):
     def setUp(self):
         self.one_eth = EthereumAmount(1)
         self.two_eth = EthereumAmount(2)
-        self.one_rdn = TokenAmount(1, Erc20Token.find_by_ticker("RDN"))
-        self.one_wiz = TokenAmount(1, Erc20Token.find_by_ticker("WIZ"))
+        self.one_rdn = TokenAmount(1, Erc20Token.find_by_ticker("RDN", "mainnet"))
+        self.one_wiz = TokenAmount(1, Erc20Token.find_by_ticker("WIZ", "goerli"))
 
     def test_can_convert_to_wei(self):
         self.assertEqual(self.one_eth.as_wei, Wei(10 ** 18))
@@ -94,21 +96,26 @@ class TokenAmountTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.one_rdn >= self.one_wiz
 
+    def test_can_get_address(self):
+        rdn_token = Erc20Token.find_by_ticker("RDN", "mainnet")
+        self.assertEqual(self.one_rdn.address, rdn_token.address)
+
 
 class Erc20TokenTestCase(unittest.TestCase):
-    def test_cannot_get_address_when_no_network_set(self):
-        rdn_token = Erc20Token.find_by_ticker("RDN")
+    def test_cannot_initialize_token_without_address(self):
         with self.assertRaises(TokenError):
-            rdn_token.address
+            Erc20Token("RDN", "REI")
 
-    def test_cannot_get_address_on_network_without_deployment(self):
-        rdn_token = Erc20Token.find_by_ticker("WIZ", "mainnet")
+    def test_cannot_get_token_on_network_without_deployment(self):
         with self.assertRaises(TokenError):
-            rdn_token.address
+            Erc20Token.find_by_ticker("WIZ", "mainnet")
 
     def test_get_address(self):
-        rdn_token = Erc20Token.find_by_ticker("WIZ", "goerli")
-        self.assertEqual(rdn_token.address, "0x95b2d84de40a0121061b105e6b54016a49621b44")
+        wiz_token = Erc20Token.find_by_ticker("WIZ", "goerli")
+        self.assertEqual(
+            wiz_token.address,
+            to_canonical_address("0x95b2d84de40a0121061b105e6b54016a49621b44")
+        )
 
 
 class InstallerAmountsTestCase(unittest.TestCase):

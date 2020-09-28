@@ -11,12 +11,13 @@ from pathlib import Path
 from typing import Optional, Union
 
 from eth_keyfile import create_keyfile_json, decode_keyfile_json
+from eth_typing import Address
 from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 
 from raiden_installer import log
 from raiden_installer.constants import REQUIRED_BLOCK_CONFIRMATIONS, WEB3_TIMEOUT
-from raiden_installer.tokens import ETH, TokenAmount, Wei
+from raiden_installer.tokens import EthereumAmount, Wei
 
 
 def make_random_string(length=32):
@@ -56,15 +57,15 @@ class Account:
         return decode_keyfile_json(self.content, self.passphrase.encode())
 
     @property
-    def address(self):
-        return to_checksum_address(self.content.get("address"))
+    def address(self) -> Address:
+        return to_canonical_address(self.content.get("address"))
 
-    def get_ethereum_balance(self, w3) -> TokenAmount:
-        return TokenAmount(Wei(w3.eth.getBalance(self.address)), ETH)
+    def get_ethereum_balance(self, w3) -> EthereumAmount:
+        return EthereumAmount(Wei(w3.eth.getBalance(self.address)))
 
     def wait_for_ethereum_funds(
-        self, w3: Web3, expected_amount: TokenAmount, timeout: int = WEB3_TIMEOUT
-    ) -> TokenAmount:
+        self, w3: Web3, expected_amount: EthereumAmount, timeout: int = WEB3_TIMEOUT
+    ) -> EthereumAmount:
         time_remaining = timeout
         POLLING_INTERVAL = 1
         block_with_balance = math.inf
@@ -127,7 +128,7 @@ class Account:
         return cls(keystore_file_path, passphrase=passphrase)
 
     @classmethod
-    def find_keystore_file_path(cls, address: str, keystore_path: Path) -> Optional[Path]:
+    def find_keystore_file_path(cls, address: Address, keystore_path: Path) -> Optional[Path]:
         try:
             files = os.listdir(keystore_path)
         except OSError as ex:
@@ -145,7 +146,7 @@ class Account:
                         # we expect a dict in specific format.
                         # Anything else is not a keyfile
                         raise KeyError(f"Invalid keystore file {full_path}")
-                    address_from_file = to_checksum_address(to_canonical_address(data["address"]))
+                    address_from_file = to_canonical_address(data["address"])
                     if address_from_file == address:
                         return Path(full_path)
                 except OSError as ex:

@@ -8,6 +8,7 @@ import requests
 from eth_utils import to_bytes
 from tests.fixtures import create_account, test_password
 from tests.integration import kyber_snapshot_addresses
+from eth_utils import to_canonical_address, to_checksum_address
 
 from raiden_installer.account import Account
 from raiden_installer.ethereum_rpc import make_web3_provider
@@ -45,8 +46,7 @@ WALLET_PRIVATE_KEY = 0x979d8b20000da5832fc99c547393fdfa5eef980c77bfb1decb17c5973
 KNC_TOKEN = Erc20Token(
     ticker="KNC",
     wei_ticker="KEI",
-    addresses={"ganache": kyber_snapshot_addresses.TokenAddress.KNC.value},
-    network="ganache"
+    address=to_canonical_address(kyber_snapshot_addresses.TokenAddress.KNC.value)
 )
 
 
@@ -87,7 +87,7 @@ def kyber_chain():
         GANACHE_COMMAND,
         cwd=str(FAKE_BLOCKCHAIN_PATH)
     )
-    time.sleep(2)
+    time.sleep(5)
     yield
     proc.terminate()
     proc.wait()
@@ -123,7 +123,7 @@ def test_cannot_buy_zero_tokens(test_account, patch_kyber_support, kyber):
 def test_cannot_buy_without_eth(test_account, patch_kyber_support, kyber):
     tx = {
         "to": "0x0000000000000000000000000000000000000000",
-        "from": test_account.address,
+        "from": to_checksum_address(test_account.address),
         "value": test_account.get_ethereum_balance(kyber.w3).as_wei,
         "gasPrice": 0,
     }

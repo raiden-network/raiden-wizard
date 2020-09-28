@@ -3,6 +3,8 @@ import os
 import time
 
 import requests
+from eth_typing import Address
+from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 from web3.exceptions import TransactionNotFound
 
@@ -31,11 +33,11 @@ def recover_ld_library_env_path():  # pragma: no cover
             os.environ.pop(lp_key)
 
 
-def get_contract_address(chain_id, contract_name):
+def get_contract_address(chain_id, contract_name) -> Address:
     try:
         network_contracts = get_contracts_deployment_info(chain_id)
         assert network_contracts
-        return network_contracts["contracts"][contract_name]["address"]
+        return to_canonical_address(network_contracts["contracts"][contract_name]["address"])
     except (TypeError, AssertionError, KeyError) as exc:
         log.warn(str(exc))
         raise ValueError(f"{contract_name} does not exist on chain id {chain_id}") from exc
@@ -58,6 +60,7 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
         "nonce": w3.eth.getTransactionCount(account.address, "pending"),
         "gasPrice": kw.pop("gas_price", (w3.eth.generateGasPrice())),
         "gas": kw.pop("gas", None),
+        "from": to_checksum_address(kw.pop("from", account.address))
     }
 
     transaction_params.update(**kw)

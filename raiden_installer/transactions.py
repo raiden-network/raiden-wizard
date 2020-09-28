@@ -1,4 +1,4 @@
-from eth_utils import to_checksum_address
+from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 
 from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN, CONTRACT_USER_DEPOSIT
@@ -16,26 +16,31 @@ GAS_REQUIRED_FOR_MINT: int = 100_000
 
 def _make_deposit_proxy(w3: Web3, token: Erc20Token):
     contract_manager = ContractManager(contracts_precompiled_path())
-    contract_address = get_contract_address(w3.eth.chainId, CONTRACT_USER_DEPOSIT)
+    contract_address = to_canonical_address(
+        get_contract_address(w3.eth.chainId, CONTRACT_USER_DEPOSIT)
+    )
     proxy = w3.eth.contract(
         address=contract_address, abi=contract_manager.get_contract_abi(CONTRACT_USER_DEPOSIT)
     )
 
-    service_token_address = to_checksum_address(proxy.functions.token().call())
+    service_token_address = to_canonical_address(proxy.functions.token().call())
 
-    if service_token_address != to_checksum_address(token.address):
-        raise ValueError(f"{token.ticker} is at {token.address}, expected {service_token_address}")
+    if service_token_address != token.address:
+        raise ValueError(
+            f"{token.ticker} is at {to_checksum_address(token.address)}, "
+            f"expected {service_token_address}"
+        )
     return proxy
 
 
 def _make_token_proxy(w3: Web3, token: Erc20Token):
-    return w3.eth.contract(address=to_checksum_address(token.address), abi=EIP20_ABI)
+    return w3.eth.contract(address=token.address, abi=EIP20_ABI)
 
 
 def mint_tokens(w3: Web3, account: Account, token: Erc20Token):
     contract_manager = ContractManager(contracts_precompiled_path())
     token_proxy = w3.eth.contract(
-        address=to_checksum_address(token.address),
+        address=token.address,
         abi=contract_manager.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
     )
 

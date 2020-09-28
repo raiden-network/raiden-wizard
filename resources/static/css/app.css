@@ -729,6 +729,10 @@ div.spinner {
   right: 45px;
 }
 
+.question img {
+  height: 60px;
+}
+
 .menu-item {
   display: -webkit-box;
   display: -ms-flexbox;

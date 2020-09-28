@@ -24,60 +24,31 @@
 </div>
 {% end %}
 
-{% block question %}
-<div class="question">
-  <span class="tooltip-item">
-    <a target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
-    </a>
-    <div class="tooltip">
-      <ul>
-        <li> 
-          The Raiden Network is an off-chain scaling solution for performing ERC20-compliant 
-          token transfers on the Ethereum blockchain. It is Ethereum's version of 
-          Bitcoin's Lightning Network, enabling near-instant, low-fee, scalable, and privacy-preserving payments. 
-        </li>
-        <li>
-          The Raiden Network allows secure transfers of tokens between participants without the need for global consensus. 
-          This is achieved using digitally signed and hash-locked transfers, called balance proofs, 
-          fully collateralized by previously setup on-chain deposits.
-        </li>
-        <li>
-          Payment channels allow for practically unlimited, bidirectional transfers between two participants, 
-          as long as the net sum of their transfers does not exceed the deposited tokens
-        </li>
-        <li>
-          These transfers can be performed instantaneously and without any involvement of the actual blockchain itself,
-          except for an initial one-time on-chain creation and an eventual closing of the channel. 
-        </li>
-      </ul>
-    </div>
-  </span>
-</div>
+{% block question_items %}
+  <li>
+    The Raiden Network is an off-chain scaling solution for performing ERC20-compliant 
+    token transfers on the Ethereum blockchain. It is Ethereum's version of 
+    Bitcoin's Lightning Network, enabling near-instant, low-fee, scalable, and privacy-preserving payments. 
+  </li>
+  <li>
+    The Raiden Network allows secure transfers of tokens between participants without the need for global consensus. 
+    This is achieved using digitally signed and hash-locked transfers, called balance proofs, 
+    fully collateralized by previously setup on-chain deposits.
+  </li>
+  <li>
+    Payment channels allow for practically unlimited, bidirectional transfers between two participants, 
+    as long as the net sum of their transfers does not exceed the deposited tokens
+  </li>
+  <li>
+    These transfers can be performed instantaneously and without any involvement of the actual blockchain itself,
+    except for an initial one-time on-chain creation and an eventual closing of the channel. 
+  </li>
 {% end %}
 
 {% block page_header_scripts %}
-<script type="text/javascript">
-
-
- window.addEventListener("load", function() {
-   const API_CONFIGURATION_LIST_ENDPOINT = "/api/configurations";
-   const passphrase = document.querySelector("input[name=passphrase]");
-   const error_display = document.querySelector("span.error");
-   const submit_button = document.querySelector("button");
-
-   function submitPassphrase(evt) {
-     WEBSOCKET.send(JSON.stringify({
-       method: "unlock",
-       passphrase: passphrase.value,
-       keystore_file_path: "{{ keystore_file_path }}",
-       return_to: "{{ return_to }}"
-     }));
-
-     toggleView();
-   }
-
-   submit_button.addEventListener("click", submitPassphrase);
- });
-</script>
+  <script type="text/javascript">
+    const KEYSTORE_FILE_PATH = "{{ keystore_file_path }}";
+    const RETURN_TO = "{{ return_to }}";
+  </script>
+  <script type="text/javascript" src="{{ static_url('js/account_unlock.js') }}"></script>
 {% end %}

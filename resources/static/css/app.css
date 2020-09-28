@@ -142,32 +142,6 @@ div.logo.home {
   display: none;
 }
 
-div.transfer-data-display {
-  width: 100%;
-  display: -ms-inline-grid;
-  display: inline-grid;
-  -webkit-box-pack: space-evenly;
-      -ms-flex-pack: space-evenly;
-          justify-content: space-evenly;
-  grid-auto-flow: column;
-}
-
-ul.action-list li {
-  height: 60px;
-}
-
-ul.funding-requirements {
-  width: 75%;
-  margin: auto;
-  font-size: 75%;
-  text-align: start;
-}
-
-ul.funding-requirements li {
-  line-height: 1.5em;
-  list-style-type: disc;
-}
-
 ul.checklist {
   margin: 0;
 }
@@ -185,113 +159,12 @@ ul.checklist li span.check-value.ok {
   color: #28a5c8 !important;
 }
 
-ul.available-configurations {
-  width: 100%;
-  border-top: solid 1.5px #0a6e87;
-  font-size: 75%;
-}
-
-ul.available-configurations li {
-  width: 100%;
-  height: 70px;
-  margin-bottom: 2px;
-  background-color: #1e1e1e;
-  display: -ms-grid;
-  display: grid;
-  grid-template: "account account account button" auto "network balance balance button" auto;
-}
-
-ul.available-configurations li span.account, ul.available-configurations li span.network {
-  padding-left: 20px;
-}
-
-ul.available-configurations li span.network, ul.available-configurations li span.balance {
-  text-transform: capitalize;
-  color: #646464;
-}
-
-ul.available-configurations li span.account {
-  grid-area: account;
-  -ms-flex-item-align: end;
-      -ms-grid-row-align: end;
-      align-self: end;
-  font-weight: 500;
-}
-
-ul.available-configurations li span.network {
-  -ms-flex-item-align: start;
-      -ms-grid-row-align: start;
-      align-self: start;
-  grid-area: network;
-}
-
-ul.available-configurations li span.balance {
-  grid-area: balance;
-}
-
-ul.available-configurations li button, ul.available-configurations li a.button {
-  -ms-flex-item-align: center;
-      -ms-grid-row-align: center;
-      align-self: center;
-  line-height: 33px;
-  width: 100px;
-  grid-area: button;
-}
-
-ul.available-configurations li a.button {
-  line-height: 33px;
-}
-
-ul.account-info {
-  margin: 0.25em auto;
-}
-
-ul.account-info span.data-attribute {
-  font-size: 125%;
-  display: block;
-}
-
-ul.account-info span.highlighted, ul.account-info span.data-value {
-  color: #28a5c8;
-  display: block;
-  margin-bottom: 0.25em;
-}
-
 .wallet-download {
   display: none;
 }
 
 .wallet-download.is-visible {
   display: block;
-}
-
-span.private {
-  display: inline-block;
-  width: 75%;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-}
-
-.action-copy-paste {
-  cursor: pointer;
-}
-
-.action-copy-paste::after {
-  font-size: 12px;
-  background-repeat: no-repeat;
-  display: inline-block;
-  content: '';
-  background-image: url("../images/copy-icon.svg");
-  min-width: 20%;
-  height: 27px;
-  line-height: 27px;
-  background-size: auto 27px;
-}
-
-.action-copy-paste.clipboard::after {
-  vertical-align: top;
-  content: 'copied!' !important;
-  background-image: none !important;
 }
 
 .tx-received::after {

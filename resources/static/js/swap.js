@@ -1,8 +1,11 @@
-const amountMenus = {};
 let selectedExchange = "";
-let selectedAmount = 0;
 
-function requestCostEstimation(button, exchange) {
+function validate() {
+  const submitButton = document.querySelector("button[type=submit]");
+  submitButton.disabled = selectedExchange === "";
+}
+
+function requestCostEstimation(button) {
   const estimationElement = document.createElement("div");
   estimationElement.classList.add("estimation");
   const placeholder = document.createTextNode(`Calculating costs...`);
@@ -10,9 +13,9 @@ function requestCostEstimation(button, exchange) {
   button.appendChild(estimationElement);
 
   const data = JSON.stringify({
-    exchange: exchange,
+    exchange: button.value,
     currency: TOKEN_TICKER,
-    target_amount: parseInt(button.value) / 10 ** DECIMALS,
+    target_amount: SWAP_AMOUNT / 10 ** DECIMALS,
   });
 
   const req = new XMLHttpRequest();
@@ -29,7 +32,12 @@ function requestCostEstimation(button, exchange) {
       const error = document.createTextNode(`Swap not possible at the moment.`);
       placeholder.remove();
       estimationElement.appendChild(error);
-      button.setAttribute("disabled", true);
+
+      button.disabled = true;
+      if (selectedExchange === button.value) {
+        selectedExchange = "";
+      }
+      validate();
     }
   };
 
@@ -39,58 +47,21 @@ function requestCostEstimation(button, exchange) {
 }
 
 function addCostsToButtons() {
-  const amountButtonsKyber = amountMenus.kyber.querySelectorAll(
-    ".amount-button"
-  );
-  const amountButtonsUniswap = amountMenus.uniswap.querySelectorAll(
-    ".amount-button"
-  );
+  const exchangeButtons = document.querySelectorAll(".exchange-button");
 
-  amountButtonsKyber.forEach((button) =>
-    requestCostEstimation(button, "kyber")
-  );
-  amountButtonsUniswap.forEach((button) =>
-    requestCostEstimation(button, "uniswap")
-  );
+  exchangeButtons.forEach((button) => requestCostEstimation(button, "kyber"));
 }
 
-function setupMenus() {
+function setupButtons() {
   const exchangeButtons = document.querySelectorAll(".exchange-button");
-  const amountButtons = document.querySelectorAll(".amount-button");
-
-  const validate = () => {
-    const submitButton = document.querySelector("button[type=submit]");
-    submitButton.disabled = selectedExchange === "" || selectedAmount === 0;
-  };
 
   const selectExchange = (button) => {
-    Object.keys(amountMenus).forEach((exchange) => {
-      amountMenus[exchange].classList.remove("is-visible");
-      const button = amountMenus[exchange]
-        .closest(".menu-item")
-        .querySelector("button");
-      button.classList.remove("selected");
-    });
-    selectedAmount = 0;
-    amountButtons.forEach((button) => button.classList.remove("selected"));
+    exchangeButtons.forEach((element) => element.classList.remove("selected"));
 
     if (selectedExchange === button.value) {
       selectedExchange = "";
     } else {
       selectedExchange = button.value;
-      button.classList.add("selected");
-      const newMenuItem = button.closest(".menu-item");
-      amountMenus[button.value].classList.add("is-visible");
-    }
-    validate();
-  };
-
-  const selectAmount = (button) => {
-    amountButtons.forEach((button) => button.classList.remove("selected"));
-    if (selectedAmount === button.value) {
-      selectedAmount = 0;
-    } else {
-      selectedAmount = button.value;
       button.classList.add("selected");
     }
     validate();
@@ -99,10 +70,6 @@ function setupMenus() {
   validate();
   exchangeButtons.forEach((button) => {
     button.addEventListener("click", () => selectExchange(button));
-  });
-
-  amountButtons.forEach((button) => {
-    button.addEventListener("click", () => selectAmount(button));
   });
 }
 
@@ -114,7 +81,7 @@ function setupSubmit() {
       JSON.stringify({
         method: "swap",
         configuration_file_name: CONFIGURATION_FILE_NAME,
-        amount: selectedAmount.toString(),
+        amount: SWAP_AMOUNT.toString(),
         token: TOKEN_TICKER,
         exchange: selectedExchange,
       })
@@ -160,10 +127,7 @@ window.addEventListener("DOMContentLoaded", function () {
     setProgressStep(4, "Fund Account with DAI");
   }
 
-  amountMenus.kyber = document.querySelector("#amount-menu-kyber");
-  amountMenus.uniswap = document.querySelector("#amount-menu-uniswap");
-
-  setupMenus();
+  setupButtons();
   setupSubmit();
   addCostsToButtons();
 

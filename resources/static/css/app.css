@@ -495,7 +495,21 @@ section.content div.container div.action {
           justify-content: space-evenly;
 }
 
-section.content div.container div.action .exchange-button {
+section.content div.container div.action-list {
+  width: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+}
+
+section.content div.container div.action-list .exchange-button {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -511,16 +525,24 @@ section.content div.container div.action .exchange-button {
           align-items: center;
 }
 
-section.content div.container div.action .exchange-button .dex-icon {
+section.content div.container div.action-list .exchange-button .dex-icon {
   height: 200px;
   font-size: 120px;
   line-height: 200px;
   width: auto;
 }
 
-section.content div.container div.action .exchange-button .expand {
-  width: 36px;
-  height: 36px;
+section.content div.container div.action-list .exchange-button .estimation {
+  font-size: 12px;
+  line-height: 24px;
+}
+
+section.content div.container div.action-list .exchange-button:disabled img {
+  opacity: 0.3;
+}
+
+section.content div.container div.action-list > *:not(:last-child) {
+  margin-right: 14px;
 }
 
 section.content div.container div.ack-prompt {
@@ -731,60 +753,6 @@ div.spinner {
 
 .question img {
   height: 60px;
-}
-
-.menu-item {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
-}
-
-.menu {
-  margin-top: 18px;
-  width: 270px;
-  border: 2px solid;
-  border-color: #28a5c8;
-  border-radius: 29px;
-  font-size: 18px;
-  color: #fff;
-  visibility: hidden;
-  opacity: 0;
-  -webkit-transition: opacity 0.3s;
-  transition: opacity 0.3s;
-}
-
-.menu.is-visible {
-  visibility: visible;
-  opacity: 1;
-}
-
-.menu button {
-  border-right: none;
-  border-left: none;
-  border-radius: 0;
-  border-top: 1px solid #28a5c8;
-  border-bottom: 1px solid #28a5c8;
-}
-
-.menu button .estimation {
-  font-size: 12px;
-  line-height: 24px;
-}
-
-.menu button:first-of-type {
-  border-top-right-radius: 24px;
-  border-top-left-radius: 24px;
-  border-top: none;
-}
-
-.menu button:last-of-type {
-  border-bottom-right-radius: 24px;
-  border-bottom-left-radius: 24px;
-  border-bottom: none;
 }
 
 .video-wrapper {

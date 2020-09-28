@@ -1,60 +1,61 @@
-{% extends "base.html" %} {% block content %}
-<div class="hero">
-  We generated a Raiden Account for you
-</div>
+{% extends "base.html" %} 
 
-<div class="info-panel">
-  <div class="spinner"></div>
-  <div class="wallet-download" id="keystore-download">
-    You need to download the Raiden Account<br />
-    <a
-      id="keystore"
-      download
-    >
-      <img
-        class="icon-link big"
-        src="{{ static_url('images/download.svg') }}"
-        alt="Download link"
-      />
-    </a>
+{% block content %}
+  <div class="hero">
+    We generated a Raiden Account for you
   </div>
-</div>
 
-<div class="info-panel">
-  <div id="no-web3">
-    You need MetaMask to proceed<br />
-    <a href="https://metamask.io/download.html" target="_blank">
-      <img
-        class="icon-link big"
-        src="{{ static_url('images/metamask.svg') }}"
-        alt="Download MetaMask"
-      />
-    </a>
+  <div class="info-panel">
+    <div class="spinner"></div>
+    <div class="wallet-download" id="keystore-download">
+      You need to download the Raiden Account<br/>
+      <a
+        id="keystore"
+        download
+      >
+        <img
+          class="icon-link big"
+          src="{{ static_url('images/download.svg') }}"
+          alt="Download link"
+        />
+      </a>
+    </div>
   </div>
-</div>
 
-<div class="action">
+  <div class="info-panel">
+    <div id="no-web3">
+      You need MetaMask to proceed<br/>
+      <a href="https://metamask.io/download.html" target="_blank">
+        <img
+          class="icon-link big"
+          src="{{ static_url('images/metamask.svg') }}"
+          alt="Download MetaMask"
+        />
+      </a>
+    </div>
+  </div>
+
   {% if network.FAUCET_AVAILABLE %}
-  <button 
-    disabled 
-    class="hide-when-disabled" 
-    id="btn-funding" 
-    onClick="runFunding('{{ configuration_file.file_name }}');"
-  >
-    Get ETH
-  </button>
+    <div class="action">
+        <button 
+          disabled 
+          class="hide-when-disabled" 
+          id="btn-funding" 
+          onClick="runFunding('{{ configuration_file.file_name }}');"
+        >
+          Get ETH
+        </button>
+    </div>
   {% else %}
-  <button
-    disabled
-    class="hide-when-disabled"
-    id="btn-web3-eth"
-    onClick="sendEthViaWeb3();"
-  >
-    Send {{ ethereum_required.formatted }}
-  </button>
+    <div class="action-list hidden" id="btns-web3">
+      <button id="btn-web3-eth" onClick="sendEthViaWeb3();">
+        Send {{ ethereum_required.formatted }}
+      </button>
+      <button id="btn-ramp-eth" onClick="showRamp();">
+        Buy {{ ethereum_required.formatted }} with Ramp
+      </button>
+    </div>
   {% end %}
-</div>
-
 {% end %}
 
 {% block question_items %}
@@ -64,11 +65,11 @@
   </li>
   {% if not network.FAUCET_AVAILABLE %}
   <li>
-    Send 0.125 ETH to your Raiden account. 0.075 ETH are used as safety buffer
+    Send {{ ethereum_required.formatted }} to your Raiden account. 0.075 ETH are used as safety buffer
     to operate 3 channels. 0.05 ETH are needed for RDN and DAI tokens.
   </li>
   <li>
-    You can withdraw those 0.125 ETH minus the amount you will have spent in a
+    You can withdraw those {{ ethereum_required.formatted }} minus the amount you will have spent in a
     transaction or as transaction fees.
   </li>
   {% end %}
@@ -95,4 +96,5 @@
       {% end %}
   </script>
   <script type="text/javascript" src="{{ static_url('js/account.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ramp-network/ramp-instant-sdk/dist/ramp-instant-sdk.umd.min.js"></script>
 {% end %}

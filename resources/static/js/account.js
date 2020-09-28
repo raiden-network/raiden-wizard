@@ -1,5 +1,3 @@
-const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
-
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 
 function runFunding(configurationFileName) {
@@ -9,6 +7,19 @@ function runFunding(configurationFileName) {
   };
   WEBSOCKET.send(JSON.stringify(message));
   toggleView();
+}
+
+function showRamp() {
+  new rampInstantSdk.RampInstantSDK({
+    hostAppName: "Raiden Wizard",
+    hostLogoUrl:
+      "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
+    swapAmount: neededEthAmount.toString(),
+    swapAsset: "ETH",
+    userAddress: TARGET_ADDRESS,
+  })
+    .on("*", console.log)
+    .show();
 }
 
 async function checkWeb3Network() {
@@ -85,7 +96,9 @@ function updateNeededEth(balance) {
   if (balance.ETH.as_wei > 0) {
     const sendButton = document.getElementById("btn-web3-eth");
     sendButton.textContent = "Send missing ETH";
-    let info = document.getElementById("low-eth-info");
+    const buyButton = document.getElementById("btn-ramp-eth");
+    buyButton.textContent = "Buy missing ETH with Ramp";
+    const info = document.getElementById("low-eth-info");
     if (!info) {
       info = document.createElement("div");
       info.id = "low-eth-info";
@@ -97,14 +110,20 @@ function updateNeededEth(balance) {
 }
 
 function sendEthButtonlogic(balance) {
-  const has_web3 = checkWeb3Available();
-  let sendButton = document.getElementById("btn-web3-eth");
-  sendButton.disabled = has_web3 ? hasEnoughEthToStartSwaps(balance) : true;
-  if (!has_web3) {
+  const hasWeb3 = checkWeb3Available();
+  const hideButtons = hasWeb3 ? hasEnoughEthToStartSwaps(balance) : true;
+  const buttonList = document.getElementById("btns-web3");
+  if (hideButtons) {
+    buttonList.classList.add("hidden");
+  } else {
+    buttonList.classList.remove("hidden");
+  }
+
+  if (!hasWeb3) {
     return;
   }
+
   if (hasEnoughEthToStartSwaps(balance)) {
-    sendButton.disabled = true;
     const action = document.querySelector(".action");
     action.classList.add("tx-received");
     setTimeout(function () {
@@ -125,15 +144,18 @@ function showDownloadButton(callback) {
   }
 }
 
-async function poll() {
-  let balance = await getBalances(CONFIGURATION_DETAIL_URL);
-  let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
-
+function removeSpinner() {
   const spinner = document.querySelector(".spinner");
   if (spinner) {
     spinner.remove();
   }
+}
 
+async function poll() {
+  let balance = await getBalances(CONFIGURATION_DETAIL_URL);
+  let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+  removeSpinner();
+  
   if (!balance.ETH.as_wei && config._initial_funding_txhash) {
     return trackTransaction(
       config._initial_funding_txhash,
@@ -160,6 +182,7 @@ window.addEventListener("DOMContentLoaded", function () {
     window.MAIN_VIEW_INTERVAL = 10000;
     window.runMainView();
   } else {
+    removeSpinner();
     showDownloadButton(() => {
       let button = document.getElementById("btn-funding");
       button.disabled = false;

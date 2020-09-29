@@ -1,11 +1,12 @@
-{% extends "base.html" %} {% block content %}
-<div class="hero">
-  Get {{ swap_amount }} via a decentralized exchange<br />
-  Choose an exchange of your choice to swap
-</div>
+{% extends "base.html" %}
 
-<div class="action">
-  <div class="menu-item">
+{% block content %}
+  <div class="hero">
+    Get {{ swap_amount.formatted }} via a decentralized exchange<br />
+    Choose an exchange of your choice to swap
+  </div>
+
+  <div class="action-list">
     <button class="exchange-button" value="kyber">
       <img
         class="dex-icon"
@@ -13,42 +14,18 @@
         alt="KyberNetwork"
       />
       <span>KyberNetwork</span>
-      <img
-        class="expand"
-        src="{{ static_url('images/expand.svg') }}"
-        alt="Expand"
-      />
+      <span>{{ swap_amount.formatted }}</span>
     </button>
-
-    <div class="menu" id="amount-menu-kyber">
-      <button class="amount-button" value="{{ swap_amount.as_wei }}">
-        {{ swap_amount.formatted }}
-      </button>
-    </div>
-  </div>
-
-  <div class="menu-item">
     <button class="exchange-button" value="uniswap">
       <span class="dex-icon">🦄</span>
       <span>Uniswap</span>
-      <img
-        class="expand"
-        src="{{ static_url('images/expand.svg') }}"
-        alt="Expand"
-      />
+      <span>{{ swap_amount.formatted }}</span>
     </button>
-
-    <div class="menu" id="amount-menu-uniswap">
-      <button class="amount-button" value="{{ swap_amount.as_wei }}">
-        {{ swap_amount.formatted }}
-      </button>
-    </div>
   </div>
-</div>
 
-<div class="action">
-  <button type="submit" disabled>Confirm</button>
-</div>
+  <div class="action">
+    <button type="submit" disabled>Confirm</button>
+  </div>
 {% end %}
 
 {% block question_items %}
@@ -62,7 +39,7 @@
       By clicking confirm the tokens will be bought and deposited instantly on your behalf.
     </li>
     <li>
-      A minimum of 10 RDN is recommended to get started and be able to play around for a while.
+      A minimum of {{ swap_amount.formatted }} is recommended to get started and be able to play around for a while.
     </li>
   {% elif token.ticker == "DAI" %}
     <li>
@@ -72,7 +49,7 @@
       DAI is a stable coin which is pegged to the USD. This means that one DAI is roughly worth one USD.
     </li>
     <li>
-      A minimum of 3 DAI is recommended to get started and be able to play around for a while.
+      A minimum of {{ swap_amount.formatted }} is recommended to get started and be able to play around for a while.
     </li>
   {% end %}
 {% end %} 
@@ -85,8 +62,9 @@
       "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
     const LAUNCH_URL = "{{ reverse_url('launch', configuration_file.file_name) }}";
 
+    const SWAP_AMOUNT = {{ swap_amount.as_wei }};
     const TOKEN_TICKER = "{{ token.ticker }}";
-    const DECIMALS = "{{ token.decimals }}";
+    const DECIMALS = {{ token.decimals }};
     const CONFIGURATION_FILE_NAME = "{{ configuration_file.file_name }}";
   </script>
   <script type="text/javascript" src="{{ static_url('js/swap.js') }}"></script>

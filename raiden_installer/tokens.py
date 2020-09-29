@@ -3,8 +3,10 @@ from decimal import Decimal, getcontext
 from enum import Enum
 from typing import Dict, Generic, NewType, Optional, TypeVar
 
+from eth_typing import Address
+from eth_utils import to_canonical_address
+
 from raiden_contracts.constants import CONTRACTS_VERSION
-from raiden_installer import default_settings, network_settings, log
 
 Eth_T = TypeVar("Eth_T", int, Decimal, float, str, "Wei")
 Token_T = TypeVar("Token_T")
@@ -54,20 +56,15 @@ class Currency:
 
 @dataclass
 class Erc20Token(Currency):
+    address: Address = Address(b"")
     supply: int = 10 ** 21
-    addresses: Dict[str, str] = field(default_factory=dict)
-    network: Optional[str] = None
 
-    @property
-    def address(self) -> str:
-        network = self.network or default_settings.network.lower()
-        try:
-            return self.addresses[network]
-        except KeyError:
-            raise TokenError(f"{self.ticker} is not deployed on {network}")
+    def __post_init__(self):
+        if self.address == Address(b""):
+            raise TokenError("Erc20Token should not get initialized without an address")
 
     @staticmethod
-    def find_by_ticker(ticker, network=None):
+    def find_by_ticker(ticker, network_name):
         major, minor, _ = CONTRACTS_VERSION.split(".", 2)
         version_string = f"{major}.{minor}"
         token_list_version = {
@@ -76,13 +73,20 @@ class Erc20Token(Currency):
             "0.36": TokensV36,
             "0.37": TokensV37,
         }.get(version_string, Tokens)
-        return replace(token_list_version[ticker].value, network=network)
+        try:
+            token_data = token_list_version[ticker].value
+            address = token_data.addresses[network_name]
+        except KeyError as exc:
+            raise TokenError(f"{ticker} is not deployed on {network_name}") from exc
+
+        return Erc20Token(
+            ticker=token_data.ticker,
+            wei_ticker=token_data.wei_ticker,
+            address=to_canonical_address(address)
+        )
 
 
-ETH = Currency(ticker="ETH", wei_ticker="WEI")
-
-
-class TokenAmount(Generic[Eth_T]):
+class CurrencyAmount(Generic[Eth_T]):
     def __init__(self, value: Eth_T, currency: Currency):
         context = getcontext()
         context.prec = currency.decimals
@@ -95,8 +99,6 @@ class TokenAmount(Generic[Eth_T]):
     @property
     def ticker(self) -> TokenTicker:
         ticker = self.currency.ticker
-        if ticker is None:
-            raise ValueError(f"No ticker defined for {self.currency.__class__.__name__}")
         return TokenTicker(ticker)
 
     @property
@@ -111,49 +113,65 @@ class TokenAmount(Generic[Eth_T]):
         return f"{self.value} {self.ticker}"
 
     def __add__(self, other):
-        if not self.__class__ == other.__class__:
-            raise ValueError(f"Can not add {self.formatted} and {other.formatted}")
+        if not self.currency == other.currency:
+            raise ValueError(f"Cannot add {self.formatted} and {other.formatted}")
 
-        return self.__class__(Wei(self.as_wei + other.as_wei), self.currency)
+        return CurrencyAmount(Wei(self.as_wei + other.as_wei), self.currency)
 
     def __sub__(self, other):
-        if not self.__class__ == other.__class__:
-            raise ValueError(f"Can not sub {self.formatted} and {other.formatted}")
+        if not self.currency == other.currency:
+            raise ValueError(f"Cannot sub {self.formatted} and {other.formatted}")
 
-        return self.__class__(Wei(self.as_wei - other.as_wei), self.currency)
+        return CurrencyAmount(Wei(self.as_wei - other.as_wei), self.currency)
 
     def __eq__(self, other):
         return self.currency == other.currency and self.as_wei == other.as_wei
 
     def __lt__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
         return self.as_wei < other.as_wei
 
     def __le__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
 
         return self.as_wei <= other.as_wei
 
     def __gt__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
         return self.as_wei > other.as_wei
 
     def __ge__(self, other):
         if not self.currency == other.currency:
-            raise ValueError(f"Can not compare {self.currency} with {other.currency}")
+            raise ValueError(f"Cannot compare {self.currency} with {other.currency}")
 
         return self.as_wei >= other.as_wei
 
 
-class EthereumAmount(TokenAmount):
+class TokenAmount(CurrencyAmount):
+    def __init__(self, value: Eth_T, currency: Erc20Token):
+        super().__init__(value, currency)
+        self.address = currency.address
+
+
+ETH = Currency(ticker="ETH", wei_ticker="WEI")
+
+
+class EthereumAmount(CurrencyAmount):
     def __init__(self, value: Eth_T):
         super().__init__(value, ETH)
 
 
-_RDN = Erc20Token(
+@dataclass(frozen=True)
+class TokenData:
+    ticker: str
+    wei_ticker: str
+    addresses: Dict[str, str]
+
+
+_RDN = TokenData(
     ticker="RDN",
     wei_ticker="REI",
     addresses={
@@ -165,18 +183,7 @@ _RDN = Erc20Token(
     },
 )
 
-_SAI = Erc20Token(
-    ticker="SAI",
-    wei_ticker="SEI",
-    addresses={
-        "mainnet": "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359",
-        "ropsten": "0xaD6D458402F60fD3Bd25163575031ACDce07538D",
-        "rinkeby": "0x2448eE2641d78CC42D7AD76498917359D961A783",
-        "kovan": "0xc4375b7de8af5a38a93548eb8453a498222c4ff2",
-    },
-)
-
-_DAI = Erc20Token(
+_DAI = TokenData(
     ticker="DAI",
     wei_ticker="DEI",
     addresses={
@@ -185,13 +192,7 @@ _DAI = Erc20Token(
     },
 )
 
-_LondonRDN = Erc20Token(
-    ticker="LDN",
-    wei_ticker="REI",
-    addresses={"goerli": "0x06b05eb77f6d7c4e7449105d36c7e04fa9cff3ca"},
-)
-
-_WizardToken = Erc20Token(
+_WizardToken = TokenData(
     ticker="WIZ",
     wei_ticker="WEI",
     addresses={"goerli": "0x95b2d84de40a0121061b105e6b54016a49621b44"},
@@ -201,14 +202,12 @@ _WizardToken = Erc20Token(
 class Tokens(Enum):
     RDN = _RDN
     DAI = _DAI
-    LDN = _LondonRDN
     WIZ = _WizardToken
 
 
 class TokensV25(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
             "goerli": "0x3a989d97388a39a0b5796306c615d10b7416be77",
@@ -217,23 +216,20 @@ class TokensV25(Enum):
 
 
 class TokensV33(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={
             "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
             "goerli": "0x709118121A1ccA0f32FC2C0c59752E8FEE3c2834",
         },
     )
-    LDN = _LondonRDN
     DAI = _DAI
     WIZ = _WizardToken
 
 
 class TokensV36(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
+    RDN = replace(
+        _RDN,
         addresses={"goerli": "0x4074fD4d460d0c31cbEdC3f59B2D98626D063952"},
     )
     DAI = _DAI
@@ -241,13 +237,14 @@ class TokensV36(Enum):
 
 
 class TokensV37(Enum):
-    RDN = Erc20Token(
-        ticker="RDN",
-        wei_ticker="REI",
-        addresses={
-            "goerli": "0xc116edAD88cda44E703ef1fc59766268E4aa187B",
-            "mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6",
-        },
+    RDN = replace(
+        _RDN,
+        addresses={"mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6"},
+    )
+    SVT = TokenData(
+        ticker="SVT",
+        wei_ticker="SEI",
+        addresses={"goerli": "0x5Fc523e13fBAc2140F056AD7A96De2cC0C4Cc63A"},
     )
     DAI = _DAI
     WIZ = _WizardToken
@@ -275,45 +272,21 @@ class RequiredAmounts:
             ),
         )
 
-    @staticmethod
-    def for_network(network_name):
-        return RequiredAmounts.from_settings(network_settings[network_name])
-
 
 @dataclass
 class SwapAmounts:
-    service_token_1: TokenAmount
-    service_token_2: TokenAmount
-    service_token_3: TokenAmount
-    transfer_token_1: TokenAmount
-    transfer_token_2: TokenAmount
-    transfer_token_3: TokenAmount
+    service_token: TokenAmount
+    transfer_token: TokenAmount
 
     @staticmethod
     def from_settings(settings):
         return SwapAmounts(
-            service_token_1=TokenAmount(
-                Wei(settings.service_token.swap_amount_1),
+            service_token=TokenAmount(
+                Wei(settings.service_token.swap_amount),
                 Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
             ),
-            service_token_2=TokenAmount(
-                Wei(settings.service_token.swap_amount_2),
-                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
-            ),
-            service_token_3=TokenAmount(
-                Wei(settings.service_token.swap_amount_3),
-                Erc20Token.find_by_ticker(settings.service_token.ticker, settings.network),
-            ),
-            transfer_token_1=TokenAmount(
-                Wei(settings.transfer_token.swap_amount_1),
-                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
-            ),
-            transfer_token_2=TokenAmount(
-                Wei(settings.transfer_token.swap_amount_2),
-                Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
-            ),
-            transfer_token_3=TokenAmount(
-                Wei(settings.transfer_token.swap_amount_3),
+            transfer_token=TokenAmount(
+                Wei(settings.transfer_token.swap_amount),
                 Erc20Token.find_by_ticker(settings.transfer_token.ticker, settings.network),
             ),
         )

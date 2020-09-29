@@ -17,7 +17,9 @@
       />
     </a>
   </div>
-  <br />
+</div>
+
+<div class="info-panel">
   <div id="no-web3">
     You need MetaMask to proceed<br />
     <a href="https://metamask.io/download.html" target="_blank">
@@ -31,6 +33,16 @@
 </div>
 
 <div class="action">
+  {% if network.FAUCET_AVAILABLE %}
+  <button 
+    disabled 
+    class="hide-when-disabled" 
+    id="btn-funding" 
+    onClick="runFunding('{{ configuration_file.file_name }}');"
+  >
+    Get ETH
+  </button>
+  {% else %}
   <button
     disabled
     class="hide-when-disabled"
@@ -39,189 +51,47 @@
   >
     Send {{ ethereum_required.formatted }}
   </button>
+  {% end %}
 </div>
 
 {% end %}
 
-{% block question %}
-<div class="question">
-  <span class="tooltip-item">
-    <a target="_blank">
-      <img class="icon-link big" src="{{ static_url('images/question.png') }}" alt="Questions" />
-    </a>
-    <div class="tooltip">
-      <ul>
-        <li>
-          Please, download your keystore file now. You can restore your Raiden account
-          with this file and the password via Metamask.
-        </li>
-        <li>
-          Send 0.125 ETH to your Raiden account. 0.075 ETH are used as safety buffer
-          to operate 3 channels. 0.05 ETH are needed for RDN and DAI tokens.
-        </li>
-        <li>
-          You can withdraw those 0.125 ETH minus the amount you will have spent in a
-          transaction or as transaction fees.
-        </li>
-        <li>
-          Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>
-        </li>
-      </ul>
-    </div>
-  </span>
-</div>
+{% block question_items %}
+  <li>
+    Please, download your keystore file now. You can restore your Raiden account
+    with this file and the password via Metamask.
+  </li>
+  {% if not network.FAUCET_AVAILABLE %}
+  <li>
+    Send 0.125 ETH to your Raiden account. 0.075 ETH are used as safety buffer
+    to operate 3 channels. 0.05 ETH are needed for RDN and DAI tokens.
+  </li>
+  <li>
+    You can withdraw those 0.125 ETH minus the amount you will have spent in a
+    transaction or as transaction fees.
+  </li>
+  {% end %}
 {% end %}
 
 {% block page_header_scripts %}
-<script type="text/javascript">
-  const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
-  const TARGET_ADDRESS = "{{ configuration_file.account.address }}";
-  const ETHEREUM_REQUIRED_AMOUNT_FORMATTED =
-    "{{ ethereum_required.formatted }}";
-  let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
+  <script type="text/javascript">
+    const TARGET_ADDRESS = "{{ to_checksum_address(configuration_file.account.address) }}";
+    const ETHEREUM_REQUIRED_AMOUNT_FORMATTED =
+      "{{ ethereum_required.formatted }}";
+    const FAUCET_AVAILABLE = "{{ network.FAUCET_AVAILABLE }}";
+    const CHAIN_ID = "{{ configuration_file.network.chain_id }}";
+    const CONFIGURATION_FILE_NAME = "{{ configuration_file.file_name }}";
 
-  async function checkWeb3Network() {
-    let required_chain_id = "{{ configuration_file.network.chain_id }}";
-    await connectWeb3();
-    web3.version.getNetwork(function (error, chain_id) {
-      if (error) {
-        console.error(error);
-      }
-
-      if (chain_id != required_chain_id) {
-        let current_chain_name = CHAIN_ID_MAPPING[chain_id];
-        let required_chain_name = CHAIN_ID_MAPPING[required_chain_id];
-        alert(
-          `Web3 Browser connected to ${current_chain_name}, please change to ${required_chain_name}.`
-        );
-      }
-    });
-  }
-
-  function makeWeb3Transaction(w3, transaction_data) {
-    w3.eth.sendTransaction(transaction_data, function (error, result) {
-      if (result) {
-        // result is the transaction hash
-        trackTransaction(result, "{{ configuration_file.file_name }}");
-      }
-
-      if (error) {
-        console.error(error);
-      }
-    });
-  }
-
-  async function sendEthViaWeb3() {
-    await checkWeb3Network();
-    let web3 = window.web3;
-    let sender_address =
-      (window.ethereum && window.ethereum.selectedAddress) ||
-      web3.eth.defaultAccount;
-    let gasPrice;
-
-    try {
-      gasPrice = await getGasPrice(
-        "{{ reverse_url('gas_price', configuration_file.file_name) }}"
-      );
-    } catch {
-      console.err("Could not fetch gas price. Falling back to web3 gas price.");
-    }
-
-    let transaction_data = {
-      from: sender_address,
-      to: TARGET_ADDRESS,
-      value: neededEthAmount,
-    };
-
-    if (gasPrice) {
-      transaction_data.gasPrice = gasPrice;
-    }
-
-    makeWeb3Transaction(web3, transaction_data);
-  }
-
-  function checkWeb3Available() {
-    let has_web3 = Boolean(window.ethereum || window.web3);
-    let noWeb3Text = document.getElementById("no-web3");
-    if (has_web3) {
-      console.log("Inside has_web3 true");
-      noWeb3Text.style.display = "none";
-    } else {
-      noWeb3Text.style.display = "inline";
-    }
-    return has_web3;
-  }
-
-  function updateNeededEth(balance) {
-    neededEthAmount = ETHEREUM_REQUIRED_AMOUNT - balance.ETH.as_wei;
-    if (balance.ETH.as_wei > 0) {
-      const sendButton = document.getElementById("btn-web3-eth");
-      sendButton.textContent = "Send missing ETH";
-      let info = document.getElementById("low-eth-info");
-      if (!info) {
-        info = document.createElement("div");
-        info.id = "low-eth-info";
-        const infoPanel = document.querySelector(".info-panel");
-        infoPanel.appendChild(info);
-      }
-      info.textContent = `You have ${balance.ETH.formatted} but you need ${ETHEREUM_REQUIRED_AMOUNT_FORMATTED}`;
-    }
-  }
-
-  function sendEthButtonlogic(balance) {
-    const has_web3 = checkWeb3Available();
-    let button_send_eth = document.getElementById("btn-web3-eth");
-    button_send_eth.disabled = has_web3
-      ? has_web3 && hasEnoughEthToStartSwaps(balance)
-      : true;
-    if (!has_web3) {
-      return;
-    }
-    if (hasEnoughEthToStartSwaps(balance)) {
-      let button_send_eth = document.getElementById("btn-web3-eth");
-      button_send_eth.disabled = true;
-      const action = document.querySelector(".action");
-      action.classList.add("tx-received");
-      setTimeout(function () {
-        forceNavigation("{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}");
-      }, 2000);
-    } else {
-      updateNeededEth(balance);
-    }
-  }
-
-  async function poll() {
-    let balance = await getBalances(
-      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
-    );
-    let config = await getConfigurationFileData(
-      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}"
-    );
-    if (!balance.ETH.as_wei && config._initial_funding_txhash) {
-        return trackTransaction(config._initial_funding_txhash, "{{ configuration_file.file_name }}");
-    }
-    if (balance.ETH.as_wei) {
-      sendEthButtonlogic(balance);
-    } else {
-      let keystore_div = document.getElementById("keystore-download");
-      keystore_div.classList.add("is-visible");
-      let keystore_button = document.getElementById("keystore");
-      keystore_button.href = "{{ reverse_url('keystore', configuration_file.file_name, keystore) }}";
-      keystore_button.onclick = function () {
-        sendEthButtonlogic(balance);
-      };
-    }
-  }
-
-  function main() {
-    poll();
-  }
-
-  window.addEventListener("load", function () {
-    setProgressStep(2, 'Fund Account with ETH');
-    window.MAIN_VIEW_INTERVAL = 10000;
-    window.runMainView();
-  });
-</script>
-
+    const GAS_PRICE_URL = "{{ reverse_url('gas_price', configuration_file.file_name) }}";
+    const KEYSTORE_URL = "{{ reverse_url('keystore', configuration_file.file_name, keystore) }}";
+    const CONFIGURATION_DETAIL_URL = 
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
+    const SWAP_URL = 
+      {% if network.name == 'mainnet' %}
+        "{{ reverse_url('swap', configuration_file.file_name, 'RDN') }}";
+      {% else %}
+        "";
+      {% end %}
+  </script>
+  <script type="text/javascript" src="{{ static_url('js/account.js') }}"></script>
 {% end %}

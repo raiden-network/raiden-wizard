@@ -150,6 +150,10 @@ input[type=password] {
     margin-bottom: 15px;
 }
 
+input[type=text] {
+    margin-bottom: 15px;
+}
+
 .error-box {
     height: 28px;
 }
@@ -342,6 +346,62 @@ section.content {
     margin: 0 auto;
     padding: 50px 0;
 
+    .progress {
+        display: none;
+        
+        &.is-visible {
+            display: block;
+        }
+        
+        .steps {
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 30px;
+            width: dimension(progress-column-width);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .circle {
+                background-color: color(progress-bg);
+                border-radius: 50%;
+                width: 45px;
+                height: 45px;
+                padding: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                align-content: center;
+
+                img {
+                    display: inline-block;
+                    max-width:100%;
+                    max-height:100%;
+                    opacity: 0.2;
+
+                    &.rounded {
+                        border-radius: 50%;
+                    }
+                }
+
+                &.active {
+                    background-color: color(progress-active);
+
+                    img {
+                        opacity: 1;
+
+                    }
+                }
+            }
+
+            .divider {
+                flex: 1;
+                height: 4px;
+                background-color: color(progress-bg);
+            }
+        }
+    }
+
     div.container {
         display: grid;
         justify-content: center;
@@ -349,7 +409,7 @@ section.content {
         justify-self: center;
         min-height: 480px;
 
-        grid-template-rows: 160px 120px minmax(120px, auto) 80px;
+        grid-template-rows: 160px minmax(120px, auto) minmax(120px, auto) 80px;
 
         div {
             justify-self: center;
@@ -364,62 +424,6 @@ section.content {
             img {
                 width: auto;
                 height: 105px;
-            }
-        }
-
-        .progress {
-            display: none;
-            
-            &.is-visible {
-                display: block;
-            }
-            
-            .steps {
-                margin-left: auto;
-                margin-right: auto;
-                margin-bottom: 30px;
-                width: dimension(progress-column-width);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-
-                .circle {
-                    background-color: color(progress-bg);
-                    border-radius: 50%;
-                    width: 45px;
-                    height: 45px;
-                    padding: 10px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    align-content: center;
-
-                    img {
-                        display: inline-block;
-                        max-width:100%;
-                        max-height:100%;
-                        opacity: 0.2;
-
-                        &.rounded {
-                            border-radius: 50%;
-                        }
-                    }
-
-                    &.active {
-                        background-color: color(progress-active);
-
-                        img {
-                            opacity: 1;
-
-                        }
-                    }
-                }
-
-                .divider {
-                    flex: 1;
-                    height: 4px;
-                    background-color: color(progress-bg);
-                }
             }
         }
 
@@ -472,6 +476,13 @@ section.content {
             display: inline-grid;
             grid-auto-flow: column;
             justify-content: space-evenly;
+        }
+
+        div.action-list {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
 
             .exchange-button {
                 display: flex;
@@ -486,11 +497,20 @@ section.content {
                     width: auto;
                 }
 
-                .expand {
-                    width: 36px;
-                    height: 36px;
+                .estimation {
+                    font-size: 12px;
+                    line-height: 24px;
+                }
+
+                &:disabled img {
+                    opacity: 0.3;
                 }
             }
+
+            &>*:not(:last-child) {
+                margin-right: 14px;
+            }
+
         }
 
         div.ack-prompt {
@@ -511,8 +531,7 @@ section.content {
 }
 
 #background-task-tracker {
-    margin-top: 25vh;
-    margin-bottom: 70px;
+    margin: 70px 0;
 
     ul.messages {
         color: color(text-standard);
@@ -681,53 +700,9 @@ div.spinner {
     position: fixed;
     bottom: 30px;
     right: 45px;
-}
 
-.menu-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.menu {
-    margin-top: 18px;
-    width: 270px;
-    border: 2px solid;
-    border-color: color(button-border);
-    border-radius: 29px;
-    font-size: 18px;
-    color: color(text-standard);
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.3s;
-    
-    &.is-visible {
-        visibility: visible;
-        opacity: 1;
-    }
-
-    button {
-        border-right: none;
-        border-left: none;
-        border-radius: 0;
-        border-top: 1px solid color(button-border);
-        border-bottom: 1px solid color(button-border);
-
-        .estimation {
-            font-size: 12px;
-            line-height: 24px;
-        }
-    }
-
-    button:first-of-type {
-        border-top-right-radius: 24px;
-        border-top-left-radius: 24px;
-        border-top: none;
-    }
-
-    button:last-of-type {
-        border-bottom-right-radius: 24px;
-        border-bottom-left-radius: 24px;
-        border-bottom: none;
+    img {
+        height: 60px;
     }
 }
 

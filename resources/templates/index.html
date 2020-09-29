@@ -2,93 +2,108 @@
 
 {% block logo_class %}home{% end %}
 
+{% block question_class %}hidden{% end %}
+
 {% block content %}
-<h1>
-  <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
-  Wizard
-</h1>
+  <h1>
+    <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
+    Wizard
+  </h1>
 
-<div class="hero">
-  Raiden needs three different coins to work
-</div>
-
-<div class="description">
-  <div class="row-items">
-    <div>
-      <img src="{{ static_url('images/eth.png') }}" alt="ETH" title="ETH" />
-      <span>...to talk to the Ethereum Blockchain</span>
-    </div>
-    <div>
-      <img src="{{ static_url('images/rdn.png') }}" alt="RDN token" title="RDN token" />
-      <span>...to get pathfinding and monitoring services</span>
-    </div>
-    <div>
-      <img src="{{ static_url('images/dai.png') }}" alt="DAI token" title="DAI token" />
-      <span>...to transfer in the Raiden Network</span>
-    </div>
+  <div class="hero">
+    Raiden needs three different coins to work
   </div>
 
-  <div>The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps</div>
+  <div class="description">
+    <div class="row-items">
+      <div>
+        <img src="{{ static_url('images/eth.png') }}" alt="ETH" title="ETH" />
+        <span>...to talk to the Ethereum Blockchain</span>
+      </div>
+      <div>
+        <img src="{{ static_url('images/rdn.png') }}" alt="RDN token" title="RDN token" />
+        <span>...to get pathfinding and monitoring services</span>
+      </div>
+      <div>
+        <img src="{{ static_url('images/dai.png') }}" alt="DAI token" title="DAI token" />
+        <span>...to transfer in the Raiden Network</span>
+      </div>
+    </div>
 
-  <div class="ack-prompt">
-    <input type="checkbox" name="ack-wizard" />
-    <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
-      I accept the <i>terms and conditions</i>
-    </label>
+
+    {% if network.name == "mainnet" %}
+      <div>
+        The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps
+      </div>
+      <div class="ack-prompt">
+        <input type="checkbox" name="ack-wizard" />
+        <label for="ack-wizard" class="modal-trigger" data-modal-trigger="disclaimer">
+          I accept the <i>terms and conditions</i>
+        </label>
+      </div>
+    {% else %}
+      <div>
+        The Wizard allows you to try out Raiden on a testnet by generating and funding a Raiden account for you
+      </div>
+    {% end %}
   </div>
-</div>
 
-<div class="action">
-  {% if configuration_file %}
-  <button class="link-button" data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}" disabled>
-    Launch
-  </button>
-  {% else %}
-  <button class="link-button" data-link-url="{{ reverse_url('create_wallet', 'mainnet') }}" id="setup-button" disabled>
-    Start
-  </button>
+  <div class="action">
+    {% if configuration_file %}
+      <button
+        class="link-button"
+        data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}"
+        {% if network.name == "mainnet" %}disabled{% end %}
+      >
+        Launch
+      </button>
+    {% else %}
+      <button
+        class="link-button"
+        id="setup-button"
+        data-link-url="{{ reverse_url('create_wallet') }}"
+        {% if network.name == "mainnet" %}disabled{% end %}
+      >
+        Start
+      </button>
+    {% end %}
+  </div>
+
+  {% if network.name == "mainnet" %}
+    <div class="modal" data-modal="disclaimer">
+      <img src="{{ static_url('images/close.svg') }}" class="modal__close" alt="Closes the modal">
+      <h2>Disclaimer<h2>
+      <div class="overflow-box">
+        <p>
+          This Software, the Raiden Wizard, will assist you in setting up the requirements to join the Raiden Network in
+          six steps.
+          Raiden needs (i) access to the Ethereum blockchain, (ii) a Raiden Account, and (iii) three different tokens to be
+          fully functional. The Software will guide you through the process to fulfil the requirements. For you to be able
+          to obtain the required tokens using the Software, the Software interacts directly with one or two decentralized
+          exchanges - <a href="https://kyberswap.com/" target="_blank">Kyber</a> or
+          <a href="https://uniswap.org" target="_blank">Uniswap</a> - using their API, see
+          <a href="http://files.kyberswap.com/tac.pdf" target="_blank">Terms and Conditions Kyber</a>. These decentralized
+          exchanges are unaffiliated with Brainbot Labs Establishment (BBLE). BBLE gives neither express or implied
+          representations nor express or implied warranties with regard to the applications or the services provided by
+          these decentralised exchanges. This includes but is not limited to the validity of the license, suitability,
+          quality, functionality, availability, access of/to the application or service. BBLE therefore cannot be held
+          responsible or liable for these application or services or for any damages related to using these applications or
+          services.
+
+          In addition, this Software in general is an Alpha version of experimental open source software released as a test
+          version under an MIT license and may contain errors and/or bugs. No guarantee or representation whatsoever is made
+          regarding its suitability (or its use) for any purpose or regarding its compliance with any applicable laws and
+          regulations. Use of the software is at your own risk and discretion and by using the software you warrant and
+          represent that you have read this disclaimer, understand its contents, assume all risk related thereto and hereby
+          release, waive, discharge and covenant not to hold liable Brainbot Labs Establishment or any of its officers,
+          employees or affiliates from and for any direct or indirect damage resulting from the software or the use thereof.
+          Such to the extent as permissible by applicable laws and regulations.
+        </p>
+      </div>
+    </div>
   {% end %}
-</div>
-
-<div class="modal" data-modal="disclaimer">
-  <img src="{{ static_url('images/close.svg') }}" class="modal__close" alt="Closes the modal">
-  <h2>Disclaimer<h2>
-  <div class="overflow-box">
-    <p>
-      This Software, the Raiden Wizard, will assist you in setting up the requirements to join the Raiden Network in
-      six steps.
-      Raiden needs (i) access to the Ethereum blockchain, (ii) a Raiden Account, and (iii) three different tokens to be
-      fully functional. The Software will guide you through the process to fulfil the requirements. For you to be able
-      to obtain the required tokens using the Software, the Software interacts directly with one or two decentralized
-      exchanges - <a href="https://kyberswap.com/" target="_blank">Kyber</a> or
-      <a href="https://uniswap.org" target="_blank">Uniswap</a> - using their API, see
-      <a href="http://files.kyberswap.com/tac.pdf" target="_blank">Terms and Conditions Kyber</a>. These decentralized
-      exchanges are unaffiliated with Brainbot Labs Establishment (BBLE). BBLE gives neither express or implied
-      representations nor express or implied warranties with regard to the applications or the services provided by
-      these decentralised exchanges. This includes but is not limited to the validity of the license, suitability,
-      quality, functionality, availability, access of/to the application or service. BBLE therefore cannot be held
-      responsible or liable for these application or services or for any damages related to using these applications or
-      services.
-
-      In addition, this Software in general is an Alpha version of experimental open source software released as a test
-      version under an MIT license and may contain errors and/or bugs. No guarantee or representation whatsoever is made
-      regarding its suitability (or its use) for any purpose or regarding its compliance with any applicable laws and
-      regulations. Use of the software is at your own risk and discretion and by using the software you warrant and
-      represent that you have read this disclaimer, understand its contents, assume all risk related thereto and hereby
-      release, waive, discharge and covenant not to hold liable Brainbot Labs Establishment or any of its officers,
-      employees or affiliates from and for any direct or indirect damage resulting from the software or the use thereof.
-      Such to the extent as permissible by applicable laws and regulations.
-    </p>
-  </div>
-</div>
 {% end %}
 
 {% block page_header_scripts %}
-<script type="text/javascript">
- window.addEventListener("load", function() {
-   let checkboxes = document.querySelectorAll("input[type=checkbox]");
-   let button = document.querySelector("button.link-button");
-   checkAcknowledgements(checkboxes, button);
- });
-</script>
+  <script type="text/javascript" src="{{ static_url('js/index.js') }}"></script>
 {% end %}

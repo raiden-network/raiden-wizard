@@ -15,6 +15,7 @@ cffi==1.12.3
 chardet==3.0.4
 Click==7.0
 coincurve==12.0.0
+coverage==5.2
 cytoolz==0.10.1
 decorator==4.4.0
 entrypoints==0.3
@@ -65,6 +66,7 @@ Pygments==2.4.2
 pyparsing==2.4.2
 pyrsistent==0.16.0
 pytest==5.0.1
+pytest-tornado==0.8.1
 raiden-contracts==0.37.0
 regex==2019.6.8
 requests==2.22.0

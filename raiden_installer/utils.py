@@ -1,17 +1,24 @@
+import math
 import os
 import time
-from typing import Any, Dict
 
 import requests
+from eth_typing import Address
+from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
+from web3.exceptions import TransactionNotFound
 
 from raiden_contracts.contract_manager import get_contracts_deployment_info
 from raiden_installer import log
-from raiden_installer.constants import WEB3_TIMEOUT
+from raiden_installer.constants import REQUIRED_BLOCK_CONFIRMATIONS, WEB3_TIMEOUT
 from raiden_installer.tokens import EthereumAmount, Wei
 
 
-def recover_ld_library_env_path():
+class TransactionTimeoutError(Exception):
+    pass
+
+
+def recover_ld_library_env_path():  # pragma: no cover
     """This works around an issue that `webbrowser.open` fails inside a
     PyInstaller binary.
     See: https://github.com/pyinstaller/pyinstaller/issues/3668
@@ -26,20 +33,20 @@ def recover_ld_library_env_path():
             os.environ.pop(lp_key)
 
 
-def get_contract_address(chain_id, contract_name):
+def get_contract_address(chain_id, contract_name) -> Address:
     try:
         network_contracts = get_contracts_deployment_info(chain_id)
         assert network_contracts
-        return network_contracts["contracts"][contract_name]["address"]
-    except (TypeError, AssertionError) as exc:
+        return to_canonical_address(network_contracts["contracts"][contract_name]["address"])
+    except (TypeError, AssertionError, KeyError) as exc:
         log.warn(str(exc))
-        return "0x0"
+        raise ValueError(f"{contract_name} does not exist on chain id {chain_id}") from exc
 
 
 def estimate_gas(w3, account, contract_function, *args, **kw):
     transaction_params = {
-        "chainId": int(w3.net.version),
-        "nonce": w3.eth.getTransactionCount(account.address),
+        "chainId": w3.eth.chainId,
+        "nonce": w3.eth.getTransactionCount(account.address, "pending"),
     }
     transaction_params.update(**kw)
     result = contract_function(*args)
@@ -49,10 +56,11 @@ def estimate_gas(w3, account, contract_function, *args, **kw):
 
 def send_raw_transaction(w3, account, contract_function, *args, **kw):
     transaction_params = {
-        "chainId": int(w3.net.version),
-        "nonce": w3.eth.getTransactionCount(account.address),
+        "chainId": w3.eth.chainId,
+        "nonce": w3.eth.getTransactionCount(account.address, "pending"),
         "gasPrice": kw.pop("gas_price", (w3.eth.generateGasPrice())),
         "gas": kw.pop("gas", None),
+        "from": to_checksum_address(kw.pop("from", account.address))
     }
 
     transaction_params.update(**kw)
@@ -72,20 +80,27 @@ def send_raw_transaction(w3, account, contract_function, *args, **kw):
     signed = w3.eth.account.signTransaction(transaction_data, account.private_key)
     tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
     log.debug(f"transaction hash: {tx_hash.hex()}")
-    return w3.eth.waitForTransactionReceipt(tx_hash, timeout=WEB3_TIMEOUT)
+    return tx_hash
 
 
-def wait_for_transaction(web3: Web3, transaction_receipt: Dict[str, Any]) -> None:
+def wait_for_transaction(w3: Web3, transaction_hash) -> None:
+    log.debug("wait for block with transaction to be fetched")
+    time_start = time.time()
+    block_with_transaction = math.inf
+    current_block = w3.eth.blockNumber
 
-    if "blockNumber" not in transaction_receipt:
-        raise KeyError("blockNumber not in transaction receipt.")
+    while current_block < block_with_transaction + REQUIRED_BLOCK_CONFIRMATIONS:
+        if time.time() - time_start >= WEB3_TIMEOUT:
+            raise TransactionTimeoutError(
+                f"Tx with hash {transaction_hash} was not found after {WEB3_TIMEOUT} seconds"
+            )
+        try:
+            tx_receipt = w3.eth.getTransactionReceipt(transaction_hash)
+            block_with_transaction = tx_receipt["blockNumber"]
+        except TransactionNotFound:
+            pass
 
-    block_with_transaction = transaction_receipt["blockNumber"]
-    current_block = web3.eth.blockNumber
-
-    while current_block < block_with_transaction:
-        log.debug("wait for block with transaction to be fetched")
-        current_block = web3.eth.blockNumber
+        current_block = w3.eth.blockNumber
         time.sleep(1)
 
 
@@ -98,5 +113,5 @@ def check_eth_node_responsivity(url):
                 "Unauthorized to make requests to ethereum node."
                 "Maybe the Infura project ID is wrong?"
             )
-    except requests.RequestException as e:
-        raise ValueError(str(e) or "Unspecified Request Exception")
+    except requests.RequestException as exc:
+        raise ValueError(str(exc) or "Unspecified Request Exception") from exc

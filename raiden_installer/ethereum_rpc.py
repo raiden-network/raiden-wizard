@@ -35,14 +35,15 @@ def make_web3_provider(url: str, account: Account) -> Web3:
         # FIXME: This is a temporary fix to speed up gas price generation
         # by fetching from eth_gas_station if possible.
         # Once we have a reliable gas price calculation this can be removed
-        try:
-            response = requests.get(ETH_GAS_STATION_API)
-            if response and response.status_code == 200:
-                data = response.json()
-                log.debug(f"fetched gas price: {Wei(int(data['fast'] * 10e7 * 1.1))} Wei")
-                return Wei(int(data["fast"] * 10e7 * 1.1))
-        except (TimeoutError, ConnectionError, KeyError):
-            log.debug("Could not fetch from ethgasstation. Falling back to web3 gas estimation.")
+        if int(web3.net.version) == 1:
+            try:
+                response = requests.get(ETH_GAS_STATION_API)
+                if response and response.status_code == 200:
+                    data = response.json()
+                    log.debug(f"fetched gas price: {Wei(int(data['fast'] * 10e7 * 1.1))} Wei")
+                    return Wei(int(data["fast"] * 10e7 * 1.1))
+            except (TimeoutError, ConnectionError, KeyError):
+                log.debug("Could not fetch from ethgasstation. Falling back to web3 gas estimation.")
 
         gas_price_strategy = construct_time_based_gas_price_strategy(
             max_wait_seconds=15, sample_size=25
@@ -63,25 +64,20 @@ class EthereumRPCProvider:
     def __init__(self, url):
         self.url = url
 
-    @staticmethod
-    def make_from_url(url):
-        try:
-            return Infura(url)
-        except ValueError:
-            return EthereumRPCProvider(url)
-
 
 class Infura(EthereumRPCProvider):
     URL_PATTERN = "https://{network_name}.infura.io:443/v3/{project_id}"
-    ID_REGEX = "(^|(?<=(infura\.io\/v[\d]\/)))[\da-fA-F]{32}$"
+    ID_REGEX = r"(^|(?<=(infura\.io\/v[\d]\/)))[\da-fA-F]{32}$"
 
     def __init__(self, url):
         super().__init__(url)
         if not Infura.is_valid_project_id(self.project_id):
             raise ValueError(f"{url} is not a valid URL and/or infura project")
 
-        if self.network.name not in Network.get_network_names():
-            raise ValueError(f"{self.network.name} is no valid ethereum network")
+        try:
+            self.network
+        except KeyError as exc:
+            raise ValueError(f"{url} contains an invalid ethereum network") from exc
 
     @property
     def network(self):

@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import hashlib
 import uuid
 
 import requests
-
-from raiden_installer import default_settings
+from eth_utils import to_checksum_address
 
 
 class FundingError(Exception):
@@ -12,8 +13,6 @@ class FundingError(Exception):
 
 class Network:
     FAUCET_AVAILABLE = False
-    KYBER_RDN_EXCHANGE = False
-    UNISWAP_RDN_EXCHANGE = False
 
     CHAIN_ID_MAPPING = {"mainnet": 1, "ropsten": 3, "rinkeby": 4, "goerli": 5, "kovan": 42}
 
@@ -38,34 +37,19 @@ class Network:
         return list(Network.CHAIN_ID_MAPPING.keys())
 
     @staticmethod
-    def all():
-        return [Network.get_by_name(n) for n in Network.get_network_names()]
-
-    @staticmethod
-    def get_by_chain_id(chain_id):
+    def get_by_chain_id(chain_id: int) -> Network:
         return Network.get_by_name(
             [name for name, cid in Network.CHAIN_ID_MAPPING.items() if cid == chain_id].pop()
         )
 
     @staticmethod
-    def get_by_name(name):
-        network_class = {
-            "mainnet": Mainnet,
-            "ropsten": Ropsten,
-            "rinkeby": Rinkeby,
-            "goerli": Goerli,
-            "kovan": Kovan,
-        }.get(name, Network)
+    def get_by_name(name: str) -> Network:
+        network_class = NETWORK_CLASSES.get(name, Network)
         return network_class()
-
-    @staticmethod
-    def get_default():
-        return Network.get_by_name(default_settings.network)
 
 
 class Mainnet(Network):
-    KYBER_RDN_EXCHANGE = True
-    UNISWAP_RDN_EXCHANGE = True
+    pass
 
 
 class Goerli(Network):
@@ -77,27 +61,38 @@ class Goerli(Network):
             client_hash = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
             response = requests.post(
                 "https://faucet.workshop.raiden.network/",
-                json={"address": account.address, "client_hash": client_hash},
+                json={"address": to_checksum_address(account.address), "client_hash": client_hash},
             )
             response.raise_for_status()
         except Exception as exc:
-            raise FundingError(f"Failed to get funds from faucet: {exc}")
+            raise FundingError(f"Failed to get funds from faucet: {exc}") from exc
 
 
 class Ropsten(Network):
-    KYBER_RDN_EXCHANGE = True
+    FAUCET_AVAILABLE = True
 
     def fund(self, account):
         try:
-            response = requests.get(f"https://faucet.ropsten.be/donate/{account.address}")
+            response = requests.get(
+                f"https://faucet.ropsten.be/donate/{to_checksum_address(account.address)}"
+            )
             response.raise_for_status()
         except Exception as exc:
-            raise FundingError(f"Failed to get funds from faucet: {exc}")
+            raise FundingError(f"Failed to get funds from faucet: {exc}") from exc
 
 
 class Rinkeby(Network):
-    UNISWAP_RDN_EXCHANGE = True
+    pass
 
 
 class Kovan(Network):
     pass
+
+
+NETWORK_CLASSES = {
+    "mainnet": Mainnet,
+    "ropsten": Ropsten,
+    "rinkeby": Rinkeby,
+    "goerli": Goerli,
+    "kovan": Kovan,
+}

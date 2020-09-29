@@ -1,11 +1,12 @@
-{% extends "base.html" %} {% block content %}
-<div class="hero">
-  Get {{ swap_amount_1 }} via a decentralized exchange<br />
-  Choose an exchange of your choice to swap
-</div>
+{% extends "base.html" %}
 
-<div class="action">
-  <div class="menu-item">
+{% block content %}
+  <div class="hero">
+    Get {{ swap_amount.formatted }} via a decentralized exchange<br />
+    Choose an exchange of your choice to swap
+  </div>
+
+  <div class="action-list">
     <button class="exchange-button" value="kyber">
       <img
         class="dex-icon"
@@ -13,232 +14,58 @@
         alt="KyberNetwork"
       />
       <span>KyberNetwork</span>
-      <img
-        class="expand"
-        src="{{ static_url('images/expand.svg') }}"
-        alt="Expand"
-      />
+      <span>{{ swap_amount.formatted }}</span>
     </button>
-
-    <div class="menu" id="amount-menu-kyber">
-      <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
-        {{ swap_amount_1.formatted }}
-      </button>
-    </div>
-  </div>
-
-  <div class="menu-item">
     <button class="exchange-button" value="uniswap">
       <span class="dex-icon">🦄</span>
       <span>Uniswap</span>
-      <img
-        class="expand"
-        src="{{ static_url('images/expand.svg') }}"
-        alt="Expand"
-      />
+      <span>{{ swap_amount.formatted }}</span>
     </button>
-
-    <div class="menu" id="amount-menu-uniswap">
-      <button class="amount-button" value="{{ swap_amount_1.as_wei }}">
-        {{ swap_amount_1.formatted }}
-      </button>
-    </div>
   </div>
-</div>
 
-<div class="action">
-  <button type="submit" disabled>Confirm</button>
-</div>
-{% end %} {% block question %}
-<div class="question">
-  <span class="tooltip-item" id="{{ token.ticker }}">
-    <a target="_blank">
-      <img
-        class="icon-link big"
-        src="{{ static_url('images/question.png') }}"
-        alt="Questions"
-      />
-    </a>
-    <div class="tooltip"></div>
-  </span>
-</div>
-{% end %} {% block page_header_scripts %}
-<script type="text/javascript">
-  const API_COST_ESTIMATION_ENDPOINT =
-    "/api/cost-estimation/{{ configuration_file.file_name }}";
-  const TOKEN_TICKER = "{{ token.ticker }}";
-  const DECIMALS = "{{ token.decimals }}";
+  <div class="action">
+    <button type="submit" disabled>Confirm</button>
+  </div>
+{% end %}
 
-  const amountMenus = {};
-  let selectedExchange = "";
-  let selectedAmount = 0;
+{% block question_items %}
+  {% if token.ticker == "RDN" %}
+    <li>
+      The Raiden Network consists of a few services in order to increase the security and reliability of the network.
+    </li>
+    <li>
+      RDN tokens are required to pay for path finding and monitoring service providers. 
+      These tokens need to be deposited into the User Deposit Contract.
+      By clicking confirm the tokens will be bought and deposited instantly on your behalf.
+    </li>
+    <li>
+      A minimum of {{ swap_amount.formatted }} is recommended to get started and be able to play around for a while.
+    </li>
+  {% elif token.ticker == "DAI" %}
+    <li>
+      The Raiden Client offers to join the DAI token network. You can make payments in DAI tokens.
+    </li>
+    <li>
+      DAI is a stable coin which is pegged to the USD. This means that one DAI is roughly worth one USD.
+    </li>
+    <li>
+      A minimum of {{ swap_amount.formatted }} is recommended to get started and be able to play around for a while.
+    </li>
+  {% end %}
+{% end %} 
 
-  const tokenTips = {
-    RDN: [
-      `The Raiden Network consists of a few services in order to increase the security and reliability of the network.`,
-      `RDN tokens are required to pay for path finding and monitoring service providers. These tokens need to be deposited into the User Deposit Contract. By clicking confirm the tokens will be bought and deposited instantly on your behalf.`,
-      `A minimum of 10 RDN is recommended to get started and be able to play around for a while.`,
-      `Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>`,
-    ],
-    DAI: [
-      `The Raiden Client offers to join the DAI token network. You can make payments in DAI tokens`,
-      `DAI is a stable coin which is pegged to the USD. This means that one DAI is roughly worth one USD.`,
-      `A minimum of 3 DAI is recommended to get started and be able to play around for a while.`,
-      `Do you need additional help? See <a href="https://gitter.im/raiden-network/raiden" target="_blank">Raiden Gitter Chat</a>`,
-    ],
-  };
+{% block page_header_scripts %}
+  <script type="text/javascript">
+    const API_COST_ESTIMATION_ENDPOINT =
+      "/api/cost-estimation/{{ configuration_file.file_name }}";
+    const CONFIGURATION_DETAIL_URL = 
+      "{{ reverse_url('api-configuration-detail', configuration_file.file_name) }}";
+    const LAUNCH_URL = "{{ reverse_url('launch', configuration_file.file_name) }}";
 
-  function requestCostEstimation(button, exchange) {
-    const estimationElement = document.createElement("div");
-    estimationElement.classList.add("estimation");
-    const placeholder = document.createTextNode(`Calculating costs...`);
-    estimationElement.appendChild(placeholder);
-    button.appendChild(estimationElement);
-
-    const data = JSON.stringify({
-      exchange: exchange,
-      currency: TOKEN_TICKER,
-      target_amount: parseInt(button.value) / 10 ** DECIMALS,
-    });
-
-    const req = new XMLHttpRequest();
-
-    req.onload = function () {
-      if (this.status == 200) {
-        const res = JSON.parse(this.response);
-        const text = document.createTextNode(`Approximately ${res.formatted} as per exchange`);
-        placeholder.remove();
-        estimationElement.appendChild(text);
-      }
-      else {
-        const error = document.createTextNode(`Swap not possible at the moment.`);
-        placeholder.remove();
-        estimationElement.appendChild(error);
-        button.setAttribute("disabled", true);
-      }
-    };
-
-    req.open("POST", API_COST_ESTIMATION_ENDPOINT, true);
-    req.setRequestHeader("Content-Type", "application/json");
-    req.send(data);
-  }
-
-  function addCostsToButtons() {
-    const amountButtonsKyber = amountMenus.kyber.querySelectorAll(
-      ".amount-button"
-    );
-    const amountButtonsUniswap = amountMenus.uniswap.querySelectorAll(
-      ".amount-button"
-    );
-
-    amountButtonsKyber.forEach((button) =>
-      requestCostEstimation(button, "kyber")
-    );
-    amountButtonsUniswap.forEach((button) =>
-      requestCostEstimation(button, "uniswap")
-    );
-  }
-
-  function setupMenus() {
-    const exchangeButtons = document.querySelectorAll(".exchange-button");
-    const amountButtons = document.querySelectorAll(".amount-button");
-
-    const validate = () => {
-      const submitButton = document.querySelector("button[type=submit]");
-      submitButton.disabled = selectedExchange === "" || selectedAmount === 0;
-    };
-
-    const selectExchange = (button) => {
-      Object.keys(amountMenus).forEach((exchange) => {
-        amountMenus[exchange].classList.remove("is-visible");
-        const button = amountMenus[exchange]
-          .closest(".menu-item")
-          .querySelector("button");
-        button.classList.remove("selected");
-      });
-      selectedAmount = 0;
-      amountButtons.forEach((button) => button.classList.remove("selected"));
-
-      if (selectedExchange === button.value) {
-        selectedExchange = "";
-      } else {
-        selectedExchange = button.value;
-        button.classList.add("selected");
-        const newMenuItem = button.closest(".menu-item");
-        amountMenus[button.value].classList.add("is-visible");
-      }
-      validate();
-    };
-
-    const selectAmount = (button) => {
-      amountButtons.forEach((button) => button.classList.remove("selected"));
-      if (selectedAmount === button.value) {
-        selectedAmount = 0;
-      } else {
-        selectedAmount = button.value;
-        button.classList.add("selected");
-      }
-      validate();
-    };
-
-    validate();
-    exchangeButtons.forEach((button) => {
-      button.addEventListener("click", () => selectExchange(button));
-    });
-
-    amountButtons.forEach((button) => {
-      button.addEventListener("click", () => selectAmount(button));
-    });
-  }
-
-  function setupSubmit() {
-    const submitButton = document.querySelector("button[type=submit]");
-
-    submitButton.addEventListener("click", function () {
-      const FILE_NAME = "{{ configuration_file.file_name }}";
-
-      WEBSOCKET.send(
-        JSON.stringify({
-          method: "swap",
-          configuration_file_name: FILE_NAME,
-          amount: selectedAmount.toString(),
-          token: TOKEN_TICKER,
-          exchange: selectedExchange,
-        })
-      );
-
-      toggleView();
-    });
-  }
-
-  function setupTooltipText() {
-    const toolTip = document
-      .getElementById(TOKEN_TICKER)
-      .querySelector(".tooltip");
-    let ul = document.createElement("ul");
-    toolTip.appendChild(ul);
-    function renderTokenTips(element, index, arr) {
-      let li = document.createElement("li");
-      li.innerHTML += element;
-      ul.appendChild(li);
-    }
-    tokenTips[TOKEN_TICKER].forEach(renderTokenTips);
-  }
-
-  window.addEventListener("load", function () {
-    if (TOKEN_TICKER === "RDN") {
-      setProgressStep(3, "Fund Account with RDN");
-    } else if (TOKEN_TICKER === "DAI") {
-      setProgressStep(4, "Fund Account with DAI");
-    }
-
-    amountMenus.kyber = document.querySelector("#amount-menu-kyber");
-    amountMenus.uniswap = document.querySelector("#amount-menu-uniswap");
-
-    setupMenus();
-    setupSubmit();
-    setupTooltipText();
-    addCostsToButtons();
-  });
-</script>
+    const SWAP_AMOUNT = {{ swap_amount.as_wei }};
+    const TOKEN_TICKER = "{{ token.ticker }}";
+    const DECIMALS = {{ token.decimals }};
+    const CONFIGURATION_FILE_NAME = "{{ configuration_file.file_name }}";
+  </script>
+  <script type="text/javascript" src="{{ static_url('js/swap.js') }}"></script>
 {% end %}

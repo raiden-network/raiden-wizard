@@ -1,6 +1,7 @@
 import os
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import structlog
@@ -16,22 +17,21 @@ ROOT_FOLDER = Path(__file__).resolve().parent.parent
 class TokenSettings:
     ticker: str
     amount_required: int
-    swap_amount_1: int
-    swap_amount_2: int
-    swap_amount_3: int
+    swap_amount: int
     mintable: bool = False
 
 
 @dataclass
 class Settings:
+    name: str  # basename (without file extension) of the corresponding toml file
     network: str
     client_release_channel: str
     client_release_version: str
     services_version: str
-    ethereum_amount_required: int
-    ethereum_amount_required_after_swap: int
     service_token: TokenSettings
     transfer_token: TokenSettings
+    ethereum_amount_required: int
+    ethereum_amount_required_after_swap: int = 0
     routing_mode: str = "pfs"
     monitoring_enabled: bool = True
     # matrix_server and pfs address are only used if client_release_channel = "demo_env"
@@ -49,8 +49,9 @@ def get_resource_folder_path():
     return os.path.join(root_folder, "resources")
 
 
-def _get_settings(network):
-    configuration_file = os.path.join(get_resource_folder_path(), "conf", f"{network}.toml")
+@lru_cache()
+def load_settings(settings_name):
+    configuration_file = os.path.join(get_resource_folder_path(), "conf", f"{settings_name}.toml")
     configuration_data = toml.load(configuration_file)
 
     service_token_settings = TokenSettings(**configuration_data["service_token"])
@@ -60,9 +61,4 @@ def _get_settings(network):
         dict(service_token=service_token_settings, transfer_token=transfer_token_settings)
     )
 
-    return Settings(**configuration_data)
-
-
-_NETWORKS = ["mainnet"]
-network_settings = {network: _get_settings(network) for network in _NETWORKS}
-default_settings = network_settings["mainnet"]
+    return Settings(name=settings_name, **configuration_data)

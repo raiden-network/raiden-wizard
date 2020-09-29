@@ -48,11 +48,13 @@
     </div>
   {% else %}
     <div class="action-list hidden" id="btns-web3">
-      <button id="btn-web3-eth" onClick="sendEthViaWeb3();">
+      <button class="big" id="btn-web3-eth" onClick="sendEthViaWeb3();">
+        <img src="{{ static_url('images/send.svg') }}" alt="Send" />
         Send {{ ethereum_required.formatted }}
       </button>
-      <button id="btn-ramp-eth" onClick="showRamp();">
-        Buy {{ ethereum_required.formatted }} with Ramp
+      <button class="big" id="btn-ramp-eth" onClick="showRamp();">
+        <img src="{{ static_url('images/money.svg') }}" alt="Buy" />
+        Buy {{ ethereum_required.formatted }}
       </button>
     </div>
   {% end %}

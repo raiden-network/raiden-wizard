@@ -14,7 +14,7 @@ function showRamp() {
     hostAppName: "Raiden Wizard",
     hostLogoUrl:
       "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
-    swapAmount: neededEthAmount.toString(),
+    swapAmount: ETHEREUM_REQUIRED_AMOUNT.toString(),
     swapAsset: "ETH",
     userAddress: TARGET_ADDRESS,
   })
@@ -96,8 +96,6 @@ function updateNeededEth(balance) {
   if (balance.ETH.as_wei > 0) {
     const sendButton = document.getElementById("btn-web3-eth");
     sendButton.textContent = "Send missing ETH";
-    const buyButton = document.getElementById("btn-ramp-eth");
-    buyButton.textContent = "Buy missing ETH with Ramp";
     const info = document.getElementById("low-eth-info");
     if (!info) {
       info = document.createElement("div");
@@ -155,7 +153,7 @@ async function poll() {
   let balance = await getBalances(CONFIGURATION_DETAIL_URL);
   let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
   removeSpinner();
-  
+
   if (!balance.ETH.as_wei && config._initial_funding_txhash) {
     return trackTransaction(
       config._initial_funding_txhash,

@@ -4,7 +4,7 @@ help:
 	@echo "coverage - check code coverage quickly with the default Python"
 
 clean:
-	rm -r build/ dist/
+	rm -rf build/ dist/
 
 bundle-docker:
 	mkdir -p dist/

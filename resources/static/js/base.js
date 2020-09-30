@@ -39,16 +39,6 @@ async function connectWeb3() {
   }
 }
 
-async function getKyberExchangeRate(token) {
-  const url = "https://api.kyber.network/api/tokens/pairs";
-  let token_ticker = (token || "RDN").toUpperCase();
-  let request = await fetch(url);
-  let response_data = await request.json();
-  let token_data = response_data["ETH_" + token_ticker];
-
-  return token_data && token_data.currentPrice;
-}
-
 function runMainView() {
   if (typeof window.main === "function") {
     main();
@@ -350,6 +340,12 @@ WEBSOCKET.onmessage = function (evt) {
 
 function addFeedbackMessage(message) {
   WEBSOCKET.onmessage({ data: JSON.stringify({ text: message }) });
+}
+
+function addErrorMessage(message) {
+  WEBSOCKET.onmessage({
+    data: JSON.stringify({ text: message, type: "error-message" }),
+  });
 }
 
 function setupModal() {

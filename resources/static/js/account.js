@@ -1,3 +1,5 @@
+const RAMP_BALANCE_TIMEOUT = 300000;
+
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 
 function runFunding(configurationFileName) {
@@ -10,15 +12,76 @@ function runFunding(configurationFileName) {
 }
 
 function showRamp() {
-  new rampInstantSdk.RampInstantSDK({
+  const ramp = new rampInstantSdk.RampInstantSDK({
     hostAppName: "Raiden Wizard",
     hostLogoUrl:
       "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
+    hostApiKey: "wa2447zu7yrgarvc6463kuocyyde9cfq9trwjj9z",
     swapAmount: ETHEREUM_REQUIRED_AMOUNT.toString(),
     swapAsset: "ETH",
     userAddress: TARGET_ADDRESS,
-  })
-    .on("*", console.log)
+  });
+
+  const purchaseCreatedCallback = () => {
+    ramp.unsubscribe("PURCHASE_CREATED", purchaseCreatedCallback);
+    toggleView();
+    const messages = [
+      "Waiting for confirmation of purchase",
+      // "If you chose bank transfer you can close the Wizard now.",
+      // "Come back when you received the completion E-Mail by Ramp.",
+    ];
+    addFeedbackMessage(messages);
+  };
+
+  const purchaseSuccessfulCallback = (event) => {
+    ramp.unsubscribe("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback);
+    addFeedbackMessage([
+      "Purchase successful!",
+      "Checking balance to get updated",
+    ]);
+
+    const boughtAmount = parseInt(event.payload.purchase.cryptoAmount);
+    let timeElapsed = 0;
+    let timer;
+    const checkBalance = async () => {
+      if (timeElapsed >= RAMP_BALANCE_TIMEOUT) {
+        if (timer) {
+          clearInterval(timer);
+        }
+        addErrorMessage([
+          `Balance did not get updated after ${
+            RAMP_BALANCE_TIMEOUT / 1000
+          } seconds!`,
+        ]);
+        return;
+      }
+
+      const balance = await getBalances(CONFIGURATION_DETAIL_URL);
+      if (balance && balance.ETH && balance.ETH.as_wei >= boughtAmount) {
+        addFeedbackMessage([
+          `Balance got updated. You now have ${balance.ETH.formatted}.`,
+        ]);
+        setTimeout(() => {
+          forceNavigation(SWAP_URL);
+        }, 5000);
+      }
+      timeElapsed += 10000;
+    };
+
+    checkBalance();
+    timer = setInterval(checkBalance, 10000);
+  };
+
+  const purchaseFailedCallback = () => {
+    if (!document.querySelector("#background-task-tracker").hidden) {
+      addErrorMessage(["Purchase failed! Try again..."]);
+    }
+  };
+
+  ramp
+    .on("PURCHASE_CREATED", purchaseCreatedCallback)
+    .on("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback)
+    .on("PURCHASE_FAILED", purchaseFailedCallback)
     .show();
 }
 
@@ -122,9 +185,12 @@ function sendEthButtonlogic(balance) {
   }
 
   if (hasEnoughEthToStartSwaps(balance)) {
-    const action = document.querySelector(".action");
-    action.classList.add("tx-received");
-    setTimeout(function () {
+    const text = document.createTextNode(
+      "Your Raiden account is funded with ETH!"
+    );
+    const infoPanel = document.querySelector(".info-panel");
+    infoPanel.appendChild(text);
+    setTimeout(() => {
       forceNavigation(SWAP_URL);
     }, 2000);
   } else {
@@ -143,15 +209,15 @@ function showDownloadButton(callback) {
 }
 
 function removeSpinner() {
-  const spinner = document.querySelector(".spinner");
+  const spinner = document.querySelector(".spinner.balance-loading");
   if (spinner) {
     spinner.remove();
   }
 }
 
 async function poll() {
-  let balance = await getBalances(CONFIGURATION_DETAIL_URL);
-  let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+  const balance = await getBalances(CONFIGURATION_DETAIL_URL);
+  const config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
   removeSpinner();
 
   if (!balance.ETH.as_wei && config._initial_funding_txhash) {

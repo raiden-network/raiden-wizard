@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2020-09-29
+
 ### Added
 
 - [#275] Wizard for Goerli testnet to try out Raiden on our demo environment.
@@ -15,7 +17,8 @@
 
 - [#273] Wizard detects if the user sends tokens to the new account without swapping.
 
-[Unreleased]: https://github.com/raiden-network/raiden-wizard/compare/v1.0.3...HEAD
+[unreleased]: https://github.com/raiden-network/raiden-wizard/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/raiden-network/raiden-wizard/compare/v1.0.3...v1.1.0
 [#308]: https://github.com/raiden-network/raiden-wizard/issues/308
 [#275]: https://github.com/raiden-network/raiden-wizard/pull/275
 [#273]: https://github.com/raiden-network/raiden-wizard/issues/273

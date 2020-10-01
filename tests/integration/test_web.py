@@ -249,7 +249,7 @@ class SharedHandlersTests:
     ):
         data = {
             "method": "setup",
-            "endpoint": infura.url,
+            "endpoint": f"https://{infura.network}.infura.io/v3/{infura.project_id}",
             "network": network_name,
             "account_file": str(test_account.keystore_file_path)
         }
@@ -284,7 +284,7 @@ class SharedHandlersTests:
     ):
         data = {
             "method": "setup",
-            "endpoint": infura.url,
+            "endpoint": f"https://{infura.network}.infura.io/v3/{infura.project_id}",
             "network": "invalid network",
             "account_file": str(test_account.keystore_file_path)
         }
@@ -309,7 +309,7 @@ class SharedHandlersTests:
     ):
         data = {
             "method": "setup",
-            "endpoint": "not.valid",
+            "endpoint": "https://no.infura.node",
             "network": network_name,
             "account_file": str(test_account.keystore_file_path)
         }

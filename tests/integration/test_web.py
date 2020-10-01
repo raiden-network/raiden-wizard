@@ -249,8 +249,7 @@ class SharedHandlersTests:
     ):
         data = {
             "method": "setup",
-            "endpoint": infura.url,
-            "network": network_name,
+            "endpoint": f"https://{network_name}.infura.io/v3/{infura.project_id}",
             "account_file": str(test_account.keystore_file_path)
         }
         ws_client.write_message(json.dumps(data))
@@ -274,7 +273,7 @@ class SharedHandlersTests:
         config.path.unlink()
 
     @pytest.mark.gen_test
-    def test_setup_with_invalid_network(
+    def test_setup_with_invalid_infura_url(
         self,
         ws_client,
         test_account,
@@ -284,8 +283,7 @@ class SharedHandlersTests:
     ):
         data = {
             "method": "setup",
-            "endpoint": infura.url,
-            "network": "invalid network",
+            "endpoint": f"https://invalid-network.infura.io/v3/{infura.project_id}",
             "account_file": str(test_account.keystore_file_path)
         }
         ws_client.write_message(json.dumps(data))
@@ -303,14 +301,12 @@ class SharedHandlersTests:
         self,
         ws_client,
         test_account,
-        network_name,
         patch_config_folder,
         settings
     ):
         data = {
             "method": "setup",
-            "endpoint": "not.valid",
-            "network": network_name,
+            "endpoint": "https://no.infura.node",
             "account_file": str(test_account.keystore_file_path)
         }
         ws_client.write_message(json.dumps(data))

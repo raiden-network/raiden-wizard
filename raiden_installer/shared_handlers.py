@@ -5,14 +5,14 @@ import time
 import webbrowser
 from glob import glob
 from pathlib import Path
+from re import search
 from typing import Optional
-from urllib.parse import urlparse
 
 import tornado.ioloop
 import wtforms
 from eth_utils import to_canonical_address, to_checksum_address
 from tornado.netutil import bind_sockets
-from tornado.web import Application, HTTPError, HTTPServer, RequestHandler, url
+from tornado.web import Application, HTTPServer, RequestHandler, url
 from tornado.websocket import WebSocketHandler
 from wtforms.validators import EqualTo
 from wtforms_tornado import Form
@@ -21,7 +21,7 @@ from raiden_contracts.contract_manager import ContractManager, contracts_precomp
 from raiden_installer import get_resource_folder_path, load_settings, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
-from raiden_installer.ethereum_rpc import EthereumRPCProvider, Infura, make_web3_provider
+from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError, temporary_passphrase_file
 from raiden_installer.tokens import Erc20Token, RequiredAmounts
@@ -42,7 +42,6 @@ DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
-AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "goerli"]]
 
 PASSPHRASE: Optional[str] = None
 
@@ -63,21 +62,17 @@ def try_unlock(account):
 
 
 class QuickSetupForm(Form):
-    network = wtforms.HiddenField("Network")
-    endpoint = wtforms.StringField("Infura Project ID/RPC Endpoint")
-
-    def validate_network(self, field):
-        network_name = field.data
-        if network_name not in [n.name for n in AVAILABLE_NETWORKS]:
-            raise wtforms.ValidationError(f"Can not run quick setup raiden with {network_name}")
+    endpoint = wtforms.StringField("Infura Project ID / URL")
 
     def validate_endpoint(self, field):
         data = field.data.strip()
-        parsed_url = urlparse(data)
-        is_valid_url = bool(parsed_url.scheme) and bool(parsed_url.netloc)
+        if not Infura.is_valid_project_id_or_endpoint(data):
+            raise wtforms.ValidationError("Not a valid Infura URL nor Infura Project ID")
 
-        if not (Infura.is_valid_project_id_or_endpoint(data) or is_valid_url):
-            raise wtforms.ValidationError("Not a valid URL nor Infura Project ID")
+        if not (Infura.is_valid_project_id(data) or search(self.meta.network, data)):
+            raise wtforms.ValidationError(
+                f"Infura URL for wrong network, expected {self.meta.network}"
+            )
 
 
 class PasswordForm(Form):
@@ -167,17 +162,16 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_setup(self, **kw):
         account_file = kw.get("account_file")
         account = Account(account_file, passphrase=get_passphrase())
-        form = QuickSetupForm(endpoint=kw.get("endpoint"), network=kw.get("network"))
+        form = QuickSetupForm(
+            meta=dict(network=self.installer_settings.network),
+            endpoint=kw.get("endpoint")
+        )
         if form.validate():
             self._send_status_update("Generating new wallet and configuration file for raiden")
 
-            network = Network.get_by_name(form.data["network"])
-            url_or_infura_id = form.data["endpoint"].strip()
-
-            if Infura.is_valid_project_id_or_endpoint(url_or_infura_id):
-                ethereum_rpc_provider = Infura.make(network, url_or_infura_id)
-            else:
-                ethereum_rpc_provider = EthereumRPCProvider(url_or_infura_id)
+            network = Network.get_by_name(self.installer_settings.network)
+            infura_url_or_id = form.data["endpoint"].strip()
+            ethereum_rpc_provider = Infura.make(network, infura_url_or_id)
 
             try:
                 check_eth_node_responsivity(ethereum_rpc_provider.url)

@@ -5,6 +5,7 @@ import time
 import webbrowser
 from glob import glob
 from pathlib import Path
+from re import search
 from typing import Optional
 
 import tornado.ioloop
@@ -41,7 +42,6 @@ DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 RESOURCE_FOLDER_PATH = get_resource_folder_path()
 
 EIP20_ABI = ContractManager(contracts_precompiled_path()).get_contract_abi("StandardToken")
-AVAILABLE_NETWORKS = [Network.get_by_name(n) for n in ["mainnet", "goerli"]]
 
 PASSPHRASE: Optional[str] = None
 
@@ -62,18 +62,17 @@ def try_unlock(account):
 
 
 class QuickSetupForm(Form):
-    network = wtforms.HiddenField("Network")
     endpoint = wtforms.StringField("Infura Project ID / URL")
-
-    def validate_network(self, field):
-        network_name = field.data
-        if network_name not in [n.name for n in AVAILABLE_NETWORKS]:
-            raise wtforms.ValidationError(f"Can not run quick setup raiden with {network_name}")
 
     def validate_endpoint(self, field):
         data = field.data.strip()
         if not Infura.is_valid_project_id_or_endpoint(data):
             raise wtforms.ValidationError("Not a valid Infura URL nor Infura Project ID")
+
+        if not (Infura.is_valid_project_id(data) or search(self.meta.network, data)):
+            raise wtforms.ValidationError(
+                f"Infura URL for wrong network, expected {self.meta.network}"
+            )
 
 
 class PasswordForm(Form):
@@ -163,11 +162,14 @@ class AsyncTaskHandler(WebSocketHandler):
     def _run_setup(self, **kw):
         account_file = kw.get("account_file")
         account = Account(account_file, passphrase=get_passphrase())
-        form = QuickSetupForm(endpoint=kw.get("endpoint"), network=kw.get("network"))
+        form = QuickSetupForm(
+            meta=dict(network=self.installer_settings.network),
+            endpoint=kw.get("endpoint")
+        )
         if form.validate():
             self._send_status_update("Generating new wallet and configuration file for raiden")
 
-            network = Network.get_by_name(form.data["network"])
+            network = Network.get_by_name(self.installer_settings.network)
             infura_url_or_id = form.data["endpoint"].strip()
             ethereum_rpc_provider = Infura.make(network, infura_url_or_id)
 

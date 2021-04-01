@@ -22,13 +22,13 @@ function showRamp() {
     userAddress: TARGET_ADDRESS,
   });
 
-  const purchaseCreatedCallback = () => {
-    ramp.unsubscribe("PURCHASE_CREATED", purchaseCreatedCallback);
+  const purchaseCreatedCallback = (event) => {
+    console.log(`Ramp purchase created with id ${event.payload.purchase.id}`);
+    ramp.unsubscribe('PURCHASE_CREATED', purchaseCreatedCallback);
     toggleView();
     const messages = [
       "Waiting for confirmation of purchase",
-      // "If you chose bank transfer you can close the Wizard now.",
-      // "Come back when you received the completion E-Mail by Ramp.",
+      "(If you chose manual bank transfer you can close the Wizard and come back once you received a confirmation by e-mail.)",
     ];
     addFeedbackMessage(messages);
   };
@@ -36,8 +36,8 @@ function showRamp() {
   const purchaseSuccessfulCallback = (event) => {
     ramp.unsubscribe("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback);
     addFeedbackMessage([
-      "Purchase successful!",
-      "Checking balance to get updated",
+      'Purchase successful!',
+      'Checking balance to get updated',
     ]);
 
     const boughtAmount = parseInt(event.payload.purchase.cryptoAmount);

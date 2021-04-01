@@ -16,7 +16,7 @@ function showRamp() {
     hostAppName: "Raiden Wizard",
     hostLogoUrl:
       "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
-    hostApiKey: "wa2447zu7yrgarvc6463kuocyyde9cfq9trwjj9z",
+    hostApiKey: RAMP_API_KEY,
     swapAmount: ETHEREUM_REQUIRED_AMOUNT.toString(),
     swapAsset: "ETH",
     userAddress: TARGET_ADDRESS,

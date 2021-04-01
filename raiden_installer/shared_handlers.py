@@ -36,6 +36,7 @@ from raiden_installer.utils import (
     recover_ld_library_env_path,
     wait_for_transaction,
 )
+from raiden_installer.constants import RAMP_API_KEY
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 
@@ -303,7 +304,12 @@ class AccountDetailHandler(BaseRequestHandler):
             configuration_file._initial_funding_txhash = None
             configuration_file.save()
 
-        self.render("account.html", configuration_file=configuration_file, keystore=filename)
+        self.render(
+            "account.html",
+            configuration_file=configuration_file,
+            keystore=filename,
+            ramp_api_key=RAMP_API_KEY,
+        )
 
 
 class LaunchHandler(BaseRequestHandler):

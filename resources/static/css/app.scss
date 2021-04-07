@@ -112,6 +112,10 @@ button, a.button {
     }
     &:disabled, &[aria-disabled="true"] {
         @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
+
+        img {
+            opacity: 0.3;
+        }
     }
 
     &.hide-when-disabled:disabled {
@@ -122,6 +126,10 @@ button, a.button {
         height: 36px;
         width: auto;
         vertical-align: middle;
+
+        &.small {
+            height: 24px;
+        }
     }
 
     &.big {

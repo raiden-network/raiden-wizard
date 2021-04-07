@@ -24,7 +24,15 @@
   </div>
 
   <div class="action">
-    <button type="submit" disabled>Confirm</button>
+    <button 
+      type="submit" 
+      disabled
+      title="By using this feature Raiden Wizard will connect to a third party service. 
+      Third party terms and conditions may apply."
+    >
+      Confirm
+      <img class="small" src="{{ static_url('images/external.svg') }}" alt="External service" />
+    </button>
   </div>
 {% end %}
 

@@ -60,6 +60,10 @@ button:disabled, button[aria-disabled="true"], a.button:disabled, a.button[aria-
   color: rgba(255, 255, 255, 0.3);
 }
 
+button:disabled img, button[aria-disabled="true"] img, a.button:disabled img, a.button[aria-disabled="true"] img {
+  opacity: 0.3;
+}
+
 button.hide-when-disabled:disabled, a.button.hide-when-disabled:disabled {
   display: none !important;
 }
@@ -68,6 +72,10 @@ button img, a.button img {
   height: 36px;
   width: auto;
   vertical-align: middle;
+}
+
+button img.small, a.button img.small {
+  height: 24px;
 }
 
 button.big, a.button.big {

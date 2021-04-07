@@ -91,6 +91,11 @@ h2 {
   line-height: 43px;
 }
 
+h3 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
 ul {
   list-style-type: none;
   -webkit-padding-start: 0;
@@ -362,6 +367,15 @@ section.content div.container div.description .row-items div span {
 
 section.content div.container div.info-panel {
   text-align: center;
+}
+
+section.content div.container div.info-panel.small {
+  max-width: 900px;
+}
+
+section.content div.container div.info-panel p {
+  font-size: 14px;
+  text-align: left;
 }
 
 section.content div.container div.action {
@@ -651,5 +665,32 @@ div.spinner {
   height: 80%;
   width: 100%;
   z-index: 130;
+}
+
+.terms-list {
+  counter-reset: item;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  text-align: left;
+  padding-left: 0;
+}
+
+.terms-list .inner-list {
+  counter-reset: item;
+  font-size: 14px;
+  text-align: left;
+  font-weight: 400;
+  padding-left: 0;
+}
+
+.terms-list li {
+  margin-top: 14px;
+  display: block;
+}
+
+.terms-list li:before {
+  content: counters(item, ".") ". ";
+  counter-increment: item;
 }
 /*# sourceMappingURL=app.css.map */

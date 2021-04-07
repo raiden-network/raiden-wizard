@@ -21,6 +21,7 @@ from raiden_contracts.contract_manager import ContractManager, contracts_precomp
 from raiden_installer import get_resource_folder_path, load_settings, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
+from raiden_installer.constants import RAMP_API_KEY
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError, temporary_passphrase_file
@@ -36,7 +37,6 @@ from raiden_installer.utils import (
     recover_ld_library_env_path,
     wait_for_transaction,
 )
-from raiden_installer.constants import RAMP_API_KEY
 
 DEBUG = "RAIDEN_INSTALLER_DEBUG" in os.environ
 
@@ -249,6 +249,21 @@ class BaseRequestHandler(RequestHandler):
 
 class IndexHandler(BaseRequestHandler):
     def get(self):
+        if not self.installer_settings.network == "mainnet":
+            try:
+                configuration_file = RaidenConfigurationFile.get_available_configurations(
+                    self.installer_settings
+                ).pop()
+            except IndexError:
+                configuration_file = None
+
+            self.render("home.html", configuration_file=configuration_file)
+
+        self.render("index.html")
+
+
+class HomeHandler(BaseRequestHandler):
+    def get(self):
         try:
             configuration_file = RaidenConfigurationFile.get_available_configurations(
                 self.installer_settings
@@ -256,7 +271,12 @@ class IndexHandler(BaseRequestHandler):
         except IndexError:
             configuration_file = None
 
-        self.render("index.html", configuration_file=configuration_file)
+        self.render("home.html", configuration_file=configuration_file)
+
+
+class TermsHandler(BaseRequestHandler):
+    def get(self):
+        self.render("terms.html")
 
 
 class SetupHandler(BaseRequestHandler):
@@ -418,6 +438,8 @@ def create_app(settings_name: str, additional_handlers: list) -> Application:
 
     handlers = [
         url(r"/", IndexHandler, name="index"),
+        url(r"/home", HomeHandler, name="home"),
+        url(r"/terms", TermsHandler, name="terms"),
         url(r"/setup/(.*)", SetupHandler, name="setup"),
         url(r"/create_wallet", WalletCreationHandler, name="create_wallet"),
         url(r"/account/(.*)", AccountDetailHandler, name="account"),

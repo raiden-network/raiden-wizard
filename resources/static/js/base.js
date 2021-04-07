@@ -411,8 +411,12 @@ function beforeunloadHandler(e) {
 }
 
 function forceNavigation(url) {
-  window.removeEventListener("beforeunload", beforeunloadHandler);
+  removeBeforeunloadHandler();
   document.location = url;
+}
+
+function removeBeforeunloadHandler() {
+  window.removeEventListener("beforeunload", beforeunloadHandler);
 }
 
 function setUpTogglePassword() {

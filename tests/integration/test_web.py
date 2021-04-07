@@ -114,6 +114,16 @@ class SharedHandlersTests:
         assert successful_html_response(response)
 
     @pytest.mark.gen_test
+    def test_home_handler(self, http_client, base_url):
+        response = yield http_client.fetch(f"{base_url}/home")
+        assert successful_html_response(response)
+
+    @pytest.mark.gen_test
+    def test_terms_handler(self, http_client, base_url):
+        response = yield http_client.fetch(f"{base_url}/terms")
+        assert successful_html_response(response)
+
+    @pytest.mark.gen_test
     def test_create_wallet_handler(self, http_client, base_url):
         response = yield http_client.fetch(f"{base_url}/create_wallet")
         assert successful_html_response(response)

@@ -16,8 +16,8 @@
   },
   "homepage": "https://github.com/raiden-network/raiden-wizard#readme",
   "dependencies": {
-    "ganache-cli": "^6.10.1",
-    "truffle": "^5.1.41",
-    "kyber-network-workshop": "KyberNetwork/workshop"
+    "ganache-cli": "6.12.2",
+    "kyber-network-workshop": "KyberNetwork/workshop",
+    "truffle": "^5.1.41"
   }
 }

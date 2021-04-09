@@ -114,6 +114,16 @@ class SharedHandlersTests:
         assert successful_html_response(response)
 
     @pytest.mark.gen_test
+    def test_home_handler(self, http_client, base_url):
+        response = yield http_client.fetch(f"{base_url}/home")
+        assert successful_html_response(response)
+
+    @pytest.mark.gen_test
+    def test_terms_handler(self, http_client, base_url):
+        response = yield http_client.fetch(f"{base_url}/terms")
+        assert successful_html_response(response)
+
+    @pytest.mark.gen_test
     def test_create_wallet_handler(self, http_client, base_url):
         response = yield http_client.fetch(f"{base_url}/create_wallet")
         assert successful_html_response(response)
@@ -420,8 +430,26 @@ class TestWeb(SharedHandlersTests):
         assert is_unlock_page(response.body)
 
     @pytest.mark.gen_test(timeout=15)
-    def test_cost_estimation_handler(self, http_client, base_url, config, settings):
+    def test_cost_estimation_handler(
+        self,
+        http_client,
+        base_url,
+        config,
+        settings,
+        mock_get_exchange
+    ):
         exchange = "Kyber"
+        exchange_costs = {
+            "gas_price": EthereumAmount(Wei(1000000000)),
+            "gas": Wei(500000),
+            "eth_sold": EthereumAmount(0.5),
+            "total": EthereumAmount(0.505),
+            "exchange_rate": EthereumAmount(0.05),
+        }
+        mock_exchange = mock_get_exchange()()
+        mock_exchange.name = exchange
+        mock_exchange.calculate_transaction_costs.return_value = exchange_costs
+
         currency = settings.transfer_token.ticker
         target_amount = 3
         data = {
@@ -440,7 +468,8 @@ class TestWeb(SharedHandlersTests):
         assert json_response["exchange"] == exchange
         assert json_response["currency"] == currency
         assert json_response["target_amount"] == target_amount
-        assert json_response["as_wei"] > 0
+        assert json_response["as_wei"] == exchange_costs["total"].as_wei
+        assert json_response["formatted"] == exchange_costs["total"].formatted
 
     # Websocket methods tests
 

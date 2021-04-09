@@ -1,4 +1,4 @@
-const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
+const RAMP_BALANCE_TIMEOUT = 300000;
 
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 
@@ -9,6 +9,80 @@ function runFunding(configurationFileName) {
   };
   WEBSOCKET.send(JSON.stringify(message));
   toggleView();
+}
+
+function showRamp() {
+  const ramp = new rampInstantSdk.RampInstantSDK({
+    hostAppName: "Raiden Wizard",
+    hostLogoUrl:
+      "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
+    hostApiKey: RAMP_API_KEY,
+    swapAmount: ETHEREUM_REQUIRED_AMOUNT.toString(),
+    swapAsset: "ETH",
+    userAddress: TARGET_ADDRESS,
+  });
+
+  const purchaseCreatedCallback = (event) => {
+    console.log(`Ramp purchase created with id ${event.payload.purchase.id}`);
+    ramp.unsubscribe('PURCHASE_CREATED', purchaseCreatedCallback);
+    toggleView();
+    const messages = [
+      "Waiting for confirmation of purchase",
+      "(If you chose manual bank transfer you can close the Wizard and come back once you received a confirmation by e-mail.)",
+    ];
+    addFeedbackMessage(messages);
+  };
+
+  const purchaseSuccessfulCallback = (event) => {
+    ramp.unsubscribe("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback);
+    addFeedbackMessage([
+      'Purchase successful!',
+      'Checking balance to get updated',
+    ]);
+
+    const boughtAmount = parseInt(event.payload.purchase.cryptoAmount);
+    let timeElapsed = 0;
+    let timer;
+    const checkBalance = async () => {
+      if (timeElapsed >= RAMP_BALANCE_TIMEOUT) {
+        if (timer) {
+          clearInterval(timer);
+        }
+        addErrorMessage([
+          `Balance did not get updated after ${
+            RAMP_BALANCE_TIMEOUT / 1000
+          } seconds!`,
+        ]);
+        return;
+      }
+
+      const balance = await getBalances(CONFIGURATION_DETAIL_URL);
+      if (balance && balance.ETH && balance.ETH.as_wei >= boughtAmount) {
+        addFeedbackMessage([
+          `Balance got updated. You now have ${balance.ETH.formatted}.`,
+        ]);
+        setTimeout(() => {
+          forceNavigation(SWAP_URL);
+        }, 5000);
+      }
+      timeElapsed += 10000;
+    };
+
+    checkBalance();
+    timer = setInterval(checkBalance, 10000);
+  };
+
+  const purchaseFailedCallback = () => {
+    if (!document.querySelector("#background-task-tracker").hidden) {
+      addErrorMessage(["Purchase failed! Try again..."]);
+    }
+  };
+
+  ramp
+    .on("PURCHASE_CREATED", purchaseCreatedCallback)
+    .on("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback)
+    .on("PURCHASE_FAILED", purchaseFailedCallback)
+    .show();
 }
 
 async function checkWeb3Network() {
@@ -85,7 +159,7 @@ function updateNeededEth(balance) {
   if (balance.ETH.as_wei > 0) {
     const sendButton = document.getElementById("btn-web3-eth");
     sendButton.textContent = "Send missing ETH";
-    let info = document.getElementById("low-eth-info");
+    const info = document.getElementById("low-eth-info");
     if (!info) {
       info = document.createElement("div");
       info.id = "low-eth-info";
@@ -97,20 +171,26 @@ function updateNeededEth(balance) {
 }
 
 function sendEthButtonlogic(balance) {
-  const has_web3 = checkWeb3Available();
-  let button_send_eth = document.getElementById("btn-web3-eth");
-  button_send_eth.disabled = has_web3
-    ? has_web3 && hasEnoughEthToStartSwaps(balance)
-    : true;
-  if (!has_web3) {
+  const hasWeb3 = checkWeb3Available();
+  const hideButtons = hasWeb3 ? hasEnoughEthToStartSwaps(balance) : true;
+  const buttonList = document.getElementById("btns-web3");
+  if (hideButtons) {
+    buttonList.classList.add("hidden");
+  } else {
+    buttonList.classList.remove("hidden");
+  }
+
+  if (!hasWeb3) {
     return;
   }
+
   if (hasEnoughEthToStartSwaps(balance)) {
-    let button_send_eth = document.getElementById("btn-web3-eth");
-    button_send_eth.disabled = true;
-    const action = document.querySelector(".action");
-    action.classList.add("tx-received");
-    setTimeout(function () {
+    const text = document.createTextNode(
+      "Your Raiden account is funded with ETH!"
+    );
+    const infoPanel = document.querySelector(".info-panel");
+    infoPanel.appendChild(text);
+    setTimeout(() => {
       forceNavigation(SWAP_URL);
     }, 2000);
   } else {
@@ -128,15 +208,25 @@ function showDownloadButton(callback) {
   }
 }
 
+function removeSpinner() {
+  const spinner = document.querySelector(".spinner.balance-loading");
+  if (spinner) {
+    spinner.remove();
+  }
+}
+
 async function poll() {
-  let balance = await getBalances(CONFIGURATION_DETAIL_URL);
-  let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+  const balance = await getBalances(CONFIGURATION_DETAIL_URL);
+  const config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+  removeSpinner();
+
   if (!balance.ETH.as_wei && config._initial_funding_txhash) {
     return trackTransaction(
       config._initial_funding_txhash,
       CONFIGURATION_FILE_NAME
     );
   }
+
   if (balance.ETH.as_wei) {
     sendEthButtonlogic(balance);
   } else {
@@ -156,6 +246,7 @@ window.addEventListener("DOMContentLoaded", function () {
     window.MAIN_VIEW_INTERVAL = 10000;
     window.runMainView();
   } else {
+    removeSpinner();
     showDownloadButton(() => {
       let button = document.getElementById("btn-funding");
       button.disabled = false;

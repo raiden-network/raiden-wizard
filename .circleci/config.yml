@@ -1,8 +1,8 @@
 version: 2.1
 
 vars: 
-  - &cache_key raiden-wizard-{{ .Branch }}-{{ checksum "requirements.txt" }}
-  - &cache_key_fake_blockchain raiden-wizard-{{ .Branch }}-{{ checksum "tests/fake_blockchain/package-lock.json" }}
+  - &cache_key raiden-wizard-deps-v1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+  - &cache_key_fake_blockchain raiden-wizard-fake-blockchain-v1-{{ .Branch }}-{{ checksum "tests/fake_blockchain/package-lock.json" }}
 
 executors:
   python-executor:

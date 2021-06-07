@@ -1,6 +1,14 @@
+const CHAIN_ID_MAPPING = {
+  1: "Mainnet",
+  3: "Ropsten",
+  4: "Rinkeby",
+  5: "Görli",
+  42: "Kovan",
+};
 const RAMP_BALANCE_TIMEOUT = 300000;
 
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
+let provider;
 
 function runFunding(configurationFileName) {
   let message = {
@@ -86,72 +94,90 @@ function showRamp() {
 }
 
 async function checkWeb3Network() {
-  let required_chain_id = CHAIN_ID;
-  await connectWeb3();
-  web3.version.getNetwork(function (error, chain_id) {
-    if (error) {
-      console.error(error);
-    }
-
-    if (chain_id != required_chain_id) {
-      let current_chain_name = CHAIN_ID_MAPPING[chain_id];
-      let required_chain_name = CHAIN_ID_MAPPING[required_chain_id];
-      alert(
-        `Web3 Browser connected to ${current_chain_name}, please change to ${required_chain_name}.`
-      );
-    }
-  });
+  const requiredChainID = CHAIN_ID;
+  const currentChainID = parseInt(await provider.request({ method: 'eth_chainId' }), 16);
+  if (currentChainID != requiredChainID) {
+    const currentChainName = CHAIN_ID_MAPPING[currentChainID];
+    const requiredChainName = CHAIN_ID_MAPPING[requiredChainID];
+    alert(
+      `Web3 Browser connected to ${currentChainName}, please change to ${requiredChainName}.`
+    );
+    return false;
+  }
+  return true;
 }
 
-function makeWeb3Transaction(w3, transaction_data) {
-  w3.eth.sendTransaction(transaction_data, function (error, result) {
-    if (result) {
-      // result is the transaction hash
-      trackTransaction(result, CONFIGURATION_FILE_NAME);
+async function connectWeb3() {
+  let accounts = [];
+  try {
+    accounts = await provider.request({ method: 'eth_accounts' });
+    if (accounts.length === 0) {
+      accounts = await provider.request({ method: 'eth_requestAccounts' });
     }
-
-    if (error) {
+  } catch (error) {
+    if (error.code === 4001) {
+      // EIP-1193 userRejectedRequest error
+      alert('Permissions to the web3 provider\'s accounts needed in order to continue.');
+    } else {
+      alert('Not able to connect to the web3 provider.');
       console.error(error);
     }
-  });
+  }
+  return accounts;
+}
+
+async function makeWeb3Transaction(transactionParams) {
+  let transactionHash;
+  try {
+    transactionHash = await provider.request({ method: 'eth_sendTransaction', params: [transactionParams]});
+  } catch (error) {
+    console.error(error);
+  }
+  if (transactionHash) {
+    trackTransaction(transactionHash, CONFIGURATION_FILE_NAME);
+  }
 }
 
 async function sendEthViaWeb3() {
-  await checkWeb3Network();
-  let web3 = window.web3;
-  let sender_address =
-    (window.ethereum && window.ethereum.selectedAddress) ||
-    web3.eth.defaultAccount;
-  let gasPrice;
+  const correctNetwork = await checkWeb3Network();
+  if (!correctNetwork) {
+    return;
+  }
 
+  const accounts = await connectWeb3();
+  if (accounts.length === 0) {
+    return;
+  }
+
+  let gasPrice;
   try {
     gasPrice = await getGasPrice(GAS_PRICE_URL);
   } catch {
-    console.err("Could not fetch gas price. Falling back to web3 gas price.");
+    console.err('Could not fetch gas price. Falling back to web3 gas price.');
   }
 
-  let transaction_data = {
-    from: sender_address,
+  const transactionParams = {
+    from: accounts[0],
     to: TARGET_ADDRESS,
-    value: neededEthAmount,
+    value: '0x' + neededEthAmount.toString(16),
   };
 
   if (gasPrice) {
-    transaction_data.gasPrice = gasPrice;
+    transactionParams.gasPrice = '0x' + gasPrice.toString(16);
   }
 
-  makeWeb3Transaction(web3, transaction_data);
+  makeWeb3Transaction(transactionParams);
 }
 
 function checkWeb3Available() {
-  let has_web3 = Boolean(window.ethereum || window.web3);
+  let hasWeb3 = provider && provider.request;
   let noWeb3Text = document.getElementById("no-web3");
-  if (has_web3) {
+  if (hasWeb3) {
     noWeb3Text.style.display = "none";
   } else {
     noWeb3Text.style.display = "inline";
   }
-  return has_web3;
+  return hasWeb3;
 }
 
 function updateNeededEth(balance) {
@@ -240,9 +266,10 @@ function main() {
   poll();
 }
 
-window.addEventListener("DOMContentLoaded", function () {
+window.addEventListener("DOMContentLoaded", async function () {
   setProgressStep(2, "Fund Account with ETH");
   if (FAUCET_AVAILABLE !== "True") {
+    provider = await detectEthereumProvider();
     window.MAIN_VIEW_INTERVAL = 10000;
     window.runMainView();
   } else {

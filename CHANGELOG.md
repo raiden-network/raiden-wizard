@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Use newest Raiden client version v2.0.0 - Bespin
+
 ### Fixed
 
 - [#338] Adapted the MetaMask integration to the recent breaking changes.

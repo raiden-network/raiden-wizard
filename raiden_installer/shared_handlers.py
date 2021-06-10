@@ -21,7 +21,6 @@ from raiden_contracts.contract_manager import ContractManager, contracts_precomp
 from raiden_installer import get_resource_folder_path, load_settings, log
 from raiden_installer.account import Account, find_keystore_folder_path
 from raiden_installer.base import RaidenConfigurationFile
-from raiden_installer.constants import RAMP_API_KEY
 from raiden_installer.ethereum_rpc import Infura, make_web3_provider
 from raiden_installer.network import Network
 from raiden_installer.raiden import RaidenClient, RaidenClientError, temporary_passphrase_file
@@ -328,7 +327,6 @@ class AccountDetailHandler(BaseRequestHandler):
             "account.html",
             configuration_file=configuration_file,
             keystore=filename,
-            ramp_api_key=RAMP_API_KEY,
         )
 
 

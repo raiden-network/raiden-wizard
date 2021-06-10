@@ -1,6 +1,6 @@
 network = "mainnet"
 client_release_channel = "mainnet"
-client_release_version = "v1.1.1"
+client_release_version = "v2.0.0"
 services_version = "mainnet"
 ethereum_amount_required = 125e15
 ethereum_amount_required_after_swap = 75e14

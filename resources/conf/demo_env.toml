@@ -1,6 +1,6 @@
 network = "goerli"
 client_release_channel = "demo_env"
-client_release_version = "v1.1.1"
+client_release_version = "v2.0.0"
 services_version = "test"
 ethereum_amount_required = 2e16
 # Special networking for Demoenvs

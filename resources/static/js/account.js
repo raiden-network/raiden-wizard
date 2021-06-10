@@ -5,7 +5,6 @@ const CHAIN_ID_MAPPING = {
   5: "Görli",
   42: "Kovan",
 };
-const RAMP_BALANCE_TIMEOUT = 300000;
 
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 let provider;
@@ -17,80 +16,6 @@ function runFunding(configurationFileName) {
   };
   WEBSOCKET.send(JSON.stringify(message));
   toggleView();
-}
-
-function showRamp() {
-  const ramp = new rampInstantSdk.RampInstantSDK({
-    hostAppName: "Raiden Wizard",
-    hostLogoUrl:
-      "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
-    hostApiKey: RAMP_API_KEY,
-    swapAmount: ETHEREUM_REQUIRED_AMOUNT.toString(),
-    swapAsset: "ETH",
-    userAddress: TARGET_ADDRESS,
-  });
-
-  const purchaseCreatedCallback = (event) => {
-    console.log(`Ramp purchase created with id ${event.payload.purchase.id}`);
-    ramp.unsubscribe('PURCHASE_CREATED', purchaseCreatedCallback);
-    toggleView();
-    const messages = [
-      "Waiting for confirmation of purchase",
-      "(If you chose manual bank transfer you can close the Wizard and come back once you received a confirmation by e-mail.)",
-    ];
-    addFeedbackMessage(messages);
-  };
-
-  const purchaseSuccessfulCallback = (event) => {
-    ramp.unsubscribe("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback);
-    addFeedbackMessage([
-      'Purchase successful!',
-      'Checking balance to get updated',
-    ]);
-
-    const boughtAmount = parseInt(event.payload.purchase.cryptoAmount);
-    let timeElapsed = 0;
-    let timer;
-    const checkBalance = async () => {
-      if (timeElapsed >= RAMP_BALANCE_TIMEOUT) {
-        if (timer) {
-          clearInterval(timer);
-        }
-        addErrorMessage([
-          `Balance did not get updated after ${
-            RAMP_BALANCE_TIMEOUT / 1000
-          } seconds!`,
-        ]);
-        return;
-      }
-
-      const balance = await getBalances(CONFIGURATION_DETAIL_URL);
-      if (balance && balance.ETH && balance.ETH.as_wei >= boughtAmount) {
-        addFeedbackMessage([
-          `Balance got updated. You now have ${balance.ETH.formatted}.`,
-        ]);
-        setTimeout(() => {
-          forceNavigation(SWAP_URL);
-        }, 5000);
-      }
-      timeElapsed += 10000;
-    };
-
-    checkBalance();
-    timer = setInterval(checkBalance, 10000);
-  };
-
-  const purchaseFailedCallback = () => {
-    if (!document.querySelector("#background-task-tracker").hidden) {
-      addErrorMessage(["Purchase failed! Try again..."]);
-    }
-  };
-
-  ramp
-    .on("PURCHASE_CREATED", purchaseCreatedCallback)
-    .on("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback)
-    .on("PURCHASE_FAILED", purchaseFailedCallback)
-    .show();
 }
 
 async function checkWeb3Network() {

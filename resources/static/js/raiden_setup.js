@@ -23,7 +23,6 @@ window.addEventListener("DOMContentLoaded", function () {
       JSON.stringify({
         method: "setup",
         endpoint: infura_project_input.value,
-        network: NETWORK_NAME,
         account_file: ACCOUNT_FILE,
       })
     );

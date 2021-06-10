@@ -112,10 +112,28 @@ button, a.button {
     }
     &:disabled, &[aria-disabled="true"] {
         @include buttoncolor(color(button-bg), color(button-inactive-border), color(text-inactive));
+
+        img {
+            opacity: 0.3;
+        }
     }
 
     &.hide-when-disabled:disabled {
         display: none !important;
+    }
+
+    img {
+        height: 36px;
+        width: auto;
+        vertical-align: middle;
+
+        &.small {
+            height: 24px;
+        }
+    }
+
+    &.big {
+        height: 64px;
     }
 }
 
@@ -135,6 +153,11 @@ h1 {
 h2 {
     font-size: 36px;
     line-height: 43px;
+}
+
+h3 {
+    font-size: 16px;
+    line-height: 24px;
 }
 
 ul {
@@ -190,32 +213,6 @@ div.logo {
     }
 }
 
-div.transfer-data-display {
-    width: 100%;
-    display: inline-grid;
-    justify-content: space-evenly;
-    grid-auto-flow: column;
-}
-
-ul.action-list {
-    li {
-        height: 60px;
-    }
-}
-
-ul.funding-requirements {
-    width: 75%;
-    margin: auto;
-    font-size: 75%;
-    text-align: start;
-    li {
-        line-height: 1.5em;
-        list-style-type: disc;
-    }
-}
-
-
-
 ul.checklist {
     margin: 0;
     li {
@@ -232,109 +229,11 @@ ul.checklist {
     }
 }
 
-ul.available-configurations {
-    width: 100%;
-    border-top: solid 1.5px color(element-border);
-    font-size: 75%;
-
-    li {
-        width: 100%;
-        height: 70px;
-        margin-bottom: 2px;
-        background-color: color(list-bg);
-        display: grid;
-        grid-template: "account account account button" auto
-                                                        "network balance balance button" auto;
-
-        span.account, span.network {
-            padding-left: 20px;
-        }
-
-        span.network, span.balance {
-            text-transform: capitalize;
-            color: color(text-dark);
-        }
-
-        span.account {
-            grid-area: account;
-            align-self: end;
-            font-weight: 500;
-        }
-
-        span.network {
-            align-self: start;
-            grid-area: network;
-
-        }
-
-        span.balance {
-            grid-area: balance;
-        }
-
-        button, a.button {
-            align-self: center;
-            @include fixedsize(100px, 33px);
-            grid-area: button;
-        }
-
-        a.button {
-            line-height: 33px;
-        }
-    }
-}
-
-ul.account-info {
-    margin: 0.25em auto;
-    span.data-attribute {
-        font-size: 125%;
-        display: block;
-    }
-    span.highlighted, span.data-value {
-        color: color(text-blue);
-        display: block;
-        margin-bottom: 0.25em;
-    }
-}
-
 .wallet-download {
    display: none;
    &.is-visible {
       display: block;
    }
-}
-
-span.private {
-    display: inline-block;
-    width: 75%;
-    overflow-x: hidden;
-    text-overflow: ellipsis;
-}
-
-.action-copy-paste {
-    cursor: pointer;
-}
-
-.action-copy-paste::after {
-    font-size: 12px;
-    background-repeat: no-repeat;
-    display: inline-block;
-    content: '';
-    background-image: url("../images/copy-icon.svg");
-    min-width: 20%;
-    height: 27px;
-    line-height: 27px;
-    background-size: auto 27px;
-
-}
-
-.action-copy-paste.clipboard::after {
-    vertical-align: top;
-    content: 'copied!' !important;
-    background-image: none !important;
-}
-
-.tx-received::after {
-    content: 'Your Raiden account is Funded with ETH!';
 }
 
 #no-web3 {
@@ -469,6 +368,15 @@ section.content {
 
         div.info-panel {
             text-align: center;
+
+            &.small {
+                max-width: 900px;
+            }
+
+            p {
+                font-size: 14px;
+                text-align: left;
+            }
         }
 
         div.action {
@@ -508,9 +416,8 @@ section.content {
             }
 
             &>*:not(:last-child) {
-                margin-right: 14px;
+                margin-right: 22px;
             }
-
         }
 
         div.ack-prompt {
@@ -721,5 +628,32 @@ div.spinner {
         height: 80%;
         width: 100%;
         z-index: 130;
+    }
+}
+
+.terms-list {
+    counter-reset: item;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+    text-align: left;
+    padding-left: 0;
+
+    .inner-list {
+        counter-reset: item;
+        font-size: 14px;
+        text-align: left;
+        font-weight: 400;
+        padding-left: 0;
+    }
+
+    li {
+        margin-top: 14px;
+        display: block;
+    }
+
+    li:before {
+        content: counters(item, ".") ". ";
+        counter-increment: item;
     }
 }

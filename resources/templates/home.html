@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block logo_class %}home{% end %}
+
+{% block question_class %}hidden{% end %}
+
+{% block content %}
+  <h1>
+    <img src="{{ static_url('images/raiden.png') }}" alt="Raiden Network" />
+    Wizard
+  </h1>
+
+  <div class="hero">
+    Raiden needs three different coins to work
+  </div>
+
+  <div class="description">
+    <div class="row-items">
+      <div>
+        <img src="{{ static_url('images/eth.png') }}" alt="ETH" title="ETH" />
+        <span>...to talk to the Ethereum Blockchain</span>
+      </div>
+      <div>
+        <img src="{{ static_url('images/rdn.png') }}" alt="RDN token" title="RDN token" />
+        <span>...to get pathfinding and monitoring services</span>
+      </div>
+      <div>
+        <img src="{{ static_url('images/dai.png') }}" alt="DAI token" title="DAI token" />
+        <span>...to transfer in the Raiden Network</span>
+      </div>
+    </div>
+
+
+    {% if network.name == "mainnet" %}
+      <div>
+        The Wizard allows you to use third party services to swap tokens and launch Raiden in 6 steps
+      </div>
+    {% else %}
+      <div>
+        The Wizard allows you to try out Raiden on a testnet by generating and funding a Raiden account for you
+      </div>
+    {% end %}
+  </div>
+
+  <div class="action">
+    {% if configuration_file %}
+      <button
+        class="link-button"
+        data-link-url="{{ reverse_url('launch', configuration_file.file_name) }}"
+      >
+        Launch
+      </button>
+    {% else %}
+      <button
+        class="link-button"
+        id="setup-button"
+        data-link-url="{{ reverse_url('create_wallet') }}"
+      >
+        Start
+      </button>
+    {% end %}
+  </div>
+{% end %}

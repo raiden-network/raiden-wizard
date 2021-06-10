@@ -1,6 +1,13 @@
-const WEB3_ETH_AMOUNT_ATTRIBUTE = "data-requested-eth-amount";
+const CHAIN_ID_MAPPING = {
+  1: "Mainnet",
+  3: "Ropsten",
+  4: "Rinkeby",
+  5: "Görli",
+  42: "Kovan",
+};
 
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
+let provider;
 
 function runFunding(configurationFileName) {
   let message = {
@@ -12,72 +19,94 @@ function runFunding(configurationFileName) {
 }
 
 async function checkWeb3Network() {
-  let required_chain_id = CHAIN_ID;
-  await connectWeb3();
-  web3.version.getNetwork(function (error, chain_id) {
-    if (error) {
-      console.error(error);
-    }
+  let currentChainID;
+  try {
+    currentChainID = parseInt(await provider.request({ method: 'eth_chainId' }), 16);
+  } catch (error) {
+    alert('Could not retrieve the chaind id from the web3 provider.');
+    return false;
+  }
 
-    if (chain_id != required_chain_id) {
-      let current_chain_name = CHAIN_ID_MAPPING[chain_id];
-      let required_chain_name = CHAIN_ID_MAPPING[required_chain_id];
-      alert(
-        `Web3 Browser connected to ${current_chain_name}, please change to ${required_chain_name}.`
-      );
-    }
-  });
+  const requiredChainID = CHAIN_ID;
+  if (currentChainID != requiredChainID) {
+    const currentChainName = CHAIN_ID_MAPPING[currentChainID];
+    const requiredChainName = CHAIN_ID_MAPPING[requiredChainID];
+    alert(
+      `Web3 Browser connected to ${currentChainName}, please change to ${requiredChainName}.`
+    );
+    return false;
+  }
+  return true;
 }
 
-function makeWeb3Transaction(w3, transaction_data) {
-  w3.eth.sendTransaction(transaction_data, function (error, result) {
-    if (result) {
-      // result is the transaction hash
-      trackTransaction(result, CONFIGURATION_FILE_NAME);
-    }
-
-    if (error) {
+async function connectWeb3() {
+  let accounts = [];
+  try {
+    accounts = await provider.request({ method: 'eth_requestAccounts' });
+  } catch (error) {
+    if (error.code === 4001) {
+      // EIP-1193 userRejectedRequest error
+      alert('Permissions to the web3 provider\'s accounts needed in order to continue.');
+    } else {
+      alert('Not able to connect to the web3 provider.');
       console.error(error);
     }
-  });
+  }
+  return accounts;
+}
+
+async function makeWeb3Transaction(transactionParams) {
+  let transactionHash;
+  try {
+    transactionHash = await provider.request({ method: 'eth_sendTransaction', params: [transactionParams]});
+  } catch (error) {
+    console.error(error);
+  }
+  if (transactionHash) {
+    trackTransaction(transactionHash, CONFIGURATION_FILE_NAME);
+  }
 }
 
 async function sendEthViaWeb3() {
-  await checkWeb3Network();
-  let web3 = window.web3;
-  let sender_address =
-    (window.ethereum && window.ethereum.selectedAddress) ||
-    web3.eth.defaultAccount;
-  let gasPrice;
+  const correctNetwork = await checkWeb3Network();
+  if (!correctNetwork) {
+    return;
+  }
 
+  const accounts = await connectWeb3();
+  if (accounts.length === 0) {
+    return;
+  }
+
+  let gasPrice;
   try {
     gasPrice = await getGasPrice(GAS_PRICE_URL);
   } catch {
-    console.err("Could not fetch gas price. Falling back to web3 gas price.");
+    console.err('Could not fetch gas price. Falling back to web3 gas price.');
   }
 
-  let transaction_data = {
-    from: sender_address,
+  const transactionParams = {
+    from: accounts[0],
     to: TARGET_ADDRESS,
-    value: neededEthAmount,
+    value: '0x' + neededEthAmount.toString(16),
   };
 
   if (gasPrice) {
-    transaction_data.gasPrice = gasPrice;
+    transactionParams.gasPrice = '0x' + gasPrice.toString(16);
   }
 
-  makeWeb3Transaction(web3, transaction_data);
+  makeWeb3Transaction(transactionParams);
 }
 
 function checkWeb3Available() {
-  let has_web3 = Boolean(window.ethereum || window.web3);
+  let hasWeb3 = provider && provider.request;
   let noWeb3Text = document.getElementById("no-web3");
-  if (has_web3) {
+  if (hasWeb3) {
     noWeb3Text.style.display = "none";
   } else {
     noWeb3Text.style.display = "inline";
   }
-  return has_web3;
+  return hasWeb3;
 }
 
 function updateNeededEth(balance) {
@@ -85,7 +114,7 @@ function updateNeededEth(balance) {
   if (balance.ETH.as_wei > 0) {
     const sendButton = document.getElementById("btn-web3-eth");
     sendButton.textContent = "Send missing ETH";
-    let info = document.getElementById("low-eth-info");
+    const info = document.getElementById("low-eth-info");
     if (!info) {
       info = document.createElement("div");
       info.id = "low-eth-info";
@@ -97,20 +126,26 @@ function updateNeededEth(balance) {
 }
 
 function sendEthButtonlogic(balance) {
-  const has_web3 = checkWeb3Available();
-  let button_send_eth = document.getElementById("btn-web3-eth");
-  button_send_eth.disabled = has_web3
-    ? has_web3 && hasEnoughEthToStartSwaps(balance)
-    : true;
-  if (!has_web3) {
+  const hasWeb3 = checkWeb3Available();
+  const hideButtons = hasWeb3 ? hasEnoughEthToStartSwaps(balance) : true;
+  const buttonList = document.getElementById("btns-web3");
+  if (hideButtons) {
+    buttonList.classList.add("hidden");
+  } else {
+    buttonList.classList.remove("hidden");
+  }
+
+  if (!hasWeb3) {
     return;
   }
+
   if (hasEnoughEthToStartSwaps(balance)) {
-    let button_send_eth = document.getElementById("btn-web3-eth");
-    button_send_eth.disabled = true;
-    const action = document.querySelector(".action");
-    action.classList.add("tx-received");
-    setTimeout(function () {
+    const text = document.createTextNode(
+      "Your Raiden account is funded with ETH!"
+    );
+    const infoPanel = document.querySelector(".info-panel");
+    infoPanel.appendChild(text);
+    setTimeout(() => {
       forceNavigation(SWAP_URL);
     }, 2000);
   } else {
@@ -128,15 +163,25 @@ function showDownloadButton(callback) {
   }
 }
 
+function removeSpinner() {
+  const spinner = document.querySelector(".spinner.balance-loading");
+  if (spinner) {
+    spinner.remove();
+  }
+}
+
 async function poll() {
-  let balance = await getBalances(CONFIGURATION_DETAIL_URL);
-  let config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+  const balance = await getBalances(CONFIGURATION_DETAIL_URL);
+  const config = await getConfigurationFileData(CONFIGURATION_DETAIL_URL);
+  removeSpinner();
+
   if (!balance.ETH.as_wei && config._initial_funding_txhash) {
     return trackTransaction(
       config._initial_funding_txhash,
       CONFIGURATION_FILE_NAME
     );
   }
+
   if (balance.ETH.as_wei) {
     sendEthButtonlogic(balance);
   } else {
@@ -150,12 +195,14 @@ function main() {
   poll();
 }
 
-window.addEventListener("DOMContentLoaded", function () {
+window.addEventListener("DOMContentLoaded", async function () {
   setProgressStep(2, "Fund Account with ETH");
   if (FAUCET_AVAILABLE !== "True") {
+    provider = await detectEthereumProvider();
     window.MAIN_VIEW_INTERVAL = 10000;
     window.runMainView();
   } else {
+    removeSpinner();
     showDownloadButton(() => {
       let button = document.getElementById("btn-funding");
       button.disabled = false;

@@ -1,7 +1,7 @@
 async function main() {
   let balance = await getBalances(CONFIGURATION_DETAIL_URL);
 
-  document.querySelector(".spinner").remove();
+  document.querySelector(".spinner.balance-loading").remove();
 
   let checklist_elem = document.querySelector("ul.checklist");
   let eth_balance_check_elem = checklist_elem.querySelector(

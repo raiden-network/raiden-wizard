@@ -14,9 +14,9 @@
     />
   </div>
   <div class="error-box">
-    <span class="error" hidden
-      >You need to provide a valid Infura Project ID</span
-    >
+    <span class="error" hidden>
+      You need to provide a valid Infura Project ID
+    </span>
   </div>
 </div>
 
@@ -41,14 +41,19 @@
   <li>
     If you have not done yet, please create a project at Infura to connect
     to the Ethereum Mainnet. You can find your Infura project ID under
-    your project's settings. For more help, look
-    <a href="https://infura.io/docs/" target="_blank">here</a>.
+    your project's settings. 
+  </li>
+  <li>
+    You can follow the steps one to three of 
+    <a href="https://blog.infura.io/getting-started-with-infura-28e41844cc89/" target="_blank">
+      this guide
+    </a>
+    to get an Infura ID.
   </li>
 {% end %}
 
 {% block page_header_scripts %}
   <script type="text/javascript">
-    const NETWORK_NAME = "{{ network.name }}";
     const ACCOUNT_FILE = "{{ account_file }}";
   </script>
   <script type="text/javascript" src="{{ static_url('js/raiden_setup.js') }}"></script>

@@ -1,53 +1,7 @@
-const CHAIN_ID_MAPPING = {
-  1: "Mainnet",
-  3: "Ropsten",
-  4: "Rinkeby",
-  5: "Görli",
-  42: "Kovan",
-};
-
 var MAIN_VIEW_INTERVAL;
 var RUNNING_TIMERS = new Array();
 
 let video;
-
-async function connectWeb3() {
-  let has_web3 = Boolean(window.ethereum || window.web3);
-  if (has_web3) {
-    // Modern dapp browsers...
-    if (window.ethereum) {
-      console.log("Using modern dapp browser");
-      window.web3 = new Web3(ethereum);
-      try {
-        // Request account access if needed
-        await ethereum.enable();
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    // Legacy dapp browsers...
-    else if (window.web3) {
-      console.log("Using legacy web3");
-      window.web3 = new Web3(web3.currentProvider);
-    }
-    // Non-dapp browsers...
-    else {
-      console.log(
-        "Non-Ethereum browser detected. You should consider trying MetaMask!"
-      );
-    }
-  }
-}
-
-async function getKyberExchangeRate(token) {
-  const url = "https://api.kyber.network/api/tokens/pairs";
-  let token_ticker = (token || "RDN").toUpperCase();
-  let request = await fetch(url);
-  let response_data = await request.json();
-  let token_data = response_data["ETH_" + token_ticker];
-
-  return token_data && token_data.currentPrice;
-}
 
 function runMainView() {
   if (typeof window.main === "function") {
@@ -352,6 +306,12 @@ function addFeedbackMessage(message) {
   WEBSOCKET.onmessage({ data: JSON.stringify({ text: message }) });
 }
 
+function addErrorMessage(message) {
+  WEBSOCKET.onmessage({
+    data: JSON.stringify({ text: message, type: "error-message" }),
+  });
+}
+
 function setupModal() {
   const modalTriggers = document.querySelectorAll(".modal-trigger");
   const bodyBlackout = document.querySelector(".body-blackout");
@@ -415,8 +375,12 @@ function beforeunloadHandler(e) {
 }
 
 function forceNavigation(url) {
-  window.removeEventListener("beforeunload", beforeunloadHandler);
+  removeBeforeunloadHandler();
   document.location = url;
+}
+
+function removeBeforeunloadHandler() {
+  window.removeEventListener("beforeunload", beforeunloadHandler);
 }
 
 function setUpTogglePassword() {

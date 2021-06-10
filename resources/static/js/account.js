@@ -94,8 +94,15 @@ function showRamp() {
 }
 
 async function checkWeb3Network() {
+  let currentChainID;
+  try {
+    currentChainID = parseInt(await provider.request({ method: 'eth_chainId' }), 16);
+  } catch (error) {
+    alert('Could not retrieve the chaind id from the web3 provider.');
+    return false;
+  }
+
   const requiredChainID = CHAIN_ID;
-  const currentChainID = parseInt(await provider.request({ method: 'eth_chainId' }), 16);
   if (currentChainID != requiredChainID) {
     const currentChainName = CHAIN_ID_MAPPING[currentChainID];
     const requiredChainName = CHAIN_ID_MAPPING[requiredChainID];
@@ -110,10 +117,7 @@ async function checkWeb3Network() {
 async function connectWeb3() {
   let accounts = [];
   try {
-    accounts = await provider.request({ method: 'eth_accounts' });
-    if (accounts.length === 0) {
-      accounts = await provider.request({ method: 'eth_requestAccounts' });
-    }
+    accounts = await provider.request({ method: 'eth_requestAccounts' });
   } catch (error) {
     if (error.code === 4001) {
       // EIP-1193 userRejectedRequest error

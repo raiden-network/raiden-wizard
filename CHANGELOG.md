@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [#338] Adapted the MetaMask integration to the recent breaking changes.
+
 ## [1.1.0] - 2020-09-29
 
 ### Added
@@ -19,6 +23,7 @@
 
 [unreleased]: https://github.com/raiden-network/raiden-wizard/compare/v1.1.0...HEAD
 [1.1.0]: https://github.com/raiden-network/raiden-wizard/compare/v1.0.3...v1.1.0
+[#338]: https://github.com/raiden-network/raiden-wizard/issues/338
 [#308]: https://github.com/raiden-network/raiden-wizard/issues/308
 [#275]: https://github.com/raiden-network/raiden-wizard/pull/275
 [#273]: https://github.com/raiden-network/raiden-wizard/issues/273

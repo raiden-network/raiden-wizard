@@ -177,6 +177,17 @@ input[type=text] {
     margin-bottom: 15px;
 }
 
+input#eth-amount {
+    width: 90px;
+    margin-left: 10px;
+    font-size: 18px;
+    height: 46px;
+}
+
+span.small {
+    font-size: 18px;
+}
+
 .error-box {
     height: 28px;
 }

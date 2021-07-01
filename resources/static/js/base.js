@@ -231,6 +231,14 @@ function checkAcknowledgements(check_input_elems, next_action_elem, callback) {
   });
 }
 
+function fromWei(value) {
+  return value / 10 ** 18;
+}
+
+function toWei(value) {
+  return value * 10 ** 18;
+}
+
 WEBSOCKET.onmessage = function (evt) {
   let message = JSON.parse(evt.data);
   let message_list_elem = document.querySelector(

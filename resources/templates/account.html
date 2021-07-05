@@ -47,11 +47,40 @@
         </button>
     </div>
   {% else %}
-    <div class="action hidden" id="btns-web3">
-      <button class="big" id="btn-web3-eth" onClick="sendEthViaWeb3();">
-        <img src="{{ static_url('images/send.svg') }}" alt="Send" />
-        Send {{ ethereum_required.formatted }}
-      </button>
+    <div class="info-panel hidden" id="btns-web3">
+      <div>
+        <span class="small">ETH amount:</span>
+        <input 
+          id="eth-amount"
+          type="number" 
+          name="ethAmount" 
+          value="{{ethereum_required.value}}" 
+          min="{{ethereum_required.value}}"
+          step="0.01"
+          autocomplete="off"
+          required 
+        />
+      </div>
+      <div class="error-box">
+        <span class="error" id="eth-amount-error" hidden></span>
+      </div>
+      <div class="action-list">
+        <button class="big" id="btn-web3-eth" onClick="sendEthViaWeb3();">
+          <img src="{{ static_url('images/send.svg') }}" alt="Send" />
+          Send ETH
+        </button>
+        <button 
+          class="big" 
+          id="btn-ramp-eth"
+          onClick="showRamp();"
+          title="By using this feature Raiden Wizard will connect to a third party service. 
+          Third party terms and conditions may apply."
+        >
+          <img src="{{ static_url('images/money.svg') }}" alt="Buy" />
+          Buy ETH &nbsp;
+          <img class="small" src="{{ static_url('images/external.svg') }}" alt="External service" />
+        </button>
+      </div>
     </div>
   {% end %}
 {% end %}
@@ -81,6 +110,7 @@
     const FAUCET_AVAILABLE = "{{ network.FAUCET_AVAILABLE }}";
     const CHAIN_ID = "{{ configuration_file.network.chain_id }}";
     const CONFIGURATION_FILE_NAME = "{{ configuration_file.file_name }}";
+    const RAMP_API_KEY = "{{ ramp_api_key }}";
 
     const GAS_PRICE_URL = "{{ reverse_url('gas_price', configuration_file.file_name) }}";
     const KEYSTORE_URL = "{{ reverse_url('keystore', configuration_file.file_name, keystore) }}";
@@ -95,4 +125,5 @@
   </script>
   <script type="text/javascript" src="{{ static_url('js/account.js') }}"></script>
   <script src="https://unpkg.com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ramp-network/ramp-instant-sdk/dist/ramp-instant-sdk.umd.min.js"></script>
 {% end %}

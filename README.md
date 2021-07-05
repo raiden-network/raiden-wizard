@@ -15,7 +15,7 @@ You can download the Raiden Wizard for either macOS or Linux.
 
 For detailed instructions on how to run the Raiden Wizard:
 
-Read the [Quick Start section of the documentation](https://docs.raiden.network/quick-start)
+Read the [Quick Start section of the documentation](https://raiden-network.readthedocs.io/en/stable/installation/quick-start/)
 
 ## For Developers
 

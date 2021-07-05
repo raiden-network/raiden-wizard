@@ -5,6 +5,7 @@ const CHAIN_ID_MAPPING = {
   5: "Görli",
   42: "Kovan",
 };
+const RAMP_BALANCE_TIMEOUT = 300000;
 
 let neededEthAmount = ETHEREUM_REQUIRED_AMOUNT;
 let provider;
@@ -16,6 +17,82 @@ function runFunding(configurationFileName) {
   };
   WEBSOCKET.send(JSON.stringify(message));
   toggleView();
+}
+
+function showRamp() {
+  const amountInput = document.getElementById("eth-amount");
+
+  const ramp = new rampInstantSdk.RampInstantSDK({
+    hostAppName: "Raiden Wizard",
+    hostLogoUrl:
+      "https://raw.githubusercontent.com/raiden-network/raiden-wizard/develop/resources/static/images/raiden_logo_black.svg",
+    hostApiKey: RAMP_API_KEY,
+    swapAmount: toWei(amountInput.value).toString(),
+    swapAsset: "ETH",
+    userAddress: TARGET_ADDRESS,
+  });
+
+  const purchaseCreatedCallback = (event) => {
+    console.log(`Ramp purchase created with id ${event.payload.purchase.id}`);
+    ramp.unsubscribe('PURCHASE_CREATED', purchaseCreatedCallback);
+    toggleView();
+    const messages = [
+      "Waiting for confirmation of purchase",
+      "(If you chose manual bank transfer you can close the Wizard and come back once you received a confirmation by e-mail.)",
+    ];
+    addFeedbackMessage(messages);
+  };
+
+  const purchaseSuccessfulCallback = (event) => {
+    ramp.unsubscribe("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback);
+    addFeedbackMessage([
+      'Purchase successful!',
+      'Checking balance to get updated',
+    ]);
+
+    const boughtAmount = parseInt(event.payload.purchase.cryptoAmount);
+    let timeElapsed = 0;
+    let timer;
+    const checkBalance = async () => {
+      if (timeElapsed >= RAMP_BALANCE_TIMEOUT) {
+        if (timer) {
+          clearInterval(timer);
+        }
+        addErrorMessage([
+          `Balance did not get updated after ${
+            RAMP_BALANCE_TIMEOUT / 1000
+          } seconds!`,
+        ]);
+        return;
+      }
+
+      const balance = await getBalances(CONFIGURATION_DETAIL_URL);
+      if (balance && balance.ETH && balance.ETH.as_wei >= boughtAmount) {
+        addFeedbackMessage([
+          `Balance got updated. You now have ${balance.ETH.formatted}.`,
+        ]);
+        setTimeout(() => {
+          forceNavigation(SWAP_URL);
+        }, 5000);
+      }
+      timeElapsed += 10000;
+    };
+
+    checkBalance();
+    timer = setInterval(checkBalance, 10000);
+  };
+
+  const purchaseFailedCallback = () => {
+    if (!document.querySelector("#background-task-tracker").hidden) {
+      addErrorMessage(["Purchase failed! Try again..."]);
+    }
+  };
+
+  ramp
+    .on("PURCHASE_CREATED", purchaseCreatedCallback)
+    .on("PURCHASE_SUCCESSFUL", purchaseSuccessfulCallback)
+    .on("PURCHASE_FAILED", purchaseFailedCallback)
+    .show();
 }
 
 async function checkWeb3Network() {
@@ -85,10 +162,11 @@ async function sendEthViaWeb3() {
     console.err('Could not fetch gas price. Falling back to web3 gas price.');
   }
 
+  const amountInput = document.getElementById("eth-amount");
   const transactionParams = {
     from: accounts[0],
     to: TARGET_ADDRESS,
-    value: '0x' + neededEthAmount.toString(16),
+    value: '0x' + toWei(amountInput.value).toString(16),
   };
 
   if (gasPrice) {
@@ -109,11 +187,38 @@ function checkWeb3Available() {
   return hasWeb3;
 }
 
+function checkEthAmountValidity(event) {
+  const amountInput = event.target;
+  const errorDisplay = document.querySelector('span.error');
+  const sendButton = document.getElementById('btn-web3-eth');
+  const rampButton = document.getElementById('btn-ramp-eth');
+
+  if (
+    amountInput.validity.valueMissing || 
+    amountInput.validity.rangeUnderflow || 
+    amountInput.validity.badInput 
+  ) {
+    errorDisplay.textContent = `At least ${fromWei(neededEthAmount)} ETH required`;
+    errorDisplay.hidden = false;
+    sendButton.disabled = true;
+    rampButton.disabled = true;
+  } else {
+    errorDisplay.hidden = true;
+    sendButton.disabled = false;
+    rampButton.disabled = false;
+  }
+}
+
+function setUpEthAmountCheck() {
+  const amountInput = document.getElementById("eth-amount");
+  amountInput.addEventListener("input", checkEthAmountValidity);
+}
+
 function updateNeededEth(balance) {
   neededEthAmount = ETHEREUM_REQUIRED_AMOUNT - balance.ETH.as_wei;
   if (balance.ETH.as_wei > 0) {
-    const sendButton = document.getElementById("btn-web3-eth");
-    sendButton.textContent = "Send missing ETH";
+    const amountInput = document.getElementById("eth-amount");
+    amountInput.min = fromWei(neededEthAmount);
     const info = document.getElementById("low-eth-info");
     if (!info) {
       info = document.createElement("div");
@@ -199,6 +304,7 @@ window.addEventListener("DOMContentLoaded", async function () {
   setProgressStep(2, "Fund Account with ETH");
   if (FAUCET_AVAILABLE !== "True") {
     provider = await detectEthereumProvider();
+    setUpEthAmountCheck();
     window.MAIN_VIEW_INTERVAL = 10000;
     window.runMainView();
   } else {

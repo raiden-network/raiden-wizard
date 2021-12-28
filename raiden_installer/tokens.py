@@ -72,6 +72,7 @@ class Erc20Token(Currency):
             "0.33": TokensV33,
             "0.36": TokensV36,
             "0.37": TokensV37,
+            "0.40": TokensV40,
         }.get(version_string, Tokens)
         try:
             token_data = token_list_version[ticker].value
@@ -183,6 +184,12 @@ _RDN = TokenData(
     },
 )
 
+_SVT = TokenData(
+    ticker="SVT",
+    wei_ticker="SEI",
+    addresses={"goerli": "0x5Fc523e13fBAc2140F056AD7A96De2cC0C4Cc63A"},
+)
+
 _DAI = TokenData(
     ticker="DAI",
     wei_ticker="DEI",
@@ -241,11 +248,14 @@ class TokensV37(Enum):
         _RDN,
         addresses={"mainnet": "0x255aa6df07540cb5d3d297f0d0d4d84cb52bc8e6"},
     )
-    SVT = TokenData(
-        ticker="SVT",
-        wei_ticker="SEI",
-        addresses={"goerli": "0x5Fc523e13fBAc2140F056AD7A96De2cC0C4Cc63A"},
-    )
+    SVT = _SVT
+    DAI = _DAI
+    WIZ = _WizardToken
+
+
+class TokensV40(Enum):
+    RDN = _RDN
+    SVT = _SVT
     DAI = _DAI
     WIZ = _WizardToken
 

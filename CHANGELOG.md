@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2021-12-28
+
+### Changed
+
+- Use newest Raiden client version v3.0.0 - Coruscant
+
 ## [1.3.0] - 2021-07-05
 
 ### Added
